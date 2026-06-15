@@ -21,6 +21,7 @@ const rules = [
   ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
   ["GOAL-MISSING", "warning", "spec", "1", "false", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
   ["ACCEPTANCE-NOT-RUNNABLE", "warning", "spec", "1", "false", "agent-loopable acceptance checks carry no runnable command — the loop must interpret prose."],
+  ["LOOP-BUDGET-INVALID", "warning", "spec", "1", "false", "loop_budget is present but not a positive integer (the autonomy grant)."],
 ];
 ---
 <Docs title="Rule catalog — doctor">
@@ -47,5 +48,5 @@ const rules = [
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 19 rules at tier 1 (the canon 2.3 structural subset, plus loop-orientation nudges). Lifecycle/state rules are deferred to a later spec.</p>
+  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 20 rules at tier 1 (the canon 2.3 structural subset, plus loop-orientation nudges). Lifecycle/state rules are deferred to a later spec.</p>
 </Docs>
