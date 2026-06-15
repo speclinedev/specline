@@ -270,10 +270,13 @@ const knowledgeHasStatus: Rule = ({ repo }) => {
   return out;
 };
 
-const archiveEdited: Rule = ({ repo, changed }) => {
+const archiveEdited: Rule = ({ changed }) => {
   const out: RawFinding[] = [];
+  // Only archived SPECS are the read-only audit trail (archive/NNNN-slug/...).
+  // Generated folder metadata like archive/README.md is not — it's regenerable.
+  const archivedSpec = /^docs\/archive\/\d{4}-[^/]+\//;
   for (const path of [...changed].sort()) {
-    if (path.startsWith("docs/archive/")) {
+    if (archivedSpec.test(path)) {
       out.push({ rule_id: "ARCHIVE-EDITED", file: path, line: null, specDir: null,
         message: `archive/ is read-only; ${path} was reported changed`,
         fix_hint: "revert the edit; archived specs are an immutable audit trail" });

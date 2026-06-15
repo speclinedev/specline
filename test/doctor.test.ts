@@ -89,6 +89,10 @@ test("archive-edited: a --changed path under archive/ errors (repo-scoped)", () 
   assert.equal(exitCodeFor(r), 1);
   // without --changed there is nothing to flag
   assert.equal(gate("archive-edited").summary.errors, 0);
+  // the generated archive/README.md is NOT the audit trail — must not trip the rule
+  const readme = gate("archive-edited", ["docs/archive/README.md"]);
+  assert.ok(!readme.findings.some((f) => f.rule_id === "ARCHIVE-EDITED"), "archive/README.md must not trip ARCHIVE-EDITED");
+  assert.equal(readme.summary.errors, 0);
 });
 
 test("every --format json report validates against the published schema", () => {
