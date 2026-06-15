@@ -16,7 +16,7 @@ const rules = [
   ["RELATION-KILLED", "warning", "repo", "1", "false", "an edge points to a killed id — warn only."],
   ["LINK-DANGLING", "error", "repo", "1", "false", "a relative link under docs/ doesn't resolve."],
   ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "false", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
-  ["ARCHIVE-EDITED", "error", "repo", "1", "false", "a --changed path under archive/ — the audit trail is read-only."],
+  ["ARCHIVE-EDITED", "error", "repo", "1", "false", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
   ["ID-DUPLICATE", "error", "repo", "1", "false", "an id appears in more than one spec-bearing location."],
   ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
 ];
