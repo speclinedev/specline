@@ -83,16 +83,23 @@ test("relation-killed: edge to a killed id is a warning, exit 0", () => {
   assert.equal(r.summary.errors, 0);
 });
 
-test("archive-edited: a --changed path under archive/ errors (repo-scoped)", () => {
-  const r = gate("archive-edited", ["docs/archive/0013-old/spec.md"]);
-  assert.ok(r.findings.some((f) => f.rule_id === "ARCHIVE-EDITED" && f.severity === "error"));
-  assert.equal(exitCodeFor(r), 1);
-  // without --changed there is nothing to flag
-  assert.equal(gate("archive-edited").summary.errors, 0);
-  // the generated archive/README.md is NOT the audit trail — must not trip the rule
-  const readme = gate("archive-edited", ["docs/archive/README.md"]);
-  assert.ok(!readme.findings.some((f) => f.rule_id === "ARCHIVE-EDITED"), "archive/README.md must not trip ARCHIVE-EDITED");
-  assert.equal(readme.summary.errors, 0);
+test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation) passes", () => {
+  const run1 = (opts: { changed?: string[]; modified?: string[] }) =>
+    run(fx("archive-edited"), { mode: "gate", changed: opts.changed ?? [], modified: opts.modified ?? [], now: "2026-06-15" });
+  const has = (r: ReturnType<typeof run1>) => r.findings.some((f) => f.rule_id === "ARCHIVE-EDITED" && f.severity === "error");
+
+  // modifying an archived spec → error (the audit trail is immutable)
+  const mod = run1({ changed: ["docs/archive/0013-old/spec.md"], modified: ["docs/archive/0013-old/spec.md"] });
+  assert.ok(has(mod));
+  assert.equal(exitCodeFor(mod), 1);
+
+  // adding an archived spec (graduation) → changed but NOT modified → passes
+  const add = run1({ changed: ["docs/archive/0013-old/spec.md"], modified: [] });
+  assert.ok(!has(add), "graduation (add) must not trip ARCHIVE-EDITED");
+  assert.equal(add.summary.errors, 0);
+
+  // the generated archive/README.md is not the audit trail, even if modified
+  assert.ok(!has(run1({ modified: ["docs/archive/README.md"] })), "archive/README.md must not trip ARCHIVE-EDITED");
 });
 
 test("every --format json report validates against the published schema", () => {

@@ -21,8 +21,12 @@ runs:
         base="${GITHUB_BASE_REF:-main}"
         git fetch --no-tags --depth=1 origin "$base" 2>/dev/null || true
         changed="$(git diff --name-only "origin/$base"...HEAD -- 'docs/**' 2>/dev/null | tr '\n' ' ')"
+        # modifications/deletions/renames only (not pure adds) — for edit detection on archive/
+        modified="$(git diff --name-status "origin/$base"...HEAD -- 'docs/**' 2>/dev/null | awk '$1 ~ /^[MDR]/ {print $NF}' | tr '\n' ' ')"
         echo "Changed under docs/: ${changed:-<none>}"
+        echo "Modified (not added): ${modified:-<none>}"
         node "$GITHUB_ACTION_PATH/src/action/main.ts" "${{ inputs.path }}" \
           --mode gate \
           --now "$(date -u +%Y-%m-%d)" \
-          --changed "$changed"
+          --changed "$changed" \
+          --modified "$modified"

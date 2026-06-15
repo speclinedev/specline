@@ -11,6 +11,8 @@ export type Mode = "gate" | "author";
 export interface RunOptions {
   mode: Mode;
   changed: string[];
+  /** subset of changed that are modifications/deletions (not adds); for edit detection. */
+  modified?: string[];
   now: string | null;
   tierOverride?: number;
 }
@@ -42,7 +44,8 @@ function compareFindings(a: Finding, b: Finding): number {
 /** Evaluate an already-loaded repo model. */
 export function evaluate(repo: Repo, opts: RunOptions): Report {
   const changed = new Set(opts.changed.map(normalize));
-  const ctx: RuleContext = { repo, changed, now: opts.now };
+  const modified = new Set((opts.modified ?? []).map(normalize));
+  const ctx: RuleContext = { repo, changed, modified, now: opts.now };
 
   const changedSpecDirs = new Set<string>();
   for (const f of repo.allFolders) {

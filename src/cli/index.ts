@@ -34,6 +34,7 @@ interface Args {
   mode: Mode;
   format: Format | null;
   changed: string[];
+  modified: string[];
   now: string | null;
   tier: number | undefined;
   decider: string;
@@ -49,7 +50,7 @@ function fail(msg: string): never {
 
 function parseArgs(argv: string[]): Args {
   const a: Args = {
-    command: "check", path: ".", mode: "gate", format: null, changed: [], now: null,
+    command: "check", path: ".", mode: "gate", format: null, changed: [], modified: [], now: null,
     tier: undefined, decider: "you", githubAction: "ask", check: false, yes: false,
   };
   const sub = argv[0];
@@ -92,6 +93,9 @@ function parseArgs(argv: string[]): Args {
       }
       case "--changed":
         while (i + 1 < argv.length && !argv[i + 1]!.startsWith("--")) a.changed.push(argv[++i]!);
+        break;
+      case "--modified":
+        while (i + 1 < argv.length && !argv[i + 1]!.startsWith("--")) a.modified.push(argv[++i]!);
         break;
       case "--decider":
         a.decider = argv[++i] ?? fail(`--decider needs a name`);
@@ -219,7 +223,7 @@ async function main(): Promise<void> {
     fail(`no docs/ directory found under ${args.path}`);
   }
 
-  const report = run(args.path, { mode: args.mode, changed: args.changed, now: args.now, tierOverride: args.tier });
+  const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now, tierOverride: args.tier });
   const format = args.format ?? "human";
   if (format === "json") {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

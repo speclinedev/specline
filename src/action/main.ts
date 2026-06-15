@@ -14,6 +14,8 @@ function flag(name: string): string | undefined {
 const path = process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : ".";
 const changedRaw = flag("--changed") ?? process.env.SPECLINE_CHANGED ?? "";
 const changed = changedRaw.split(/\s+/).filter(Boolean);
+const modifiedRaw = flag("--modified") ?? process.env.SPECLINE_MODIFIED ?? "";
+const modified = modifiedRaw.split(/\s+/).filter(Boolean);
 const now = flag("--now") ?? process.env.SPECLINE_NOW ?? null;
 const mode: Mode = (flag("--mode") ?? "gate") === "author" ? "author" : "gate";
 
@@ -21,7 +23,7 @@ const mode: Mode = (flag("--mode") ?? "gate") === "author" ? "author" : "gate";
 const esc = (s: string) => s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
 const escProp = (s: string) => esc(s).replace(/,/g, "%2C").replace(/:/g, "%3A");
 
-const report = run(path, { mode, changed, now });
+const report = run(path, { mode, changed, modified, now });
 
 for (const f of report.findings) {
   const cmd = f.severity === "error" ? "error" : f.severity === "warning" ? "warning" : "notice";

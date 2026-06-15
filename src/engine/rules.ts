@@ -51,8 +51,11 @@ const RELATION_KEYS = ["depends_on", "part_of", "supersedes", "conflicts_with"];
 
 export interface RuleContext {
   repo: Repo;
-  /** repo-root-relative POSIX paths the caller declared changed. */
+  /** repo-root-relative POSIX paths the caller declared changed (added or modified). */
   changed: Set<string>;
+  /** the subset that are modifications/deletions, not pure adds — for edit detection
+   *  on otherwise-immutable files (e.g. archive/). Empty unless the caller supplies it. */
+  modified: Set<string>;
   now: string | null;
 }
 
@@ -270,12 +273,13 @@ const knowledgeHasStatus: Rule = ({ repo }) => {
   return out;
 };
 
-const archiveEdited: Rule = ({ changed }) => {
+const archiveEdited: Rule = ({ modified }) => {
   const out: RawFinding[] = [];
-  // Only archived SPECS are the read-only audit trail (archive/NNNN-slug/...).
-  // Generated folder metadata like archive/README.md is not — it's regenerable.
+  // Only a *modification* of an archived spec is a violation — adding one is
+  // graduation, which is allowed. So this reads `modified`, not `changed`. And only
+  // archived specs (archive/NNNN-slug/...) count; the generated archive/README.md does not.
   const archivedSpec = /^docs\/archive\/\d{4}-[^/]+\//;
-  for (const path of [...changed].sort()) {
+  for (const path of [...modified].sort()) {
     if (archivedSpec.test(path)) {
       out.push({ rule_id: "ARCHIVE-EDITED", file: path, line: null, specDir: null,
         message: `archive/ is read-only; ${path} was reported changed`,
