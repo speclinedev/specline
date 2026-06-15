@@ -214,6 +214,26 @@ repos); a bug is a spec with `type: bug`. The model-tier map (new in v2.3) lives
 in conventions: it maps capability tiers named in specs (`light|standard|frontier`)
 to the actual models a repo uses, so specs stay agent-agnostic.
 
+**Self-documenting folders.** Each recommended directory carries a `README.md` at
+its root, so the structure explains itself in place — to a human reading it and to
+an agent writing in it — without loading the full canon. The file uses one fixed
+skeleton:
+
+    # <folder>/ — <one-line purpose>
+    What's here     what this directory holds
+    How to write    the posture and the rule for authoring here
+    How to read     how to interpret these docs; where the alternative lives
+    What's not here what belongs in another directory instead
+
+These READMEs are **generated from this canon, never hand-edited** — the
+per-directory definitions in the layout above are their source. Each carries a
+header marking it a generated artifact (`<!-- generated · canon 2.3 · do not edit ·
+run: specline sync -->`), in the same class as `relations-index.yml`. `specline
+init` writes them when a repo adopts Specline; `specline sync` (or `doctor --fix`)
+regenerates them on a canon-version bump. Doctor checks **drift** — a README that
+no longer matches what the current canon would generate is a finding — but never
+writes them: generation is the writer's job, the drift check is the validator's.
+
 ---
 
 ## IDs and references

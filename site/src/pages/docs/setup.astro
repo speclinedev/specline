@@ -1,0 +1,68 @@
+---
+import Docs from "../../layouts/Docs.astro";
+---
+<Docs title="Getting started — set up or convert a repo">
+  <div class="doc-kicker">Doctor · Getting started</div>
+  <h1>Set up or convert a repo</h1>
+  <p class="doc-lead">
+    From zero to a Specline repo — whether you're starting fresh or bringing an existing
+    codebase's docs into the structure. Each path works two ways: let an agent do it
+    (recommended), or do it by hand.
+  </p>
+
+  <h2>Before you start</h2>
+  <ul>
+    <li><a href="/docs/install">Install</a> the <code>specline</code> command (Node 22+, no build).</li>
+    <li>For the agent path: register the <a href="/docs/mcp">MCP server</a> and drop the <a href="/docs/agent"><code>CLAUDE.md</code> brief</a> into the repo.</li>
+  </ul>
+  <p class="doc-note">There's no <code>specline init</code> command yet — setup today is agent-driven or by hand (a generated <code>init</code>/<code>migrate</code> is the planned next tool).</p>
+
+  <h2>Set up a new repo</h2>
+
+  <h3>The agent way — recommended</h3>
+  <p>With the brief in place, open an agent in the repo and say:</p>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">you →</span></div><pre>Set this repo up for Specline.</pre></div>
+  <p>It scaffolds the structure (the pin, the id counter, an <code>architecture.md</code>) and is ready for your first <em>"shape a feature"</em>.</p>
+
+  <h3>By hand</h3>
+  <p>The minimal valid setup is small:</p>
+  <pre class="tree"><span class="dir">docs/</span>
+  architecture.md                  <span class="cmt"># a few lines: what this system is, read first</span>
+  <span class="dir">conventions/</span>
+    doc-architecture.md            <span class="cmt"># the canon + tier pin — doctor reads tier here</span>
+  <span class="dir">specs/</span>
+    .id-counter                    <span class="cmt"># a bare integer, e.g. 0000</span></pre>
+  <p><code>conventions/doc-architecture.md</code> is the one file doctor reads to find your tier:</p>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">docs/conventions/doc-architecture.md</span></div><pre><span class="v"># Doc architecture — pin &amp; deciders</span>
+
+| Field | Value |
+|---|---|
+| <span class="k">Canon</span> | Specline 2.3.0-draft |
+| <span class="k">Tier</span>  | <span class="acc">**1 — the loop.**</span> |
+| <span class="k">Decider</span> | your-name |</pre></div>
+  <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/specs/0001-slug/</code>.</p>
+
+  <h2>Convert an existing repo</h2>
+  <p>
+    Your already-shipped features never had a Specline spec, so there's nothing to
+    ratify or archive — they go straight into <code>knowledge/</code> as descriptions of
+    what's true now.
+  </p>
+
+  <h3>The agent way — recommended</h3>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">you →</span></div><pre>Convert our docs to Specline with me.</pre></div>
+  <p>The agent reads your existing docs, assigns ids, populates <code>knowledge/NNNN-slug/</code>, sets <code>.id-counter</code>, and adds the conventions pin — checking itself with doctor as it goes.</p>
+
+  <h3>By hand</h3>
+  <ol>
+    <li>Add <code>docs/conventions/doc-architecture.md</code> with the canon + tier pin (as above).</li>
+    <li>For each shipped feature's existing doc, create <code>docs/knowledge/NNNN-slug/</code> (sequential ids from <code>0001</code>). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts doctor rejects in <code>knowledge/</code>).</li>
+    <li>Set <code>docs/specs/.id-counter</code> to the highest id you assigned.</li>
+    <li>Leave <code>archive/</code> empty — it fills as new features go forward through the loop. Backfill a contract only for a feature whose original spec still carries value.</li>
+  </ol>
+  <div class="callout"><span class="ci">▲</span><p>doctor permits <code>knowledge/</code> entries with no archived spec — so a converted repo is conformant from day one. The audit trail in <code>archive/</code> grows forward, not retroactively.</p></div>
+
+  <h2 id="verify">Verify</h2>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div><pre>specline doctor .</pre></div>
+  <p>Zero <code>error</code> findings (exit 0) means the structure is valid. Warnings are fine — they flag things to look at, not things to block on. From here, every new feature flows through the <a href="/">loop</a>: shape → ratify → build → graduate.</p>
+</Docs>

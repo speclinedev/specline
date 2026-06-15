@@ -26,5 +26,5 @@ tracks it.
 ## The validator
 
 `doctor` — the deterministic structural validator for Specline repos — lives in
-the sibling [`doctor`](../doctor) repo (`speclinedev/doctor`). It reads only
+the sibling [`cli`](../cli) repo (`speclinedev/cli`). It reads only
 markdown, YAML, and directory structure; it makes no judgment calls.

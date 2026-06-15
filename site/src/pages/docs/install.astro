@@ -20,8 +20,8 @@ import Docs from "../../layouts/Docs.astro";
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
     <pre><span class="cmt"># clone</span>
-git clone https://github.com/speclinedev/doctor
-cd doctor
+git clone https://github.com/speclinedev/cli
+cd cli
 
 <span class="cmt"># run against any repo</span>
 node src/cli/index.ts ~/path/to/repo --format human</pre>
@@ -32,7 +32,7 @@ node src/cli/index.ts ~/path/to/repo --format human</pre>
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">~/.local/bin/specline</span></div>
     <pre>#!/bin/sh
-exec node /abs/path/to/doctor/src/cli/index.ts "$@"</pre>
+exec node /abs/path/to/cli/src/cli/index.ts "$@"</pre>
   </div>
   <p class="doc-note">Then <code>chmod +x ~/.local/bin/specline</code> (ensure <code>~/.local/bin</code> is on your PATH). The canon path resolves relative to the source, so it works from anywhere.</p>
 

@@ -16,9 +16,9 @@ import Docs from "../../layouts/Docs.astro";
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
     <pre>claude mcp add --scope user doctor -- \
-  node /abs/path/to/doctor/src/mcp/index.ts</pre>
+  node /abs/path/to/cli/src/mcp/index.ts</pre>
   </div>
-  <p class="doc-note">Use your actual absolute path to <code>doctor/src/mcp/index.ts</code>. Verify with <code>claude mcp get doctor</code> — it should report <code>✔ Connected</code>. The server is dependency-free stdio JSON-RPC; no install needed.</p>
+  <p class="doc-note">Use your actual absolute path to <code>cli/src/mcp/index.ts</code>. Verify with <code>claude mcp get doctor</code> — it should report <code>✔ Connected</code>. The server is dependency-free stdio JSON-RPC; no install needed.</p>
 
   <h2>The three tools</h2>
   <div class="tbl-wrap">
