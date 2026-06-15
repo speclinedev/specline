@@ -1,0 +1,316 @@
+---
+import Book from "../layouts/Book.astro";
+
+const chapters = [
+  { id: "what", num: "01", title: "What this is" },
+  { id: "loop", num: "02", title: "The loop" },
+  { id: "spec", num: "03", title: "The spec folder" },
+  { id: "layout", num: "04", title: "The product record" },
+  { id: "features", num: "05", title: "How features are documented" },
+  { id: "gates", num: "06", title: "Two gates, one machine" },
+  { id: "claims", num: "07", title: "Claims & failure modes" },
+  { id: "tiers", num: "08", title: "Start light" },
+  { id: "use", num: "09", title: "How you use it" },
+  { id: "doctor", num: "10", title: "The doctor" },
+];
+---
+
+<Book title="Specline — the handbook" chapters={chapters}>
+  <section class="cover">
+    <div class="cover-inner">
+      <div class="cover-top">Specline · canon 2.3.0-draft · the handbook</div>
+      <h1>One shape for<br />every feature<br />you design.</h1>
+      <div class="cover-body">
+        <p class="cover-lead">
+          Specline gives every feature the same structure — so a plan is something you
+          and an agent can produce, check, and trust the same way every time, instead of
+          a blank page and a different shape on each one. A deterministic checker keeps
+          it honest; you keep the judgment.
+        </p>
+        <div class="colophon">
+          <div class="colophon-row"><span class="k">Loop</span><span class="v">shape → ratify → build → graduate</span></div>
+          <div class="colophon-row"><span class="k">Your gates</span><span class="v">ratify · accept</span></div>
+          <div class="colophon-row"><span class="k">The checker</span><span class="v">doctor — structure only</span></div>
+          <div class="colophon-row"><span class="k">Start at</span><span class="v">tier 0 — one spec</span></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <a class="btn-primary" href="#what">Read the handbook</a>
+        <a class="tb-btn" href="/spec.md">For your agents ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="book">
+    <div class="wrap">
+
+      <section class="chapter" id="what">
+        <div class="head-eyebrow">01 · What this is</div>
+        <h2>The structure, made real</h2>
+        <p class="lead">
+          You write a plan, hand it to a model, it more or less follows it. The next
+          feature has a different shape and different gaps. Nothing is wrong, but nothing
+          is consistent — and inconsistency is where things get missed.
+        </p>
+        <p>
+          Specline fixes the shape. Every feature becomes the same kind of folder, with
+          the same sections, and a checker (<strong>doctor</strong>) that tells you when a
+          plan doesn't fit. A convention everyone agrees to but nothing enforces is just a
+          suggestion; Specline makes it something you can actually rely on.
+        </p>
+        <p class="pull">A convention without a validator is a suggestion.</p>
+      </section>
+
+      <section class="chapter" id="loop">
+        <div class="head-eyebrow">02 · The loop</div>
+        <h2>Four moves</h2>
+        <p>
+          A feature moves through four steps. You're only ever on the two ends — shaping
+          the intent and approving the result. The middle runs itself.
+        </p>
+        <figure>
+          <div class="loop-fig">
+            <div class="loop-nodes">
+              <div class="loop-node"><div class="ln">01</div><h5>Shape</h5><div class="who">you + agent</div><span class="arr">→</span></div>
+              <div class="loop-node"><div class="ln">02</div><h5>Ratify</h5><div class="who">you — gate</div><span class="arr">→</span></div>
+              <div class="loop-node"><div class="ln">03</div><h5>Build</h5><div class="who">agent</div><span class="arr">→</span></div>
+              <div class="loop-node"><div class="ln">04</div><h5>Graduate</h5><div class="who">agent · archive</div></div>
+            </div>
+            <div class="loop-return"><span class="tip">↩</span><span class="lbl">reshape is normal</span></div>
+          </div>
+          <figcaption>SHAPE → RATIFY → BUILD → GRADUATE. Reshaping returns to shaping at any time — a transition, not a failure.</figcaption>
+        </figure>
+        <p>
+          <strong>Shape</strong> — you and an agent talk the feature through and write the
+          spec; unknowns become logged questions with a default, so nothing blocks.
+          <strong>Ratify</strong> — you read it in one sitting and approve.
+          <strong>Build</strong> — the agent implements against the ratified spec.
+          <strong>Graduate</strong> — on ship, the spec is archived and a short knowledge
+          note records why the code is the way it is.
+        </p>
+      </section>
+
+      <section class="chapter" id="spec">
+        <div class="head-eyebrow">03 · The spec folder</div>
+        <h2>The same files, every time</h2>
+        <p>That sameness <em>is</em> the benefit. Read one spec and you can read them all.</p>
+        <pre class="tree"><span class="dir">docs/specs/0007-trade-in-quote/</span>
+  <span class="req">spec.md</span>            <span class="cmt"># the contract — what we're building and why</span>
+  <span class="req">relations.md</span>       <span class="cmt"># how this feature connects to others</span>
+  status.md          <span class="cmt"># the build's memory (once you start building)</span>
+  open-questions.md  <span class="cmt"># decisions not yet made (optional)</span></pre>
+        <p><code>spec.md</code> always carries the same sections, in the same order:</p>
+        <div class="codeblock">
+          <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">spec.md</span></div>
+          <pre><span class="dl">---</span>
+<span class="k">id:</span> <span class="v">0007</span>
+<span class="k">slug:</span> <span class="v">trade-in-quote</span>
+<span class="k">status:</span> <span class="v">draft</span>
+<span class="k">decider:</span> <span class="v">jonathan</span>
+<span class="dl">---</span>
+
+<span class="v"># Trade-In Quote</span>
+
+<span class="k">## Intent</span>        <span class="cmt"># what + why, and the appetite (how big?)</span>
+<span class="k">## Non-goals</span>     <span class="cmt"># what this deliberately won't do</span>
+<span class="k">## Behavior</span>      <span class="cmt"># numbered, observable statements</span>
+<span class="k">## Business rules</span> <span class="cmt"># the must / must-not constraints</span>
+<span class="k">## Acceptance checks</span> <span class="cmt"># how you know it's done</span>
+<span class="k">## Out of scope</span>   <span class="cmt"># deferred for later</span></pre>
+        </div>
+        <p>
+          <em>Why the number <code>0007</code>?</em> So features can reference each other by a
+          name that never changes even if you rename or move them. It's bookkeeping — the
+          agent assigns it; you can mostly ignore it.
+        </p>
+      </section>
+
+      <section class="chapter" id="layout">
+        <div class="head-eyebrow">04 · The product record</div>
+        <h2>One structured home for the whole product</h2>
+        <p class="lead">
+          Specline isn't just a folder for specs. It defines <code>docs/</code> as the
+          product's source of truth — one structured place holding everything that
+          determines the product: its intent, its decisions, its strategy, what actually
+          shipped, and the trail of what was promised.
+        </p>
+        <p>
+          "docs" usually means afterthought — written late, read never. Here it's the
+          reverse: the primary, prescriptive record the product is built <em>from</em>, and
+          the descriptive memory of what it became. Every directory earns its place.
+        </p>
+        <pre class="tree"><span class="dir">docs/</span>
+  architecture.md     <span class="cmt"># system shape — read first</span>
+  <span class="dir">conventions/</span>        <span class="cmt"># standards, templates, the canon + tier pin</span>
+  <span class="dir">decisions/</span>          <span class="cmt"># repo-local ADRs — append-only (ADR &gt; spec &gt; knowledge)</span>
+  <span class="dir">strategy/</span>           <span class="cmt"># vision, roadmap, launch contracts — dated, archived</span>
+  <span class="dir">technical/</span>          <span class="cmt"># cross-cutting patterns — only when non-obvious</span>
+  <span class="dir">specs/</span>              <span class="cmt"># IN-FLIGHT — prescriptive, temporary</span>
+  <span class="dir">knowledge/</span>          <span class="cmt"># SHIPPED — descriptive, permanent</span>
+  <span class="dir">archive/</span>            <span class="cmt"># TERMINAL — contracts, read-only</span>
+  relations-index.yml <span class="cmt"># generated reverse-edge index</span></pre>
+        <p>
+          Some of these doctor <strong>enforces</strong>; the rest are conventions the canon
+          defines and you maintain. Knowing which is which is the difference between a rule
+          and a habit.
+        </p>
+        <div class="tbl-wrap"><table class="book-table">
+          <thead><tr><th>Directory</th><th>Holds</th><th>doctor</th></tr></thead>
+          <tbody>
+            <tr><td>architecture.md</td><td>System shape; the read-first orientation.</td><td>convention</td></tr>
+            <tr><td>conventions/</td><td>Standards, templates, the canon-version + tier pin.</td><td>reads the pin</td></tr>
+            <tr><td>decisions/</td><td>Repo-local ADRs, append-only. Precedence: ADR &gt; spec &gt; knowledge.</td><td>convention</td></tr>
+            <tr><td>strategy/</td><td>Vision, roadmap snapshots, launch contracts.</td><td>convention</td></tr>
+            <tr><td>technical/</td><td>Cross-cutting implementation patterns.</td><td>convention</td></tr>
+            <tr><td>specs/</td><td>In-flight features — prescriptive, temporary.</td><td>enforced</td></tr>
+            <tr><td>knowledge/</td><td>Shipped reality — descriptive, permanent.</td><td>enforced</td></tr>
+            <tr><td>archive/</td><td>Terminal contracts — permanent, read-only.</td><td>enforced</td></tr>
+          </tbody>
+        </table></div>
+        <p class="doc-note">doctor validates the lifecycle-core — <code>specs/</code>, <code>knowledge/</code>, <code>archive/</code>, the pin, ids, links. <code>decisions/</code>, <code>strategy/</code>, and <code>technical/</code> are defined by the canon but maintained by you: convention, not policed.</p>
+      </section>
+
+      <section class="chapter" id="features">
+        <div class="head-eyebrow">05 · Feature memory</div>
+        <h2>How a feature is documented</h2>
+        <p>
+          A feature's documentation changes <em>posture</em> as it moves through the loop —
+          from a contract you're building toward, to a description of what you built.
+        </p>
+        <p>
+          <strong>In flight</strong>, it lives in <code>docs/specs/NNNN-slug/</code>:
+          prescriptive — what we intend to build. Temporary by design.
+        </p>
+        <p><strong>When it ships, it graduates into two permanent homes at once:</strong></p>
+        <div class="bcard">
+          <h3>archive/NNNN/spec.md — the contract</h3>
+          <p>The final spec, verbatim, <code>status: shipped</code>, acceptance results linked. Read-only forever. <em>What was promised.</em></p>
+          <div class="gate"><span class="gate-tag gate-doctor">doctor · read-only</span> prescriptive</div>
+        </div>
+        <div class="bcard">
+          <h3>knowledge/NNNN/ — the living description</h3>
+          <p>Present-tense docs of what's true now — intent, rules, and rationale, reorganized for a reader. <em>What it became.</em></p>
+          <div class="gate"><span class="gate-tag gate-human">gate · judgment</span> descriptive</div>
+        </div>
+        <p>The in-flight spec is then <strong>deleted</strong> — the contract survives only in <code>archive/</code>. A feature is never in <code>specs/</code> and <code>archive/</code> at once.</p>
+        <p class="pull">If a knowledge doc would lose an argument with the code, it shouldn't exist. If it records why the code is the way it is, it can't lose that argument.</p>
+        <p>
+          That's the test for what belongs in <code>knowledge/</code>: keep intent, rules, and
+          rationale; cut anything the code already says. Tense and posture are a judgment call
+          at the gate — doctor only checks that <code>knowledge/</code> carries no lifecycle files.
+        </p>
+        <h3>Migrating an existing repo</h3>
+        <p>
+          Already-shipped features never had a Specline spec, so there's no contract to
+          archive. In practice you populate <code>knowledge/NNNN-slug/</code> directly from
+          your existing descriptive docs — they're usually already knowledge-shaped — assign an
+          id, and let <code>archive/</code> fill as features go forward. Backfill a minimal
+          contract only where the original still carries value. doctor permits knowledge
+          without an archived spec, so a migrated repo is conformant from day one.
+        </p>
+      </section>
+
+      <section class="chapter" id="gates">
+        <div class="head-eyebrow">06 · The split</div>
+        <h2>Two gates, one machine</h2>
+        <p>
+          Specline draws one hard line: <strong>structure is checked by a machine; meaning
+          is judged by you.</strong>
+        </p>
+        <div class="bcard">
+          <h3>doctor — the machine</h3>
+          <p>Checks structure only: is the folder shaped right, do the links resolve, are the IDs consistent. Deterministic, runs no AI, makes no judgment. Same answer every time.</p>
+          <div class="gate"><span class="gate-tag gate-doctor">doctor · enforced</span> structure</div>
+        </div>
+        <div class="bcard">
+          <h3>you — the two gates</h3>
+          <p>Judge meaning: is this the right thing to build, is it sized right, is the spec actually good. A machine can't and shouldn't do that.</p>
+          <div class="gate"><span class="gate-tag gate-human">gate · ratify</span><span class="gate-tag gate-human">gate · accept</span> judgment</div>
+        </div>
+        <p>So you're only ever on the two ends. The middle runs itself.</p>
+      </section>
+
+      <section class="chapter" id="claims">
+        <div class="head-eyebrow">07 · Honest marketing</div>
+        <h2>Claims &amp; failure modes</h2>
+        <p class="pull">A claim without a failure mode is marketing.</p>
+        <p>Every promise Specline makes names the condition under which it breaks.</p>
+        <div class="tbl-wrap">
+          <table class="book-table">
+            <thead><tr><th>Claim</th><th>Mechanism</th><th>Fails when</th></tr></thead>
+            <tbody>
+              <tr><td>Consistent structure, every feature</td><td>One fixed folder shape, checked by doctor</td><td>You skip the checker — then it's a convention again</td></tr>
+              <tr><td>Rework caught at the cheapest moment</td><td>Acceptance checks run inside the work, not at a demo</td><td>Checks are written unfalsifiably</td></tr>
+              <tr><td>Memory that survives staff &amp; models</td><td>Graduation writes knowledge; archive preserves contracts</td><td>Graduation is skipped</td></tr>
+              <tr><td>An agent can plan with you, not just code</td><td>The methodology is served to the agent as a tool</td><td>The repo never carries the brief, so the agent isn't aware</td></tr>
+              <tr><td>Audit trail</td><td>Every shipped feature resolves to an archived spec</td><td>Archive integrity breaks — a doctor error</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="chapter" id="tiers">
+        <div class="head-eyebrow">08 · Adoption</div>
+        <h2>Start light</h2>
+        <p>You do <strong>not</strong> adopt all of Specline at once. You pick a tier, and doctor enforces only the one you declare.</p>
+        <div class="tiers">
+          <div class="tier"><div class="tn">Tier 0</div><div class="td"><strong>One spec.</strong> A single feature in the Specline shape. An afternoon. See if the structure helps before anything else.</div></div>
+          <div class="tier"><div class="tn">Tier 1 · start here</div><div class="td"><strong>The loop.</strong> The folder shape, the four moves, the ratify gate. Almost certainly all you need as a solo planner.</div></div>
+          <div class="tier"><div class="tn">Tier 2 · later</div><div class="td"><strong>Parallel-work governance.</strong> Expiry timers, decision budgets, quarantine — for a team running many features at once. Noise for one person.</div></div>
+        </div>
+        <div class="callout"><span class="ci">▲</span><p>If a rule isn't earning its keep for you, you're at the wrong tier. That's a setting, not a failure.</p></div>
+      </section>
+
+      <section class="chapter" id="use">
+        <div class="head-eyebrow">09 · Day to day</div>
+        <h2>How you use it</h2>
+        <p>When you're ready, you do almost nothing to brief the agent:</p>
+        <p>
+          Drop the <code>CLAUDE.md</code> brief into your repo. Open a fresh agent chat and
+          say, in your own words — <em>"Let's shape a new feature: …"</em> or <em>"Migrate
+          this plan into Specline with me: …".</em> The agent pulls the methodology itself,
+          asks you the shaping questions, and produces the spec folder, checking its own
+          work with doctor as it goes. You read the result in one sitting and approve it.
+        </p>
+        <div class="endpoint">
+          <h3>Point your agent here</h3>
+          <p>Everything an agent needs to operate Specline, in the format it reads best — the raw canon, served at a stable URL.</p>
+          <div class="curl"><span class="prompt">$</span><span class="cmd">curl -s</span> <span class="flag">https://specline.dev/spec.md</span></div>
+        </div>
+        <p>You don't memorize the rules and you don't paste the canon. The agent learns the methodology from the tool; you bring the judgment.</p>
+      </section>
+
+      <section class="chapter" id="doctor">
+        <div class="head-eyebrow">10 · The checker</div>
+        <h2>The doctor</h2>
+        <p>
+          <strong>doctor</strong> is the deterministic validator. It reads only markdown,
+          YAML, and folder structure — it never runs your code, never calls a model, never
+          touches the network. One question, the same answer every time:
+          <em>is this repo structurally valid?</em>
+        </p>
+        <p>It checks things like:</p>
+        <div class="tbl-wrap">
+          <table class="book-table">
+            <thead><tr><th>Check</th><th>Severity</th></tr></thead>
+            <tbody>
+              <tr><td>Every spec folder has spec.md and relations.md</td><td>error</td></tr>
+              <tr><td>Frontmatter parses; id &amp; slug match the directory</td><td>error</td></tr>
+              <tr><td>IDs are unique and accounted for</td><td>error</td></tr>
+              <tr><td>Every relative link resolves</td><td>error</td></tr>
+              <tr><td>status.md has the required sections</td><td>error</td></tr>
+              <tr><td>Unknown keys or sections (newer canon)</td><td>warning</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          It runs at your command, in CI, or as a tool the agent calls while it writes. What
+          it never does is judge meaning — tense, sizing, whether the spec is <em>right</em>.
+          That stays yours, at the two gates.
+        </p>
+        <p class="pull">Same input, same output, every run.</p>
+      </section>
+
+    </div>
+  </main>
+</Book>

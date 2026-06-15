@@ -1,0 +1,54 @@
+---
+import Docs from "../../layouts/Docs.astro";
+---
+<Docs title="Install — doctor">
+  <div class="doc-kicker">Doctor · Install</div>
+  <h1>Install</h1>
+  <p class="doc-lead">
+    The CLI is <code>specline</code>; <code>doctor</code> is its validate verb. doctor is
+    TypeScript that runs on Node directly — no build step, no dependencies.
+  </p>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li><strong>Node 22+</strong> — Node strips TypeScript types natively, so the source runs as-is.</li>
+    <li>That's it. No Bun, no <code>npm install</code>, no runtime to set up.</li>
+  </ul>
+
+  <h2>Today: from the repo</h2>
+  <p>Clone the doctor repo and run it directly:</p>
+  <div class="codeblock">
+    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
+    <pre><span class="cmt"># clone</span>
+git clone https://github.com/speclinedev/doctor
+cd doctor
+
+<span class="cmt"># run against any repo</span>
+node src/cli/index.ts ~/path/to/repo --format human</pre>
+  </div>
+
+  <h3>Put <code>specline</code> on your PATH</h3>
+  <p>A two-line wrapper makes <code>specline</code> work from any directory:</p>
+  <div class="codeblock">
+    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">~/.local/bin/specline</span></div>
+    <pre>#!/bin/sh
+exec node /abs/path/to/doctor/src/cli/index.ts "$@"</pre>
+  </div>
+  <p class="doc-note">Then <code>chmod +x ~/.local/bin/specline</code> (ensure <code>~/.local/bin</code> is on your PATH). The canon path resolves relative to the source, so it works from anywhere.</p>
+
+  <h2>Coming: published distribution</h2>
+  <p>Not yet published — the planned, version-pinned forms are:</p>
+  <ul>
+    <li><strong>npm</strong> — <code>npx @specline/cli doctor &lt;repo&gt;</code>, or <code>npm i -g @specline/cli</code>. The package version tracks the canon version (<code>@specline/cli@2.3</code> ↔ canon 2.3).</li>
+    <li><strong>Standalone binary</strong> — <code>bun build --compile</code> produces a single dependency-free <code>specline</code> executable for the no-Node case.</li>
+  </ul>
+
+  <h2>Verify</h2>
+  <div class="codeblock">
+    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
+    <pre>specline doctor .          <span class="cmt"># validate the current repo</span>
+specline rules             <span class="cmt"># list the rule catalog</span>
+specline spec | head       <span class="cmt"># print the pinned canon</span></pre>
+  </div>
+  <p>Next: the <a href="/docs/cli">CLI reference</a>, or wire it in as an <a href="/docs/mcp">MCP tool</a>.</p>
+</Docs>

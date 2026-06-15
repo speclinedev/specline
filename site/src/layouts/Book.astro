@@ -1,0 +1,101 @@
+---
+import "../styles/global.css";
+
+interface Chapter { id: string; num: string; title: string; }
+interface Props { title: string; chapters: Chapter[]; canon?: string; }
+const { title, chapters, canon = "canon 2.3.0-draft" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content="Specline — spec-driven development where a machine-checkable spec is the contract, humans hold the two gates, and an agent runs the loop between them." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      // apply saved theme before paint to avoid a flash; dark is the default
+      try {
+        const t = localStorage.getItem("specline-theme");
+        if (t === "paper" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <header class="topbar">
+      <button class="tb-btn tb-menu" id="menuBtn" aria-label="Open contents">☰</button>
+      <span class="glyph" aria-hidden="true"></span>
+      <span class="wordmark">Specline</span>
+      <span class="canon">{canon}</span>
+      <span class="tb-spacer"></span>
+      <a class="tb-btn" href="/docs">Docs</a>
+      <a class="tb-btn" href="/spec.md">For agents ↗</a>
+      <button class="tb-btn" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
+    </header>
+
+    <nav class="toc" id="toc" aria-label="Contents">
+      <div class="toc-k">Contents</div>
+      {chapters.map((c) => (
+        <a href={`#${c.id}`} data-target={c.id}><span class="num">{c.num}</span>{c.title}</a>
+      ))}
+    </nav>
+    <div class="toc-backdrop" id="tocBackdrop"></div>
+
+    <slot />
+
+    <footer class="book-footer">
+      <span>Specline · {canon} · this site re-reviews when the canon amends</span>
+      <span><a href="/spec.md">/spec.md</a> · <a href="/llms.txt">/llms.txt</a> · "Specline" is a working name</span>
+    </footer>
+
+    <script>
+      const root = document.documentElement;
+      const themeBtn = document.getElementById("themeBtn");
+      themeBtn?.addEventListener("click", () => {
+        const next = root.dataset.theme === "paper" ? "dark" : "paper";
+        root.dataset.theme = next;
+        try { localStorage.setItem("specline-theme", next); } catch (e) {}
+      });
+
+      const body = document.body;
+      const menuBtn = document.getElementById("menuBtn");
+      const backdrop = document.getElementById("tocBackdrop");
+      const closeToc = () => body.classList.remove("toc-open");
+      menuBtn?.addEventListener("click", () => body.classList.toggle("toc-open"));
+      backdrop?.addEventListener("click", closeToc);
+      document.querySelectorAll(".toc a").forEach((a) => a.addEventListener("click", closeToc));
+
+      const progress = document.getElementById("progress");
+      const onScroll = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        if (progress) progress.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : "0%";
+      };
+      document.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      const links = new Map();
+      document.querySelectorAll(".toc a").forEach((a) => links.set(a.getAttribute("data-target"), a));
+      const obs = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              links.forEach((l) => l.classList.remove("active"));
+              links.get(e.target.id)?.classList.add("active");
+            }
+          });
+        },
+        { rootMargin: "-40% 0px -55% 0px" }
+      );
+      document.querySelectorAll(".chapter, .cover[id]").forEach((s) => obs.observe(s));
+    </script>
+  </body>
+</html>

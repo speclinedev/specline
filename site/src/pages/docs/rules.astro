@@ -1,0 +1,49 @@
+---
+import Docs from "../../layouts/Docs.astro";
+
+const rules = [
+  ["STRUCT-MISSING-SPEC", "error", "spec", "1", "true", "A specs/ folder has no spec.md."],
+  ["STRUCT-MISSING-RELATIONS", "error", "spec", "1", "true", "A specs/ folder has no relations.md."],
+  ["FRONTMATTER-UNPARSEABLE", "error", "spec", "1", "false", "spec.md frontmatter is missing or doesn't parse."],
+  ["FRONTMATTER-ID-MISMATCH", "error", "spec", "1", "false", "frontmatter id or slug doesn't match the directory."],
+  ["FRONTMATTER-MISSING-RATIFIED", "error", "spec", "1", "false", "ratified/building spec lacks ratified_by or ratified_at (B3)."],
+  ["STATUS-SCHEMA", "error", "spec", "1", "false", "status.md is missing or duplicates a required section."],
+  ["ENUM-INVALID", "error", "spec", "1", "false", "blast_radius / target_model holds a value outside the allowed set."],
+  ["UNKNOWN-FRONTMATTER-KEY", "warning", "spec", "1", "false", "an unrecognized frontmatter key — preserved, not failed (newer canon)."],
+  ["UNKNOWN-SECTION", "warning", "spec", "1", "false", "an unrecognized body section — preserved, not failed."],
+  ["RELATION-DANGLING", "error", "repo", "1", "false", "a relations.md edge points to an id that exists nowhere."],
+  ["RELATION-CROSS-REPO", "warning", "repo", "1", "false", "a repo:NNNN-slug edge — validated weakly, warn only."],
+  ["RELATION-KILLED", "warning", "repo", "1", "false", "an edge points to a killed id — warn only."],
+  ["LINK-DANGLING", "error", "repo", "1", "false", "a relative link under docs/ doesn't resolve."],
+  ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "false", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
+  ["ARCHIVE-EDITED", "error", "repo", "1", "false", "a --changed path under archive/ — the audit trail is read-only."],
+  ["ID-DUPLICATE", "error", "repo", "1", "false", "an id appears in more than one spec-bearing location."],
+  ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
+];
+---
+<Docs title="Rule catalog — doctor">
+  <div class="doc-kicker">Doctor · Rules</div>
+  <h1>Rule catalog</h1>
+  <p class="doc-lead">
+    Every check doctor can emit, from a single registry that the engine and
+    <code>specline rules</code> share — so a finding can never carry a <code>rule_id</code>
+    the catalog lacks, and the catalog can never drift from what fires.
+  </p>
+  <p>
+    <strong>Scope</strong> — <code>repo</code> findings fail everywhere; <code>spec</code>
+    findings fail only when that spec is in <code>--changed</code> (quarantine), else warn.
+    <strong>Downgradable</strong> — in <code>author</code> mode a downgradable rule that
+    fires for a missing element becomes <code>distance_to_ratifiable</code> (info), not an error.
+  </p>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead><tr><th>rule_id</th><th>severity</th><th>scope</th><th>tier</th><th>downgradable</th><th>fires when</th></tr></thead>
+      <tbody>
+        {rules.map((r) => (
+          <tr><td><code>{r[0]}</code></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 17 rules at tier 1 (the canon 2.3 structural subset). Lifecycle/state rules are deferred to a later spec.</p>
+</Docs>

@@ -1,0 +1,105 @@
+---
+import "../styles/global.css";
+
+interface Props { title: string; canon?: string; }
+const { title, canon = "canon 2.3.0-draft" } = Astro.props;
+
+const nav = [
+  { group: "Handbook", items: [{ href: "/", label: "The handbook" }] },
+  {
+    group: "Doctor",
+    items: [
+      { href: "/docs/install", label: "Install" },
+      { href: "/docs/cli", label: "CLI" },
+      { href: "/docs/mcp", label: "MCP server" },
+      { href: "/docs/rules", label: "Rule catalog" },
+      { href: "/docs/agent", label: "Agent setup" },
+    ],
+  },
+];
+
+const here = Astro.url.pathname.replace(/\/$/, "") || "/";
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("specline-theme");
+        if (t === "paper" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <header class="topbar">
+      <button class="tb-btn tb-menu" id="menuBtn" aria-label="Open navigation">☰</button>
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span class="glyph" aria-hidden="true"></span>
+        <span class="wordmark">Specline</span>
+      </a>
+      <span class="canon">{canon}</span>
+      <span class="tb-spacer"></span>
+      <a class="tb-btn" href="/">Handbook</a>
+      <a class="tb-btn" href="/spec.md">For agents ↗</a>
+      <button class="tb-btn" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
+    </header>
+
+    <nav class="toc" id="toc" aria-label="Documentation">
+      {nav.map((g) => (
+        <>
+          <div class="toc-group">{g.group}</div>
+          {g.items.map((it) => (
+            <a href={it.href} class={here === it.href.replace(/\/$/, "") ? "active" : ""}>{it.label}</a>
+          ))}
+        </>
+      ))}
+    </nav>
+    <div class="toc-backdrop" id="tocBackdrop"></div>
+
+    <main class="book">
+      <div class="wrap">
+        <article class="doc">
+          <slot />
+        </article>
+      </div>
+    </main>
+
+    <footer class="book-footer">
+      <span>Specline · {canon} · this site re-reviews when the canon amends</span>
+      <span><a href="/spec.md">/spec.md</a> · <a href="/llms.txt">/llms.txt</a></span>
+    </footer>
+
+    <script>
+      const root = document.documentElement;
+      document.getElementById("themeBtn")?.addEventListener("click", () => {
+        const next = root.dataset.theme === "paper" ? "dark" : "paper";
+        root.dataset.theme = next;
+        try { localStorage.setItem("specline-theme", next); } catch (e) {}
+      });
+      const body = document.body;
+      const close = () => body.classList.remove("toc-open");
+      document.getElementById("menuBtn")?.addEventListener("click", () => body.classList.toggle("toc-open"));
+      document.getElementById("tocBackdrop")?.addEventListener("click", close);
+      const progress = document.getElementById("progress");
+      const onScroll = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        if (progress) progress.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : "0%";
+      };
+      document.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    </script>
+  </body>
+</html>

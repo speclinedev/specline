@@ -1,0 +1,47 @@
+---
+import Docs from "../../layouts/Docs.astro";
+---
+<Docs title="Agent setup — doctor">
+  <div class="doc-kicker">Doctor · Agent setup</div>
+  <h1>Agent setup</h1>
+  <p class="doc-lead">
+    The point of Specline is that <em>you</em> don't carry the methodology and you don't
+    paste the canon — the agent learns it from the tool, and you bring the judgment. Two
+    pieces make that automatic.
+  </p>
+
+  <h2>1. The repo carries a brief</h2>
+  <p>
+    Drop a <code>CLAUDE.md</code> at the repo root. Claude Code reads it on open, so any
+    agent you start there is briefed without you saying a word. A ready template lives at
+    <code>specline/templates/specline-CLAUDE.md</code>; it tells the agent it's a Specline
+    repo, how to shape and migrate plans with you, and to use the doctor tools.
+  </p>
+
+  <h2>2. doctor is available as a tool</h2>
+  <p>
+    With the <a href="/docs/mcp">MCP server</a> registered at user scope, the agent
+    discovers <code>doctor_spec</code> / <code>doctor_rules</code> / <code>doctor_check</code>
+    in every repo. The brief plus the tools mean the agent self-onboards.
+  </p>
+
+  <h2>The day-to-day flow</h2>
+  <ol>
+    <li>Open a fresh agent chat in the repo (with <code>CLAUDE.md</code> present).</li>
+    <li>Say it in your own words:
+      <div class="codeblock">
+        <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">you →</span></div>
+        <pre>Let's shape a new feature: &lt;your idea&gt;.
+— or —
+Migrate this plan into Specline with me: &lt;the file&gt;.</pre>
+      </div>
+    </li>
+    <li>The agent pulls the canon (<code>doctor_spec</code>), asks you the shaping questions, and writes the spec folder — checking itself with <code>doctor_check</code> (author mode) as it goes.</li>
+    <li>You read the result in one sitting and approve it, or send it back. That's the ratify gate — your call, not the machine's.</li>
+  </ol>
+
+  <div class="callout"><span class="ci">▲</span><p>What's <em>not</em> your job: remembering the spec structure, checking it's right, or knowing the rules before you start. The agent knows the structure (from <code>doctor_spec</code>), doctor checks it, and <code>doctor_rules</code> lists the checks on demand.</p></div>
+
+  <h2>Without Claude Code</h2>
+  <p>The same works for any agent with shell access: have it run <code>specline spec</code> to load the canon and <code>specline doctor --mode author --format json</code> to check its work. MCP just makes discovery automatic.</p>
+</Docs>

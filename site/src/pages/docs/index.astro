@@ -1,0 +1,23 @@
+---
+import Docs from "../../layouts/Docs.astro";
+---
+<Docs title="Specline docs — doctor">
+  <div class="doc-kicker">Documentation</div>
+  <h1>doctor</h1>
+  <p class="doc-lead">
+    doctor is the deterministic structural validator for Specline repos. It reads only
+    markdown, YAML, and folder structure — never your code, never a model, never the
+    network — and answers one question the same way every time: <em>is this repo
+    structurally valid?</em>
+  </p>
+  <p>It runs three ways, over one engine and one output contract:</p>
+  <div class="doc-cards">
+    <a class="doc-card" href="/docs/install"><div class="dc-t">Install →</div><div class="dc-d">Get the <code>specline</code> command on your machine. Node 22+, no build step.</div></a>
+    <a class="doc-card" href="/docs/cli"><div class="dc-t">CLI →</div><div class="dc-d"><code>specline doctor</code>, <code>rules</code>, <code>spec</code> — flags, modes, exit codes.</div></a>
+    <a class="doc-card" href="/docs/mcp"><div class="dc-t">MCP server →</div><div class="dc-d">Wire doctor in as a tool an agent calls while it plans with you.</div></a>
+    <a class="doc-card" href="/docs/rules"><div class="dc-t">Rule catalog →</div><div class="dc-d">Every <code>rule_id</code>, its severity, scope, tier, and downgradable flag.</div></a>
+    <a class="doc-card" href="/docs/agent"><div class="dc-t">Agent setup →</div><div class="dc-d">The <code>CLAUDE.md</code> brief that makes an agent aware of Specline.</div></a>
+    <a class="doc-card" href="/spec.md"><div class="dc-t">Raw canon ↗</div><div class="dc-d">The full methodology as markdown — what doctor enforces, for your agents.</div></a>
+  </div>
+  <div class="callout"><span class="ci">▲</span><p>doctor is deterministic and structural. It never judges meaning — sizing, tense, whether the spec is <em>right</em>. That stays yours, at the two gates.</p></div>
+</Docs>

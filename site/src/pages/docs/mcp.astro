@@ -1,0 +1,45 @@
+---
+import Docs from "../../layouts/Docs.astro";
+---
+<Docs title="MCP server — doctor">
+  <div class="doc-kicker">Doctor · MCP</div>
+  <h1>MCP server</h1>
+  <p class="doc-lead">
+    The MCP server exposes doctor as <em>tools an agent calls natively</em> — so a planning
+    agent can pull the methodology and check its own work mid-session, without you pasting
+    anything or it shelling out to a CLI. Same engine, same output contract; only the
+    transport changes.
+  </p>
+
+  <h2>Register it (once, user scope)</h2>
+  <p>With Claude Code, register it at user scope so it's available in <em>every</em> repo you open:</p>
+  <div class="codeblock">
+    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
+    <pre>claude mcp add --scope user doctor -- \
+  node /abs/path/to/doctor/src/mcp/index.ts</pre>
+  </div>
+  <p class="doc-note">Use your actual absolute path to <code>doctor/src/mcp/index.ts</code>. Verify with <code>claude mcp get doctor</code> — it should report <code>✔ Connected</code>. The server is dependency-free stdio JSON-RPC; no install needed.</p>
+
+  <h2>The three tools</h2>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead><tr><th>Tool</th><th>Does</th><th>Arguments</th></tr></thead>
+      <tbody>
+        <tr><td>doctor_check</td><td>Validate a repo; returns the JSON report.</td><td><code>path</code> (req), <code>mode</code>, <code>changed[]</code>, <code>now</code>, <code>tier</code></td></tr>
+        <tr><td>doctor_spec</td><td>Return the pinned canon — inject to make the agent aware of Specline.</td><td>—</td></tr>
+        <tr><td>doctor_rules</td><td>Return the rule catalog the agent will be checked against.</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>How an agent uses it</h2>
+  <ol>
+    <li>On opening a Specline repo, the agent calls <code>doctor_spec</code> to load the methodology and <code>doctor_rules</code> to learn what it'll be graded on.</li>
+    <li>While shaping a spec with you, it calls <code>doctor_check</code> in <code>author</code> mode, naming the files it touched — and self-corrects from each finding's <code>rule_id</code> + <code>fix_hint</code>.</li>
+    <li>Before handoff, one <code>doctor_check</code> in <code>gate</code> mode confirms zero errors.</li>
+  </ol>
+  <div class="callout"><span class="ci">↩</span><p>This is the web/CLI twin made native: the same canon that <a href="/spec.md">/spec.md</a> serves over HTTP, the agent gets through <code>doctor_spec</code> inside the repo.</p></div>
+
+  <h2>Without MCP</h2>
+  <p>An agent with shell access (like Claude Code) can already run the <a href="/docs/cli">CLI</a> directly — <code>specline doctor --mode author --format json</code> and parse the result. The MCP server just makes it a first-class tool the agent discovers automatically, in any client.</p>
+</Docs>
