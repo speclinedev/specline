@@ -19,6 +19,8 @@ const rules = [
   ["ARCHIVE-EDITED", "error", "repo", "1", "false", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
   ["ID-DUPLICATE", "error", "repo", "1", "false", "an id appears in more than one spec-bearing location."],
   ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
+  ["GOAL-MISSING", "warning", "spec", "1", "false", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
+  ["ACCEPTANCE-NOT-RUNNABLE", "warning", "spec", "1", "false", "agent-loopable acceptance checks carry no runnable command — the loop must interpret prose."],
 ];
 ---
 <Docs title="Rule catalog — doctor">
@@ -45,5 +47,5 @@ const rules = [
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 17 rules at tier 1 (the canon 2.3 structural subset). Lifecycle/state rules are deferred to a later spec.</p>
+  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 19 rules at tier 1 (the canon 2.3 structural subset, plus loop-orientation nudges). Lifecycle/state rules are deferred to a later spec.</p>
 </Docs>
