@@ -12,6 +12,8 @@ const chapters = [
   { id: "tiers", num: "08", title: "Start light" },
   { id: "use", num: "09", title: "How you use it" },
   { id: "doctor", num: "10", title: "The doctor" },
+  { id: "build", num: "11", title: "How agents build" },
+  { id: "escalation", num: "12", title: "Escalation & autonomy" },
 ];
 ---
 
@@ -22,16 +24,17 @@ const chapters = [
       <h1>One shape for<br />every feature<br />you design.</h1>
       <div class="cover-body">
         <p class="cover-lead">
-          Specline gives every feature the same structure — so a plan is something you
-          and an agent can produce, check, and trust the same way every time, instead of
-          a blank page and a different shape on each one. A deterministic checker keeps
-          it honest; you keep the judgment.
+          Two things, one framework. Specline gives every feature the same structure — so
+          you and an agent produce, check, and trust a plan the same way every time. Then it
+          lets agents <em>build</em> that plan autonomously between your two gates, with a
+          deterministic checker keeping it honest. You define and approve; the loop runs the
+          middle.
         </p>
         <div class="colophon">
-          <div class="colophon-row"><span class="k">Loop</span><span class="v">shape → ratify → build → graduate</span></div>
+          <div class="colophon-row"><span class="k">Define</span><span class="v">one spec shape, every feature</span></div>
+          <div class="colophon-row"><span class="k">Build</span><span class="v">an autonomous loop between your gates</span></div>
           <div class="colophon-row"><span class="k">Your gates</span><span class="v">ratify · accept</span></div>
           <div class="colophon-row"><span class="k">The checker</span><span class="v">doctor — structure only</span></div>
-          <div class="colophon-row"><span class="k">Start at</span><span class="v">tier 0 — one spec</span></div>
         </div>
       </div>
       <div class="btn-row">
@@ -66,7 +69,8 @@ const chapters = [
         <h2>Four moves</h2>
         <p>
           A feature moves through four steps. You're only ever on the two ends — shaping
-          the intent and approving the result. The middle runs itself.
+          the intent and approving the result. The middle — the build — runs itself, in an
+          autonomous loop we open up in <a href="#build">chapter 11</a>.
         </p>
         <figure>
           <div class="loop-fig">
@@ -84,7 +88,8 @@ const chapters = [
           <strong>Shape</strong> — you and an agent talk the feature through and write the
           spec; unknowns become logged questions with a default, so nothing blocks.
           <strong>Ratify</strong> — you read it in one sitting and approve.
-          <strong>Build</strong> — the agent implements against the ratified spec.
+          <strong>Build</strong> — the agent implements against the ratified spec, in an
+          autonomous loop (chapter 11).
           <strong>Graduate</strong> — on ship, the spec is archived and a short knowledge
           note records why the code is the way it is.
         </p>
@@ -112,6 +117,7 @@ const chapters = [
 <span class="v"># Trade-In Quote</span>
 
 <span class="k">## Intent</span>        <span class="cmt"># what + why, and the appetite (how big?)</span>
+<span class="k">## Goal</span>          <span class="cmt"># the one falsifiable outcome the build loop targets</span>
 <span class="k">## Non-goals</span>     <span class="cmt"># what this deliberately won't do</span>
 <span class="k">## Behavior</span>      <span class="cmt"># numbered, observable statements</span>
 <span class="k">## Business rules</span> <span class="cmt"># the must / must-not constraints</span>
@@ -227,7 +233,7 @@ const chapters = [
           <p>Judge meaning: is this the right thing to build, is it sized right, is the spec actually good. A machine can't and shouldn't do that.</p>
           <div class="gate"><span class="gate-tag gate-human">gate · ratify</span><span class="gate-tag gate-human">gate · accept</span> judgment</div>
         </div>
-        <p>So you're only ever on the two ends. The middle runs itself.</p>
+        <p>So you're only ever on the two ends. The middle runs itself — and <a href="#build">chapter 11</a> is what "runs itself" actually means.</p>
       </section>
 
       <section class="chapter" id="claims">
@@ -309,6 +315,84 @@ const chapters = [
           That stays yours, at the two gates.
         </p>
         <p class="pull">Same input, same output, every run.</p>
+      </section>
+
+      <section class="chapter" id="build">
+        <div class="head-eyebrow">11 · The autonomous half</div>
+        <h2>How agents build, between your gates</h2>
+        <p class="lead">
+          "The middle runs itself" — here's the middle. Once a spec is ratified, a feature
+          isn't built in one pass; it's built by an <strong>autonomous loop</strong> that runs
+          without you in each turn. The spec's whole job on the build side is to give that
+          loop everything it needs to run on its own.
+        </p>
+        <p>The loop reads four things from the spec, and your two gates bracket it:</p>
+        <div class="tbl-wrap"><table class="book-table">
+          <thead><tr><th>The loop needs</th><th>The spec provides</th></tr></thead>
+          <tbody>
+            <tr><td>A target</td><td><strong>Goal</strong> — the one falsifiable outcome it converges toward</td></tr>
+            <tr><td>An exit condition</td><td><strong>Agent-loopable acceptance checks</strong> — runnable commands; the loop stops when they pass</td></tr>
+            <tr><td>Memory</td><td><strong>status.md</strong> — the last green checkpoint to resume from, and the dead ends not to re-walk</td></tr>
+            <tr><td>An autonomy grant</td><td><strong>loop_budget</strong> — how long it may run unattended before calling you (ch. 12)</td></tr>
+          </tbody>
+        </table></div>
+        <p>A single iteration of the loop:</p>
+        <p>
+          <strong>Resume</strong> from <code>status.md</code> (the last green checkpoint) →
+          <strong>work</strong> toward the Goal → <strong>run</strong> the acceptance checks →
+          if a check goes red→green, <strong>record</strong> a new green checkpoint; if not,
+          <strong>burn</strong> a cycle of the loop budget → repeat.
+        </p>
+        <p class="pull">The Goal is the destination. The acceptance checks are the exit.</p>
+        <p>
+          That distinction is the whole trick: the checks, not the Goal, are the loop's
+          <em>mechanical</em> exit — it stops when they pass. The Goal is what they're chosen
+          to <em>prove</em>. Your two <strong>gates are the loop's boundary conditions</strong>,
+          not interruptions: you set the target at <em>ratify</em>, you confirm the result at
+          <em>accept</em>, and everything between is the loop.
+        </p>
+        <p>
+          The thing that <em>runs</em> the loop — the <strong>orchestrator</strong> — is
+          <a href="/docs/orchestrator">external and pluggable</a>: a capable agent plus a loop
+          harness runs a single spec today; a fuller external runner handles parallel and
+          unattended builds. Specline defines the loop and checks the spec carries its inputs —
+          it doesn't build the runner.
+        </p>
+      </section>
+
+      <section class="chapter" id="escalation">
+        <div class="head-eyebrow">12 · Escalation</div>
+        <h2>When the loop calls you back</h2>
+        <p>
+          An autonomous loop needs a brake — two, actually. A build hands control back to a
+          human gate at the <strong>first</strong> of two independent triggers:
+        </p>
+        <div class="bcard">
+          <h3>ttl_expires — the time trigger</h3>
+          <p>Wall-clock staleness: a build left open too long. Catches <em>abandonment</em> — a build everyone forgot about.</p>
+          <div class="gate"><span class="gate-tag gate-warn">escalate · time</span></div>
+        </div>
+        <div class="bcard">
+          <h3>loop_budget — the progress trigger</h3>
+          <p>The cap on build cycles with no green-checkpoint advance. Catches <em>thrashing</em> — an agent looping fast but not converging, which can exhaust the budget in minutes, long before the clock runs out.</p>
+          <div class="gate"><span class="gate-tag gate-warn">escalate · progress</span></div>
+        </div>
+        <p>
+          They never conflict: same outcome (autonomous → you), different axes (time vs.
+          progress), first one wins. <code>loop_budget</code> is your <strong>autonomy
+          grant</strong> — set at ratify, like blast_radius, it's how much you trust this build
+          to run unattended. A high-stakes feature gets a short leash.
+        </p>
+        <h3>Effort routing</h3>
+        <p>
+          The same risk judgment routes <em>how hard</em> the loop runs. A spec's
+          <code>blast_radius</code> (low / medium / high) maps to model effort and reviewer
+          depth via <code>target_model</code>: a low-risk spec runs on a cheaper model with a
+          light review; a high-blast-radius one runs at full effort with a fresh-context
+          verifier checking against the acceptance set. The spec is the routing table — you
+          declare the risk once, and the loop spends compute in proportion.
+        </p>
+        <div class="callout"><span class="ci">▲</span><p>None of this is tier-0 work. Escalation, autonomy budgets, and routing matter once you're running builds unattended and in parallel — they're the governance of the autonomous half, not the price of writing one good spec.</p></div>
       </section>
 
     </div>

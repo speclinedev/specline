@@ -33,6 +33,7 @@ docs/specs/0007-trade-in-quote/
 `spec.md` always has the same sections, in the same order:
 
 - **Intent** — what and why, and the *appetite* (how big — one sitting? a week?).
+- **Goal** — the one falsifiable outcome the build loop targets (see "How agents build").
 - **Non-goals** — what this deliberately won't do. (Often the most useful section.)
 - **Behavior** — numbered, observable statements of what it does.
 - **Business rules** — the must/must-not constraints.
@@ -157,3 +158,37 @@ methodology from the tool; you bring the judgment. That's the whole point.
 
 Your job is the two ends: *what to build* and *is this good*. Everything between is
 carried by the agent and the checker.
+
+## How agents build (the autonomous half)
+
+"The middle runs itself" — here's the middle. Once a spec is ratified, a feature is
+built by an **autonomous loop** that runs without you in each turn. The spec gives
+the loop four things, and your two gates bracket it:
+
+- **Goal** — the *target* it converges toward.
+- **Agent-loopable acceptance checks** — runnable commands; the loop's *mechanical*
+  exit. It stops when they pass. (The Goal is what they're chosen to prove.)
+- **status.md** — *memory*: the last green checkpoint to resume from, and the dead
+  ends not to re-walk.
+- **loop_budget** — the *autonomy grant*: how long it may run unattended.
+
+One iteration: resume from `status.md` → work toward the Goal → run the checks → if a
+check goes red→green, record a new checkpoint, else burn a loop_budget cycle → repeat.
+The thing that runs this — the **orchestrator** — is external and pluggable: an agent
+plus a loop harness runs one spec; a fuller runner handles parallel/unattended builds.
+Specline defines the loop, not the runner.
+
+## Escalation & autonomy
+
+An autonomous loop needs a brake — two, at the *first* of which it hands control back
+to you:
+
+- **`ttl_expires`** — the *time* trigger (a build left open too long; abandonment).
+- **`loop_budget`** — the *progress* trigger (cycles with no green-checkpoint advance;
+  thrashing, which can exhaust the budget long before the clock).
+
+They don't conflict — same outcome, different axes, first wins. `loop_budget` is your
+autonomy grant, set at ratify like `blast_radius`. The same risk judgment also routes
+*how hard* the loop runs: `blast_radius` → model effort + reviewer depth via
+`target_model`. Declare the risk once; the loop spends compute in proportion. This is
+the governance of the autonomous half — tier-2 work, not the price of one good spec.

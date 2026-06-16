@@ -130,7 +130,9 @@ accountability.)*
 repo-wide — it never blocks unrelated work. Exit from quarantine is an explicit
 reshape (re-ratification) or kill (archive with tombstone). Moving `ttl_expires`
 without a same-commit `ratified_at` update is an error: no silent extension.
-*(Doctor: enforced.)*
+TTL is the *time* trigger of build-loop escalation; its *progress* twin is
+`loop_budget` (see The build loop), which escalates on no convergence rather than
+on elapsed time. *(Doctor: enforced.)*
 
 **5. Falsifiable or Draft.** A spec is not `ratified` until its acceptance checks
 can be executed by an agent or verified by a person in one sitting — and the
@@ -329,8 +331,10 @@ they are well-formed. Do not merge them — one measures time, the other progres
 2. **Goal** *(new in v2.3)* — a single falsifiable sentence: the observable
    outcome that means *done*. Intent is the *why* (for the human); the Goal is
    the *target* (for the build loop) — the one statement an autonomous run
-   converges toward. If you can't state it falsifiably in one line, the feature
-   isn't shaped yet.
+   converges toward. The agent-loopable acceptance checks (§8) are the loop's
+   *mechanical* exit; the Goal is what they are chosen to prove (see The build
+   loop). If you can't state it falsifiably in one line, the feature isn't shaped
+   yet.
 3. **Non-goals** — explicit. The most valuable section for strong models: it is
    where over-building is fenced off.
 4. **Behavior** — observable, numbered, each verifiable from outside.
@@ -442,6 +446,48 @@ Context construction order for build work: conventions → `architecture.md` and
 named cross-cutting docs → the spec folder per the table → related
 specs/knowledge (`overview.md` first, deeper only if the edge's why warrants it)
 → ADRs citing this spec's ID.
+
+---
+
+## The build loop *(new in v2.3)*
+
+Between the two human gates, a feature is built by an **autonomous loop**, not a
+single pass. This loop is what the deferred **orchestrator** runs (see Open
+questions); the spec's whole job on the build side is to give the loop everything
+it needs to run *without a human in each turn*. Drawn as a circle:
+
+1. **Resume from memory.** Load `status.md` — the loop's cross-iteration memory.
+   Start from the **Last green checkpoint** (the resume point) and read **Dead
+   ends** so this iteration does not re-walk them.
+2. **Work toward the Goal.** The **Goal** is the loop's *target* — the one
+   falsifiable outcome it converges toward. Intent is the *why* (for the human);
+   the Goal is the *destination* (for the loop).
+3. **Test against the exit condition.** Run the **agent-loopable acceptance
+   checks** — each a runnable command. These, not the Goal, are the loop's
+   *mechanical* exit: the loop stops when they pass. The Goal is what they are
+   chosen to prove.
+4. **Advance, or burn a cycle.** If an iteration moves a check from red to green,
+   it records a new **Last green checkpoint** — that *is* a green-checkpoint
+   advance. An iteration that makes no such advance spends one cycle of the
+   **`loop_budget`**.
+5. **Escalate at a boundary.** The loop runs autonomously until the **first** of
+   two triggers fires: `loop_budget` exhausted (no progress) or `ttl_expires`
+   reached (too much time). Either hands control back to a **human gate** — the
+   gates are the loop's *boundary conditions*, not interruptions to it.
+6. **Hand back via artifacts.** Across iterations and at handback, the loop
+   communicates through **artifacts, tool results, and `status.md`** — never a
+   reasoning transcript (see Agent-execution notes).
+
+So the spec carries the loop's four inputs — **target** (Goal), **exit condition**
+(agent-loopable checks), **memory** (`status.md`), and **autonomy grant**
+(`loop_budget`, bounded in time by `ttl_expires`) — and the two gates bracket it.
+doctor validates those inputs are present and well-shaped; the **orchestrator**
+runs the loop and enforces the boundaries.
+
+A note on the word *loop*: it does double duty here. The **lifecycle loop**
+(shape → ratify → build → graduate) is the feature's journey *across* the gates;
+the **build loop** above is the autonomous run *inside* the build step. Unqualified,
+"the loop" means the build loop.
 
 ---
 
@@ -697,6 +743,7 @@ only the rules of the declared tier.
 | Doctor red on main | Fix-forward; structural reds are small. If recurring, amend the canon, don't route around it. |
 | Graduation skipped | Run the graduation prompt retroactively; the archive-integrity check finds the gap. |
 | TTL quarantine | Decider chooses reshape or kill within one sitting. |
+| **`loop_budget` exhausted** | The build loop escalated without converging. The decider reads the `status.md` Dead ends, then reshapes the spec (clearer Goal / better-specified checks) or takes the build over by hand. |
 | Gate bypassed | Revert the status flip; the spec returns to draft. |
 | Decider absent | Deputy decides; no deputy → defaults apply, spec parks `blocked`. |
 | **Blast-radius under-declared (found mid-build)** | **Re-ratify with the corrected value; the orchestrator re-routes effort/model. Logged to routing-accuracy instrumentation.** |
@@ -715,3 +762,12 @@ only the rules of the declared tier.
 - **Whether `target_model` is authored or always derived.**
 - `doctor` distribution and implementation language (tracked in `0001-doctor`).
 - Cross-repo edge validation.
+- **The orchestrator (build-loop runner) is external and pluggable.** Specline
+  defines the *contract* the loop runs against — Goal, agent-loopable checks,
+  `status.md`, `loop_budget`/`ttl_expires`, routing — and does **not** build the
+  *runner*. A capable model self-orchestrates a single spec (e.g. an agent + a thin
+  loop harness); a fuller external orchestrator adds what one model can't do for
+  itself: fresh-context re-entry, parallel scheduling across the decider budget,
+  model-tier routing, and fresh-context verifier subagents. The open question is
+  only the **runner contract** — the minimal behaviors a runner must satisfy to be
+  Specline-compliant — not an orchestrator implementation owned here.

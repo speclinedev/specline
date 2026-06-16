@@ -5,7 +5,10 @@ interface Props { title: string; canon?: string; }
 const { title, canon = "canon 2.3.0-draft" } = Astro.props;
 
 const nav = [
-  { group: "Handbook", items: [{ href: "/", label: "The handbook" }] },
+  { group: "Handbook", items: [
+    { href: "/", label: "The handbook" },
+    { href: "/docs/why", label: "Why now" },
+  ] },
   {
     group: "Doctor",
     items: [
@@ -17,6 +20,9 @@ const nav = [
       { href: "/docs/agent", label: "Agent setup" },
     ],
   },
+  { group: "Execution", items: [
+    { href: "/docs/orchestrator", label: "The orchestrator" },
+  ] },
 ];
 
 const here = Astro.url.pathname.replace(/\/$/, "") || "/";
