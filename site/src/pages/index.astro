@@ -20,7 +20,7 @@ const chapters = [
 <Book title="Specline — the handbook" chapters={chapters}>
   <section class="cover">
     <div class="cover-inner">
-      <div class="cover-top">Specline · canon 2.3.0-draft · the handbook</div>
+      <div class="cover-top">Specline · canon 2.4.0-draft · the handbook</div>
       <h1>One shape for<br />every feature<br />you design.</h1>
       <div class="cover-body">
         <p class="cover-lead">
@@ -116,7 +116,7 @@ const chapters = [
 
 <span class="v"># Trade-In Quote</span>
 
-<span class="k">## Intent</span>        <span class="cmt"># what + why, and the appetite (how big?)</span>
+<span class="k">## Intent</span>        <span class="cmt"># what + why, and the appetite (review size — one sitting)</span>
 <span class="k">## Goal</span>          <span class="cmt"># the one falsifiable outcome the build loop targets</span>
 <span class="k">## Non-goals</span>     <span class="cmt"># what this deliberately won't do</span>
 <span class="k">## Behavior</span>      <span class="cmt"># numbered, observable statements</span>
@@ -352,6 +352,15 @@ const chapters = [
           <em>accept</em>, and everything between is the loop.
         </p>
         <p>
+          That's the <strong>inner loop</strong> — mechanical, bounded, the verifier deliberately
+          absent. Wrapping it is an <strong>outer loop</strong>: once the provable checks are
+          green, a <strong>fresh-context verifier</strong> judges the spec's <code>judgeable</code>
+          acceptance items — claims settled not by a command but against a <em>named spec
+          section</em> — and bounces work back a bounded number of rounds
+          (<code>review_rounds_before_human</code>) before handing you the result. Deterministic
+          inner loop, bounded-judgment outer loop, your unbounded judgment at the gate.
+        </p>
+        <p>
           The thing that <em>runs</em> the loop — the <strong>orchestrator</strong> — is
           <a href="/docs/orchestrator">external and pluggable</a>: a capable agent plus a loop
           harness runs a single spec today; a fuller external runner handles parallel and
@@ -368,7 +377,7 @@ const chapters = [
           human gate at the <strong>first</strong> of two independent triggers:
         </p>
         <div class="bcard">
-          <h3>ttl_expires — the time trigger</h3>
+          <h3>stale_after — the time trigger</h3>
           <p>Wall-clock staleness: a build left open too long. Catches <em>abandonment</em> — a build everyone forgot about.</p>
           <div class="gate"><span class="gate-tag gate-warn">escalate · time</span></div>
         </div>

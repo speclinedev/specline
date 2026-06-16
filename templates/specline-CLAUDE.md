@@ -20,8 +20,11 @@ shape and migrate plans into this model — collaboratively, never autonomously.
 ## How to migrate an existing plan with the PO
 
 1. **Read the existing plan** (wherever it lives) and reflect it back to the PO
-   in your own words. Confirm the *intent* and the *appetite* (how big — one
-   sitting?) before structuring anything.
+   in your own words. Confirm the *intent* and the *appetite* — how big the *spec*
+   is to *review* in one sitting, **not** how big the build is (build size is the
+   separate `size: small|large` field). If the contract won't fit one sitting,
+   decompose into a **parent-map** (`type: parent` — a map, not a plan; no
+   mechanics) over buildable child scopes.
 2. **Propose the spec folder**, don't impose it. For each feature:
    ```
    docs/specs/NNNN-slug/
@@ -30,8 +33,9 @@ shape and migrate plans into this model — collaboratively, never autonomously.
      status.md        # build-loop memory (once building)
      open-questions.md# unresolved decisions (optional)
    ```
-   First-time setup also needs `docs/conventions/doc-architecture.md` (pins the
-   canon version + tier) and `docs/specs/.id-counter` (a bare integer).
+   First-time setup also needs `specline.yml` at repo root (the source of truth
+   for the canon pin, tier, thresholds, and model map) and `docs/specs/.id-counter`
+   (a bare integer). `doc-architecture.md` is now optional prose only.
 3. **Ask, don't assume.** Anything you can't derive — decider, blast_radius,
    acceptance criteria — becomes an entry in `open-questions.md` with *who
    decides*, *the options*, *a default*, and *a deadline*. A logged default lets
@@ -42,15 +46,23 @@ shape and migrate plans into this model — collaboratively, never autonomously.
 ## spec.md anatomy
 
 Frontmatter (between `---` fences):
-`id`, `slug` (must match the directory `NNNN-slug`), `type`, `status`
+`id`, `slug` (must match the directory `NNNN-slug`), `type`
+(`feature|bug|chore|parent`), `status`
 (`draft|ratified|building|blocked|shipped|killed`), `decider`, `blast_radius`
-(`low|medium|high`), `created`, `canon`. Add `ratified_by`/`ratified_at` once
-ratified or building.
+(`low|medium|high`), `size` (`small|large` — declared *build* size, default
+`small`), `created`. Add `ratified_by`/`ratified_at` once ratified or building,
+and `stale_after` (the staleness/abandonment date) on entering `building` or
+`blocked`. The canon version is pinned once in `specline.yml`, not per spec.
 
 Body sections (use these names — others are tolerated but flagged):
 **Intent**, **Non-goals**, **Behavior** (numbered, observable), **Business
-rules**, **Critical files**, **Acceptance checks** (mark each `(agent-loopable)`
-or `(human-gate)`), **Out of scope**.
+rules**, **Critical files**, **Acceptance checks**, **Out of scope**.
+
+Acceptance checks are **partitioned by altitude** — mark each one:
+`(agent-loopable)` provable, leads with a runnable command; `(judgeable)`
+settled by a fresh-context agent against a **named** spec section (the section
+reference is mandatory — no section, not falsifiable); or `(human-gate)`
+tasteable, a person decides once. A `parent` spec carries no acceptance at all.
 
 ## Check your work continuously
 

@@ -26,20 +26,16 @@ import Docs from "../../layouts/Docs.astro";
 
   <h3>By hand</h3>
   <p>The minimal valid setup is small:</p>
-  <pre class="tree"><span class="dir">docs/</span>
+  <pre class="tree"><span class="dir">specline.yml</span>                       <span class="cmt"># the canon + tier pin — doctor reads tier here</span>
+<span class="dir">docs/</span>
   architecture.md                  <span class="cmt"># a few lines: what this system is, read first</span>
-  <span class="dir">conventions/</span>
-    doc-architecture.md            <span class="cmt"># the canon + tier pin — doctor reads tier here</span>
   <span class="dir">specs/</span>
     .id-counter                    <span class="cmt"># a bare integer, e.g. 0000</span></pre>
-  <p><code>conventions/doc-architecture.md</code> is the one file doctor reads to find your tier:</p>
-  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">docs/conventions/doc-architecture.md</span></div><pre><span class="v"># Doc architecture — pin &amp; deciders</span>
-
-| Field | Value |
-|---|---|
-| <span class="k">Canon</span> | Specline 2.3.0-draft |
-| <span class="k">Tier</span>  | <span class="acc">**1 — the loop.**</span> |
-| <span class="k">Decider</span> | your-name |</pre></div>
+  <p><code>specline.yml</code> at the repo root is the one file doctor reads to find your tier and thresholds:</p>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">2.4.0-draft</span>
+<span class="k">tier</span>: <span class="acc">1</span>            <span class="cmt"># 1 — the loop</span>
+<span class="k">deciders</span>: <span class="v">[your-name]</span></pre></div>
+  <p class="doc-note"><code>docs/conventions/doc-architecture.md</code> is now optional prose/rationale — the machine-readable pins and thresholds live in <code>specline.yml</code>.</p>
   <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/specs/0001-slug/</code>.</p>
 
   <h2>Convert an existing repo</h2>
@@ -55,7 +51,7 @@ import Docs from "../../layouts/Docs.astro";
 
   <h3>By hand</h3>
   <ol>
-    <li>Add <code>docs/conventions/doc-architecture.md</code> with the canon + tier pin (as above).</li>
+    <li>Add <code>specline.yml</code> at the repo root with the canon + tier pin (as above).</li>
     <li>For each shipped feature's existing doc, create <code>docs/knowledge/NNNN-slug/</code> (sequential ids from <code>0001</code>). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts doctor rejects in <code>knowledge/</code>).</li>
     <li>Set <code>docs/specs/.id-counter</code> to the highest id you assigned.</li>
     <li>Leave <code>archive/</code> empty — it fills as new features go forward through the loop. Backfill a contract only for a feature whose original spec still carries value.</li>

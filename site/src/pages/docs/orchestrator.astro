@@ -13,13 +13,14 @@ import Docs from "../../layouts/Docs.astro";
   <div class="callout"><span class="ci">▲</span><p>Specline owns the <em>contract</em>, not the <em>runner</em>. A capable model self-orchestrates a single spec (an agent + a thin loop harness like <code>/loop</code>); a fuller external orchestrator handles what one model can't do for itself — fresh-context re-entry, parallel builds across the decider budget, model-tier routing, and fresh-context verifier subagents.</p></div>
 
   <h2>What it runs</h2>
-  <p>The build loop, defined in the canon. One iteration:</p>
-  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">the loop</span></div><pre>resume from status.md (last green checkpoint)
+  <p>The build loop, defined in the canon — really two nested loops. The <strong>inner loop</strong> is mechanical: the implementer against the provable (<code>agent-loopable</code>) checks. One iteration:</p>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">the inner loop</span></div><pre>resume from status.md (last green checkpoint)
   → work toward the Goal
   → run the agent-loopable acceptance checks   <span class="cmt"># the mechanical exit</span>
   → red→green? record a new green checkpoint
      else        burn a loop_budget cycle
   → repeat, until checks pass or a boundary fires</pre></div>
+  <p>The <strong>outer loop</strong> wraps it: a fresh-context verifier subagent against the <code>judgeable</code> partition (checks settled by judging against a named spec section, no command). It has its own small bounce budget (<code>review_rounds_before_human</code>) and gates the hand-off <em>to the human</em> — it never holds the inner loop.</p>
 
   <h2>What it consumes vs. what doctor validates</h2>
   <p>Clean division of labor: doctor checks the spec carries the four loop inputs and they're well-shaped; the orchestrator reads them and acts.</p>
@@ -29,7 +30,7 @@ import Docs from "../../layouts/Docs.astro";
       <tr><td>Goal — the target</td><td>present &amp; falsifiable-shaped</td><td>converges toward it</td></tr>
       <tr><td>Agent-loopable checks — the exit</td><td>runnable command present</td><td>runs them each iteration</td></tr>
       <tr><td>status.md — memory</td><td>required sections + entries</td><td>resumes from / appends to it</td></tr>
-      <tr><td>loop_budget / ttl_expires — autonomy</td><td>well-formed values</td><td>counts cycles / clock; escalates</td></tr>
+      <tr><td>loop_budget / stale_after — autonomy</td><td>well-formed values</td><td>counts cycles / clock; escalates</td></tr>
       <tr><td>blast_radius / target_model — routing</td><td>allowed values</td><td>selects model effort + reviewer depth</td></tr>
     </tbody>
   </table></div>
@@ -37,7 +38,7 @@ import Docs from "../../layouts/Docs.astro";
   <h2>Boundaries</h2>
   <p>
     It hands control back to a human gate at the first of: <code>loop_budget</code> exhausted
-    (no progress), <code>ttl_expires</code> reached (too much time), or a true gate — a
+    (no progress), <code>stale_after</code> reached (too much time), or a true gate — a
     destructive action, a real scope change, or input only the PO can give. It never silently
     extends a boundary, never edits a ratified spec, and communicates through artifacts and
     <code>status.md</code>, not a reasoning transcript.

@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.3.md`). The canon is the
+> The readable companion to the canon (`specline-2.4.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
@@ -32,12 +32,19 @@ docs/specs/0007-trade-in-quote/
 
 `spec.md` always has the same sections, in the same order:
 
-- **Intent** — what and why, and the *appetite* (how big — one sitting? a week?).
+- **Intent** — what and why, and the *appetite* — how big the *spec* is to
+  *review* (one sitting?), not how big the build is. Build size is a separate
+  frontmatter field, `size: small|large`. (Can't fit the contract in one sitting?
+  Decompose: a **parent-map** — `type: parent`, a map of the territory, not a plan
+  — over a handful of buildable child scopes. The parent holds no mechanics.)
 - **Goal** — the one falsifiable outcome the build loop targets (see "How agents build").
 - **Non-goals** — what this deliberately won't do. (Often the most useful section.)
 - **Behavior** — numbered, observable statements of what it does.
 - **Business rules** — the must/must-not constraints.
-- **Acceptance checks** — how you know it's done.
+- **Acceptance checks** — how you know it's done, at three altitudes:
+  **provable** (`agent-loopable` — a runnable command), **judgeable**
+  (a fresh-context agent judging against a *named* spec section), and
+  **tasteable** (`human-gate` — a person decides once).
 - **Out of scope** — deferred for later.
 
 That's it. Read one spec, you can read them all.
@@ -54,9 +61,10 @@ usually means afterthought; here it's the primary, prescriptive record the produ
 built *from*, and the descriptive memory of what it became.
 
 ```
+specline.yml          # repo-root config: canon pin, tier, thresholds, model map
 docs/
   architecture.md     # system shape — read first
-  conventions/        # standards, templates, the canon + tier pin
+  conventions/        # standards, templates, graduation prompt
   decisions/          # repo-local ADRs — append-only (ADR > spec > knowledge)
   strategy/           # vision, roadmap, launch contracts — dated, archived
   technical/          # cross-cutting patterns — only when non-obvious
@@ -66,8 +74,8 @@ docs/
   relations-index.yml # generated reverse-edge index
 ```
 
-doctor **enforces** the lifecycle-core — `specs/`, `knowledge/`, `archive/`, the pin,
-ids, links. `decisions/`, `strategy/`, and `technical/` are defined by the canon but
+doctor **enforces** the lifecycle-core — `specs/`, `knowledge/`, `archive/`, the
+`specline.yml` pin and thresholds, ids, links. `decisions/`, `strategy/`, and `technical/` are defined by the canon but
 maintained by you: convention, not policed. Knowing which is which is the difference
 between a rule and a habit.
 
@@ -126,7 +134,7 @@ You do **not** adopt all of Specline at once. You pick a tier:
 
 - **Tier 0–1 (start here)** — the consistent folder shape, the four-move loop, the
   ratify gate. This is almost certainly all you need as a solo planner.
-- **Tier 2 (later, maybe never)** — parallel-work governance: expiry timers,
+- **Tier 2 (later, maybe never)** — parallel-work governance: staleness timers,
   decision budgets, quarantine. Useful for a team running many features at once;
   noise for one person. `doctor` enforces only the tier you declare.
 
@@ -174,6 +182,14 @@ the loop four things, and your two gates bracket it:
 
 One iteration: resume from `status.md` → work toward the Goal → run the checks → if a
 check goes red→green, record a new checkpoint, else burn a loop_budget cycle → repeat.
+
+It's really **two loops**. The **inner** loop is mechanical: the implementer drives
+the *provable* (`agent-loopable`) checks until they pass — no reviewer in it. That
+inner loop is wrapped by an **outer** loop: a **fresh-context verifier** checks the
+implementer's work against the *judgeable* partition, bouncing it back a bounded
+number of times (`review_rounds_before_human`) before the work reaches you. Inner =
+deterministic, outer = bounded judgment, the human gate = unbounded judgment.
+
 The thing that runs this — the **orchestrator** — is external and pluggable: an agent
 plus a loop harness runs one spec; a fuller runner handles parallel/unattended builds.
 Specline defines the loop, not the runner.
@@ -183,7 +199,9 @@ Specline defines the loop, not the runner.
 An autonomous loop needs a brake — two, at the *first* of which it hands control back
 to you:
 
-- **`ttl_expires`** — the *time* trigger (a build left open too long; abandonment).
+- **`stale_after`** — the *time* trigger (a build left open too long; abandonment).
+  Going stale doesn't *discard* the spec — it **quarantines** it for you to reshape
+  or kill; that's why it's *staleness*, not a TTL.
 - **`loop_budget`** — the *progress* trigger (cycles with no green-checkpoint advance;
   thrashing, which can exhaust the budget long before the clock).
 
