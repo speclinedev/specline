@@ -1,0 +1,67 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const states = [
+  { name: "draft", set: "Agent / PO, while shaping", means: "Being shaped. Acceptance checks may not yet be falsifiable; open questions may be unresolved.", to: "→ ratified (a human approves), or → killed (abandoned)." },
+  { name: "ratified", set: "The named decider, by an approving commit", means: "A human read the contract and approved it. Sets ratified_by / ratified_at. Build-ready when open-questions.md is clean.", to: "→ building (the implementer starts), or → draft (reshape)." },
+  { name: "building", set: "Implementer, on starting the build", means: "Under construction by the autonomous loop. Carries a stale_after date — the abandonment trigger.", to: "→ shipped (graduates), → blocked (hits a contradiction), or → killed." },
+  { name: "blocked", set: "Implementer, on hitting a contradiction", means: "Paused on something the loop can't resolve. Carries a stale_after date. Records the dead end in status.md.", to: "→ building (resume after a reshape), or → killed." },
+  { name: "shipped", set: "Graduation, wired to the implementation PR", means: "Done. The contract moves to archive/ verbatim with an acceptance-results link; knowledge/ describes the shipped reality. Exists only in archive/.", to: "Terminal." },
+  { name: "killed", set: "A deliberate kill, or an abandoned draft", means: "Dropped. Archived with a one-line tombstone stating why (\"abandoned\" for a draft dropped before ship). The ID stays burned. Exists only in archive/.", to: "Terminal." },
+];
+---
+<Docs title="Reference — lifecycle & states">
+  <div class="doc-kicker">Reference · Lifecycle</div>
+  <h1>The states, and the moves</h1>
+  <p class="doc-lead">
+    A spec has one <code>status</code> at a time, carried in its frontmatter — identity and
+    state, nothing else. Four <strong>moves</strong> carry it from an idea to a shipped, archived
+    contract; <em>reshape</em> is a normal move back, not a failure. The two terminal states,
+    <code>shipped</code> and <code>killed</code>, exist <strong>only in <code>archive/</code></strong> —
+    set during archiving, never seen in <code>specs/</code>.
+  </p>
+
+  <h2>The states</h2>
+  <p>Each state names what's true, who sets it, and where it can go next:</p>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead>
+        <tr><th>State</th><th>What it means</th><th>Who sets it</th><th>Transitions</th></tr>
+      </thead>
+      <tbody>
+        {states.map((s) => (
+          <tr>
+            <td><code>{s.name}</code></td>
+            <td>{s.means}</td>
+            <td>{s.set}</td>
+            <td>{s.to}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>The four moves</h2>
+  <p>The lifecycle loop is the feature's journey <em>across</em> the gates — distinct from the autonomous build loop that runs <em>inside</em> the build step:</p>
+
+  <div class="bcard">
+    <h3>Shape <span class="gate-tag gate-human">agent + PO</span></h3>
+    <p>An agent drafts the contract; the PO edits. The spec lives in <code>draft</code> until it carries a falsifiable Goal and partitioned acceptance checks. Specline runs in author mode here — advisory, reporting distance to ratifiable, not failure.</p>
+  </div>
+  <div class="bcard">
+    <h3>Ratify <span class="gate-tag gate-human">decider · the first gate</span></h3>
+    <p>A named human reads the whole contract in one sitting (B1) and approves it. The approving commit sets <code>ratified_by</code> / <code>ratified_at</code> and a <code>blast_radius</code> value. Merge to main <em>is</em> the ratification event. <code>draft</code> → <code>ratified</code>.</p>
+  </div>
+  <div class="bcard">
+    <h3>Build <span class="gate-tag gate-human">agent · autonomous</span></h3>
+    <p>The implementer flips the spec to <code>building</code> and runs the loop toward the Goal, against the agent-loopable checks. It escalates back to a human at the first of two triggers — <code>loop_budget</code> exhausted or <code>stale_after</code> reached. A contradiction flips it to <code>blocked</code>.</p>
+  </div>
+  <div class="bcard">
+    <h3>Graduate <span class="gate-tag gate-human">agent · wired to the impl PR</span></h3>
+    <p>An agent-executed editing pass, triggered structurally by the implementation PR: archives the final <code>spec.md</code> as <code>shipped</code>, writes the present-tense <code>knowledge/</code> doc, and deletes the spec folder. The human acceptance gate reviews the graduated doc — "is this what I decided?"</p>
+  </div>
+
+  <div class="callout"><span class="ci">▸</span><p><strong>Reshape returns to shaping.</strong> A mid-build contradiction is a normal transition, not a breach: flip to <code>blocked</code>, land a spec-amendment commit that re-approves (updating <code>ratified_at</code> and resetting <code>stale_after</code> in the same commit), then resume <code>building</code>. The merged spec on main is canonical, always.</p></div>
+
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Lifecycle"</a>.</p></div>
+</Docs>

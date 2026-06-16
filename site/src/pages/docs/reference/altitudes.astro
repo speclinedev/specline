@@ -1,0 +1,51 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+---
+<Docs title="Reference — acceptance altitudes">
+  <div class="doc-kicker">Reference · Altitudes</div>
+  <h1>The three acceptance altitudes</h1>
+  <p class="doc-lead">
+    Acceptance checks are <strong>partitioned by altitude</strong> — and the altitudes are the
+    <strong>handoffs between who certifies <em>done</em></strong>, not three flavors of test.
+    Each check belongs to one actor: the implementer (<strong>provable</strong>), the reviewer
+    (<strong>judgeable</strong>), or you (<strong>tasteable</strong>). Falsifiable (B5) means
+    <em>settleable the same way twice</em>; each altitude is one actor settling it.
+  </p>
+
+  <div class="bcard">
+    <h3><code>provable</code> <span class="gate-tag gate-doctor">the implementer's exit</span></h3>
+    <p><strong>Certified by</strong> the implementer: the goal is met. Shown by a runnable command where one fits (<code>npm test -- trade-in</code> — exits 0), <strong>or by the implementer's grounded assessment</strong> against the code and its own tool results — evidence, not opinion.</p>
+    <p>A runnable command is the <em>strongest</em> form of that evidence, not the <em>required</em> form. What's required is that the implementer can establish the goal is met before it stops and hands off. Not every goal reduces to a command, and pretending it does is how specs end up weak.</p>
+  </div>
+  <div class="bcard">
+    <h3><code>judgeable</code> <span class="gate-tag gate-human">the reviewer's gate</span></h3>
+    <p><strong>Certified by</strong> a fresh-context reviewer agent: it judges the implementer's <em>interpretation</em> against a <strong>named spec section</strong> and the repo's standards (<code>conventions/</code>, <code>technical/</code>) — including the nuanced bars the goal can't fully state, like performance and security.</p>
+    <p><strong>Falsifiability gate:</strong> the named section, which is mandatory — a <code>judgeable</code> item that cites no section isn't settleable, so Specline flags it. This is the check on the implementer's self-assessment; it bounces work back within <code>review_rounds_before_human</code> before reaching you.</p>
+    <p><strong>e.g.</strong> "matches the empty-state behavior in §4.3."</p>
+  </div>
+  <div class="bcard">
+    <h3><code>tasteable</code> <span class="gate-tag gate-human">your gate</span></h3>
+    <p><strong>Certified by</strong> the decider, once, at the acceptance gate — taste, product-fit, anything no command or review can falsify. The final, unbounded judgment.</p>
+    <p><strong>e.g.</strong> "the onboarding flow feels effortless."</p>
+  </div>
+
+  <h2>The handoffs, in order</h2>
+  <p>The implementer asserts done (grounded), the reviewer independently checks the interpretation, the human accepts. Judgment is layered, not banished — each altitude is the next actor's turn.</p>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead>
+        <tr><th>Altitude</th><th>Actor</th><th>Certifies</th><th>Bound</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>provable</code></td><td>Implementer</td><td>The goal is met — by command or grounded assessment.</td><td>The inner loop: <code>loop_budget</code> / <code>stale_after</code>.</td></tr>
+        <tr><td><code>judgeable</code></td><td>Fresh-context reviewer</td><td>The interpretation matches the named sections + standards.</td><td>The outer loop: <code>review_rounds_before_human</code>.</td></tr>
+        <tr><td><code>tasteable</code></td><td>The decider</td><td>It's right. Final accept.</td><td>None — unbounded judgment, once.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout"><span class="ci">▸</span><p><strong>Depth scales with risk.</strong> <code>blast_radius</code> gates the <em>depth</em> of the <code>judgeable</code> partition, not its existence: a <code>low</code> blast radius may leave it empty (no separate reviewer); <code>high</code> makes a fresh-context reviewer mandatory.</p></div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Specline's limit.</strong> Specline checks, in planning, that the partition is present and a <code>judgeable</code> item names a section. It cannot judge whether the implementer's assessment was sound or the reviewer was right — that's the actors' job, then yours.</p></div>
+
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a> (see also <a href="/handbook/review">review, then accept</a>). The law: <a href="/spec.md">the canon, "Falsifiable or Draft" (B5) and "The build loop"</a>.</p></div>
+</Docs>

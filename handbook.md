@@ -4,19 +4,20 @@
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
-## The one-sentence version
+## Every feature gets the same shape
 
-Specline gives every feature you design the **same shape**, so a plan is something
-you (and an agent) can produce, check, and trust the same way every time — instead
-of a fresh blank page and a different structure each time.
+Specline gives every feature you design the **same shape** — the same folder, the
+same sections, the same order, every time. So a plan stops being a blank page and
+becomes something you and an agent produce, check, and trust the same way twice.
 
-## The problem it solves
+## A convention nobody enforces is just a suggestion
 
-You write a plan, hand it to a model, it more or less follows it. Next feature,
-different shape, different gaps. Nothing is *wrong*, but nothing is *consistent* —
-and inconsistency is where things get missed. A convention everyone agrees to but
-nothing enforces is just a suggestion. Specline makes the structure real: a fixed
-shape, and a checker (`doctor`) that tells you when a plan doesn't fit it.
+You write a plan, hand it to an agent, and it mostly does what you said. Mostly.
+Next feature, a different agent, a different shape, a different set of gaps.
+Nothing's wrong, exactly. Nothing's the same, either — and inconsistency is where
+things go missing. A convention everyone agrees to and nobody enforces is just a
+suggestion. Specline makes the shape real: a fixed structure, and a **checker**
+(`doctor`) that reads a plan and tells you the moment it doesn't fit.
 
 ## What you get every time: the spec folder
 
@@ -41,10 +42,10 @@ docs/specs/0007-trade-in-quote/
 - **Non-goals** — what this deliberately won't do. (Often the most useful section.)
 - **Behavior** — numbered, observable statements of what it does.
 - **Business rules** — the must/must-not constraints.
-- **Acceptance checks** — how you know it's done, at three altitudes:
-  **provable** (`agent-loopable` — a runnable command), **judgeable**
-  (a fresh-context agent judging against a *named* spec section), and
-  **tasteable** (`human-gate` — a person decides once).
+- **Acceptance checks** — how you know it's done. A check gets settled one of three
+  ways: by running it (`agent-loopable` — a runnable command), by judgment
+  (`judgeable` — a fresh-context agent ruling against a *named* spec section), or by
+  taste (`human-gate` — a person decides once).
 - **Out of scope** — deferred for later.
 
 That's it. Read one spec, you can read them all.
@@ -53,12 +54,12 @@ That's it. Read one spec, you can read them all.
 changes even if you rename or move them. It's bookkeeping — at your scale you can
 mostly ignore it; the agent assigns it.)*
 
-## The product record: one home for the whole product
+## One home for the whole product
 
-Specline isn't just a folder for specs. It defines `docs/` as the product's source of
-truth — one structured place holding everything that determines the product. "docs"
-usually means afterthought; here it's the primary, prescriptive record the product is
-built *from*, and the descriptive memory of what it became.
+Specline isn't just a folder for specs. It makes `docs/` the product's source of
+truth — one structured place that holds everything determining the product. "docs"
+usually means afterthought. Here it's the primary, prescriptive record the product
+is built *from*, and the descriptive memory of what it became.
 
 ```
 specline.yml          # repo-root config: canon pin, tier, thresholds, model map
@@ -75,14 +76,14 @@ docs/
 ```
 
 doctor **enforces** the lifecycle-core — `specs/`, `knowledge/`, `archive/`, the
-`specline.yml` pin and thresholds, ids, links. `decisions/`, `strategy/`, and `technical/` are defined by the canon but
-maintained by you: convention, not policed. Knowing which is which is the difference
-between a rule and a habit.
+`specline.yml` pin and thresholds, ids, links. It leaves `decisions/`, `strategy/`,
+and `technical/` to you: the canon defines them, but they're convention, not
+policed. Know which is which. That's the difference between a rule and a habit.
 
-## How a feature is documented
+## A feature changes posture as it ships
 
-A feature's documentation changes *posture* as it moves through the loop — from a
-contract you're building toward, to a description of what you built.
+A feature's documentation doesn't sit still. It shifts *posture* as it moves through
+the loop — from a contract you're building toward, to a description of what you built.
 
 - **In flight** it lives in `docs/specs/NNNN-slug/` — prescriptive, temporary.
 - **When it ships, it graduates into two permanent homes at once:**
@@ -92,9 +93,10 @@ contract you're building toward, to a description of what you built.
     it became.*
 - The in-flight spec is then **deleted** — the contract survives only in `archive/`.
 
-The test for what belongs in `knowledge/`: *if a knowledge doc would lose an argument
-with the code, it shouldn't exist; if it records why the code is the way it is, it
-can't lose that argument.* Keep intent, rules, rationale; cut anything the code says.
+Here's the test for what belongs in `knowledge/`. If a knowledge doc would lose an
+argument with the code, it shouldn't exist; if it records *why* the code is the way
+it is, it can't lose that argument. Keep intent, rules, rationale. Cut anything the
+code already says.
 
 **Migrating an existing repo:** already-shipped features never had a spec, so there's
 no contract to archive. Populate `knowledge/NNNN-slug/` directly from your existing
@@ -107,33 +109,34 @@ migrated repo is conformant from day one.
 1. **Shape** — you and an agent talk through the feature and write the spec
    folder. Unknowns become logged open questions with a default, so nothing
    blocks. This is a conversation, not a form.
-2. **Ratify** — you read the whole spec *in one sitting* and approve it. This is
-   a **human gate**: your judgment, not the machine's.
-3. **Build** — the agent implements against the ratified spec, keeping `status.md`
+2. **Sign** — you read the whole spec *in one sitting* and approve it. This is a
+   **human gate**: your judgment, not the machine's. (In the files it's the
+   `ratified_by` field.)
+3. **Build** — the agent implements against the signed spec, keeping `status.md`
    as its memory so it can resume without re-deriving everything.
 4. **Graduate** — when it ships, the spec moves to an archive and a short
    `knowledge/` doc records *why* the code is the way it is.
 
-## The split that makes it work: two gates vs. the machine
+## Structure is checked by a machine. Meaning is judged by you.
 
-Specline draws one hard line: **structure is checked by a machine; meaning is
-judged by you.**
+Specline draws one hard line. **Structure is checked by a machine; meaning is judged
+by you.** Everything follows from which side of that line a thing falls on.
 
 - **`doctor` (the machine)** checks *structure only* — is the folder shaped right,
-  do the links resolve, are the IDs consistent. It's deterministic, runs no AI,
-  makes no judgment. Same answer every time.
-- **You (the two gates)** judge *meaning* — is this the right thing to build, is
-  it sized right, is the spec actually good. A machine can't and shouldn't do that.
+  do the links resolve, are the IDs consistent. doctor checks the shape, never your
+  code. It runs no AI and makes no judgment. Same answer every time.
+- **You (the two gates)** judge *meaning* — is this the right thing to build, is it
+  sized right, is the spec actually good. A machine can't do that, and shouldn't try.
 
 So you're only ever on the two ends: shaping the intent, and approving the result.
 The middle runs itself.
 
 ## Start light: tiers
 
-You do **not** adopt all of Specline at once. You pick a tier:
+You do **not** adopt all of Specline at once. You pick a tier.
 
 - **Tier 0–1 (start here)** — the consistent folder shape, the four-move loop, the
-  ratify gate. This is almost certainly all you need as a solo planner.
+  sign gate. As a solo planner this is almost certainly all you need.
 - **Tier 2 (later, maybe never)** — parallel-work governance: staleness timers,
   decision budgets, quarantine. Useful for a team running many features at once;
   noise for one person. `doctor` enforces only the tier you declare.
@@ -143,7 +146,7 @@ setting, not a failure.
 
 ## How you actually use it, day to day
 
-When you're ready, you do **almost nothing** to brief the agent:
+When you're ready, you do **almost nothing** to brief the agent.
 
 1. Drop the `CLAUDE.md` brief (in `specline/templates/`) into your repo. An agent
    opened there reads it automatically.
@@ -169,9 +172,11 @@ carried by the agent and the checker.
 
 ## How agents build (the autonomous half)
 
-"The middle runs itself" — here's the middle. Once a spec is ratified, a feature is
-built by an **autonomous loop** that runs without you in each turn. The spec gives
-the loop four things, and your two gates bracket it:
+"The middle runs itself" — here's the middle. The builder won't be in the room. You
+shape a feature with one agent; once the spec is signed, a different agent builds it
+— fresh context, never in the room, can't ask what you meant. So it builds what's on
+the page. The spec gives that **autonomous loop** four things, and your two gates
+bracket it:
 
 - **Goal** — the *target* it converges toward.
 - **Agent-loopable acceptance checks** — runnable commands; the loop's *mechanical*
@@ -190,14 +195,14 @@ implementer's work against the *judgeable* partition, bouncing it back a bounded
 number of times (`review_rounds_before_human`) before the work reaches you. Inner =
 deterministic, outer = bounded judgment, the human gate = unbounded judgment.
 
-The thing that runs this — the **orchestrator** — is external and pluggable: an agent
-plus a loop harness runs one spec; a fuller runner handles parallel/unattended builds.
+The thing that runs this — **the runner** — is external and pluggable: an agent plus
+a loop harness runs one spec; a fuller runner handles parallel/unattended builds.
 Specline defines the loop, not the runner.
 
 ## Escalation & autonomy
 
-An autonomous loop needs a brake — two, at the *first* of which it hands control back
-to you:
+An autonomous loop needs a brake — two of them, and at the *first* to trip it hands
+control back to you.
 
 - **`stale_after`** — the *time* trigger (a build left open too long; abandonment).
   Going stale doesn't *discard* the spec — it **quarantines** it for you to reshape
@@ -206,7 +211,7 @@ to you:
   thrashing, which can exhaust the budget long before the clock).
 
 They don't conflict — same outcome, different axes, first wins. `loop_budget` is your
-autonomy grant, set at ratify like `blast_radius`. The same risk judgment also routes
-*how hard* the loop runs: `blast_radius` → model effort + reviewer depth via
+autonomy grant, set at sign-off like `blast_radius`. The same risk judgment also
+routes *how hard* the loop runs: `blast_radius` → model effort + reviewer depth via
 `target_model`. Declare the risk once; the loop spends compute in proportion. This is
 the governance of the autonomous half — tier-2 work, not the price of one good spec.

@@ -1,0 +1,36 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="The spec lives in the codebase" slug="specs-in-the-codebase">
+  <section class="chapter">
+    <div class="head-eyebrow">02 · The bet</div>
+    <h2>The spec lives in the codebase</h2>
+    <p class="lead">
+      Here's the move everything rests on: the spec for a feature lives <strong>in the
+      repo</strong>, as files under <code>docs/</code> — not in a task tracker. Your feature
+      definitions sit next to the code they describe, version with it, and travel with it.
+    </p>
+    <p>This is a deliberate break from how most teams work, and it's worth saying why it matters:</p>
+    <ul>
+      <li><strong>The builder lives in the code.</strong> The agent building the feature is
+        already in the repo. Put the contract there and it reads the spec and the code
+        together — the spec can actually govern the build instead of floating in another tab
+        the agent never opens.</li>
+      <li><strong>Intent and implementation can't drift apart unsupervised.</strong> When the
+        plan is a ticket somewhere else, the code and the intent diverge the moment work
+        starts, and nobody reconciles them. Co-located, they're reviewed and versioned as one
+        thing.</li>
+      <li><strong>It becomes permanent product memory.</strong> A closed ticket is archived
+        and forgotten. A shipped spec graduates into the repo — the contract frozen, the
+        rationale kept — so the <em>why</em> survives staff changes, vendor changes, and
+        model changes. (Chapter 9.)</li>
+    </ul>
+    <p>
+      That's the bet: <strong>the feature definition is a repository artifact, not a tracker
+      entry.</strong> Everything Specline adds — the fixed shape, the checker, the build loop
+      — exists to make that bet pay off. It only works, though, if the artifact is consistent
+      enough that an agent can rely on it. That's the next chapter.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/docs-layout">the <code>docs/</code> layout</a> — the home the spec lives in.</p></div>
+  </section>
+</Chapter>

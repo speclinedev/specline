@@ -16,8 +16,8 @@ const BODY = `# Specline
 - [Handbook](https://specline.dev/): the readable explainer of how Specline works.
 
 ## Tooling
-- doctor: the deterministic structural validator. CLI (\`specline doctor\`) and an MCP
-  server exposing doctor_check / doctor_spec / doctor_rules.
+- Specline: the deterministic structural validator. CLI (\`specline check\`) and an MCP
+  server exposing specline_check / specline_spec / specline_rules.
 `;
 
 export const GET: APIRoute = () =>

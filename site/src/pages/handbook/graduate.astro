@@ -1,0 +1,44 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Shipped work becomes memory" slug="graduate">
+  <section class="chapter">
+    <div class="head-eyebrow">09 · Graduate</div>
+    <h2>Shipped work becomes memory</h2>
+    <p class="lead">
+      When you accept a feature, the spec has done its job — and Specline keeps the parts of
+      it worth keeping. Graduation is the step that turns a finished, perishable spec into
+      permanent product memory, so the <em>why</em> behind the feature outlives the people,
+      vendors, and models that happened to build it. This is the payoff of putting the spec in
+      the repo in the first place.
+    </p>
+    <p>The accepted feature splits into two permanent artifacts:</p>
+    <div class="bcard">
+      <h3>archive/ — the contract, frozen</h3>
+      <p>The final spec, verbatim, with its acceptance results linked. Read-only forever. This
+      is <em>what was promised</em> — the record you can point to when someone asks what this
+      feature was supposed to do and how done was certified.</p>
+    </div>
+    <div class="bcard">
+      <h3>knowledge/ — the living description</h3>
+      <p>A short, present-tense doc of what's true now: intent, the rules that still bind, and
+      the rationale the code itself can't state. This is <em>what it became</em> — the part
+      that stays current as the code changes, because it records meaning, not mechanics.</p>
+    </div>
+    <p>
+      Then the in-flight spec is deleted. The contract survives only in <code>archive/</code>;
+      the living truth lives in <code>knowledge/</code>; the working draft is gone, because a
+      perishable artifact that lingers just rots and misleads.
+    </p>
+    <p class="pull">If a knowledge doc would lose an argument with the code, it shouldn't exist.</p>
+    <p>
+      That sentence is the whole test for what belongs in <code>knowledge/</code>. A doc that
+      describes <em>how</em> the code works competes with the code — and the code wins, because
+      it's the source of truth for mechanics and it's always current. But a doc that records
+      <em>why</em> the code is the way it is can't lose that argument: the code can't state its
+      own intent, the options that were rejected, or the rule it's enforcing. Keep that. Cut
+      anything the code already says.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/docs-layout">the <code>docs/</code> layout</a> (where <code>archive/</code> and <code>knowledge/</code> live) and the <a href="/docs/reference/lifecycle">spec lifecycle</a> — shape to graduation.</p></div>
+  </section>
+</Chapter>

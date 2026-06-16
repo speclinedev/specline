@@ -5,34 +5,34 @@ import Docs from "../../layouts/Docs.astro";
   <div class="doc-kicker">Why Specline · Why now</div>
   <h1>Why now</h1>
   <p class="doc-lead">
-    The usual worry is that a spec is scaffolding a strong model has outgrown. It's the
-    opposite: <strong>Specline helps more as the model gets stronger</strong>, because the
-    thing it rations — judgment, context, and a falsifiable definition of done — is exactly
-    what even a frontier-class model still can't supply for itself.
+    The usual worry is that a spec is scaffolding a strong model has outgrown — training wheels
+    for a system that can ride. It's the opposite. <strong>Specline helps more as the model
+    gets stronger</strong>, because the thing it rations — judgment, context, and a falsifiable
+    definition of done — is exactly what even a frontier model still can't hand itself.
   </p>
 
-  <h2>One-shot is a property of the pair, not the model</h2>
+  <h2>One-shot lives in the pair, not the model</h2>
   <p>
     Frontier models advertise first-shot correctness on <em>complex, well-specified</em>
     problems. Read the qualifier. One-shot isn't the model reading your mind — it's the model,
-    <em>given a problem specified well enough that the answer is determined</em>, producing it
-    in one pass instead of ten. The bottleneck didn't vanish when models got better; it
-    <strong>moved</strong> — out of the model's reasoning and into the quality of the
-    specification handed to it.
+    <em>handed a problem specified well enough that the answer is already determined</em>,
+    producing it in one pass instead of ten. The bottleneck didn't vanish when models got
+    better. It <strong>moved</strong> — out of the model's reasoning and into the spec you
+    hand it.
   </p>
   <p class="pull">One-shot is a property of (model × spec), not of the model. Specline manufactures the spec half.</p>
   <p>
-    A vague prompt to a frontier model doesn't one-shot — it confidently builds the wrong
-    thing, or over-builds, because nothing told it not to. Intent stated, mechanics omitted;
-    non-goals explicit; reserved decisions made up front; a falsifiable done. That list is the
-    spec body.
+    A vague prompt doesn't one-shot. It confidently builds the wrong thing, or builds three
+    things you didn't ask for, because nothing told it where to stop. Intent stated, mechanics
+    left out; non-goals named; reserved decisions made up front; a done you can falsify. That
+    list isn't advice. It's the spec body.
   </p>
 
-  <h2>The vendor's own guidance is Specline's boundaries</h2>
+  <h2>The vendor's own guidance draws Specline's boundaries</h2>
   <p>
-    The strongest evidence the methodology is aimed correctly: a frontier model's official
-    prompting guide, written with no knowledge of Specline, independently prescribes the same
-    moves.
+    Here's the strongest evidence the methodology is aimed right. A frontier model's official
+    prompting guide, written with no knowledge of Specline, prescribes the same moves on its
+    own.
   </p>
   <div class="tbl-wrap"><table class="book-table">
     <thead><tr><th>Frontier-model guidance</th><th>Specline</th></tr></thead>
@@ -44,25 +44,25 @@ import Docs from "../../layouts/Docs.astro";
       <tr><td>"Pause for the user only on a destructive action, real scope change, or input only they can give."</td><td>The two human gates</td></tr>
     </tbody>
   </table></div>
-  <p>When the model vendor converges on your methodology without having seen it, the methodology is tracking something real about how these models work — not repackaging an older process.</p>
+  <p>When the vendor converges on your methodology without having seen it, the methodology is tracking something real about how these models work. It isn't an old process in new clothes.</p>
 
-  <h2>The one real risk</h2>
+  <h2>There's exactly one way to get this wrong</h2>
   <p>
     The same guides warn that instructions "too prescriptive" for a frontier model
-    <em>degrade</em> its output. So Specline's one failure mode is violating its own rule: a
+    <em>degrade</em> its output. So Specline's one failure mode is breaking its own rule. A
     mechanics-heavy spec — restating what the code will do, enumerating steps the model would
     choose better itself — measurably lowers a frontier model's quality. <strong>Intent over
     description stops being a tidiness preference and becomes a performance requirement.</strong>
     Specline helps exactly to the degree it stays intent-heavy and mechanics-sparse.
   </p>
 
-  <h2>The verdict</h2>
+  <h2>Where this lands</h2>
   <p>
-    Specline supplies the three things a frontier model can't self-source — reserved judgment,
-    the right context, and a falsifiable done — and stays out of the way on mechanics, which
-    the model now does better than any spec could dictate. The margin <em>widens</em> with
-    capability. One-shot isn't a rival to this methodology; it's the same claim from the other
-    side — and producing the "well-specified" half, cheaply and with the model co-drafting, is
-    precisely what Specline is for.
+    Specline supplies the three things a frontier model can't source for itself — reserved
+    judgment, the right context, and a falsifiable done — and gets out of the way on mechanics,
+    which the model now does better than any spec could dictate. As capability climbs, the
+    margin <em>widens</em>. One-shot was never a rival to this methodology; it's the same claim
+    from the other side. And producing the well-specified half — cheaply, with the model
+    co-drafting — is exactly what Specline is for.
   </p>
 </Docs>

@@ -1,0 +1,54 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Review, then accept" slug="review">
+  <section class="chapter">
+    <div class="head-eyebrow">08 · Review &amp; accept</div>
+    <h2>Review, then accept</h2>
+    <p class="lead">
+      The implementer's word that the goal is met is the start of acceptance, not the end of
+      it. The agent that wrote the code shares its own blind spots, so a separate,
+      fresh-context reviewer checks the work before it reaches you — and then you, the human,
+      make the final call. This is the outer loop, and it's what turns "the implementer thinks
+      it's done" into "this is accepted."
+    </p>
+    <p>
+      The reviewer judges the implementer's <em>interpretation</em> — not whether the code runs,
+      but whether the build reads the spec the way the spec meant. It works against the
+      <strong>judgeable</strong> acceptance checks, each of which names a spec section, and
+      against the repo's standards in <code>conventions/</code> and <code>technical/</code> —
+      including the nuanced bars the Goal can't fully state, like performance and security.
+      The named section is what makes its judgment falsifiable: it isn't reviewing on vibes,
+      it's checking the work against a clause someone can point to.
+    </p>
+    <p>
+      Like the inner loop, the outer loop has a budget: <code>review_rounds_before_human</code>,
+      the number of times the reviewer can bounce work back to the implementer before it stops
+      and hands you the result. The bounce budget gates the transition <em>to you</em> — never
+      the inner loop. When it's exhausted, or the reviewer is satisfied, the work arrives at
+      your gate.
+    </p>
+    <p class="pull">Then you accept — tasteable, the second human gate, the one nothing else can settle.</p>
+    <h3>The three altitudes are the handoffs</h3>
+    <p>
+      This is the clearest way to hold the whole model. The three acceptance altitudes aren't
+      three flavors of test — they're the handoffs between who certifies <em>done</em>, in
+      order:
+    </p>
+    <div class="tbl-wrap"><table class="book-table">
+      <thead><tr><th>Altitude</th><th>Who certifies</th><th>How it's settled</th></tr></thead>
+      <tbody>
+        <tr><td><strong>provable</strong></td><td>The implementer</td><td>Its exit condition — the goal is met, by a runnable command where one fits or by grounded assessment against the code.</td></tr>
+        <tr><td><strong>judgeable</strong></td><td>The reviewer</td><td>A fresh agent judges the interpretation against a named section and the repo's standards, incl. perf and security.</td></tr>
+        <tr><td><strong>tasteable</strong></td><td>You</td><td>The final accept — taste, product-fit, anything no check or review can falsify. Settled once, by a person.</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      Layered judgment, on purpose: the implementer asserts done and grounds it in evidence,
+      the reviewer independently checks that interpretation, and you accept. Each altitude is
+      a check on the one below it. That's why a stochastic builder's self-report is safe to
+      build on — it's the first word, not the last.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: the <a href="/docs/reference/altitudes">acceptance altitudes</a> — provable, judgeable, tasteable, and the handoff each names.</p></div>
+  </section>
+</Chapter>

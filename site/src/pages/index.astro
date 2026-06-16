@@ -1,409 +1,114 @@
 ---
-import Book from "../layouts/Book.astro";
-
-const chapters = [
-  { id: "what", num: "01", title: "What this is" },
-  { id: "loop", num: "02", title: "The loop" },
-  { id: "spec", num: "03", title: "The spec folder" },
-  { id: "layout", num: "04", title: "The product record" },
-  { id: "features", num: "05", title: "Documenting features" },
-  { id: "gates", num: "06", title: "Two gates, one machine" },
-  { id: "claims", num: "07", title: "Claims & failure modes" },
-  { id: "tiers", num: "08", title: "Start light" },
-  { id: "use", num: "09", title: "How you use it" },
-  { id: "doctor", num: "10", title: "The doctor" },
-  { id: "build", num: "11", title: "How agents build" },
-  { id: "escalation", num: "12", title: "Escalation & autonomy" },
-];
+import "../styles/global.css";
+const canon = "canon 2.4.0-draft";
 ---
 
-<Book title="Specline — the handbook" chapters={chapters}>
-  <section class="cover">
-    <div class="cover-inner">
-      <div class="cover-top">Specline · canon 2.4.0-draft · the handbook</div>
-      <h1>One shape for<br />every feature<br />you design.</h1>
-      <div class="cover-body">
-        <p class="cover-lead">
-          Two things, one framework. Specline gives every feature the same structure — so
-          you and an agent produce, check, and trust a plan the same way every time. Then it
-          lets agents <em>build</em> that plan autonomously between your two gates, with a
-          deterministic checker keeping it honest. You define and approve; the loop runs the
-          middle.
-        </p>
-        <div class="colophon">
-          <div class="colophon-row"><span class="k">Define</span><span class="v">one spec shape, every feature</span></div>
-          <div class="colophon-row"><span class="k">Build</span><span class="v">an autonomous loop between your gates</span></div>
-          <div class="colophon-row"><span class="k">Your gates</span><span class="v">ratify · accept</span></div>
-          <div class="colophon-row"><span class="k">The checker</span><span class="v">doctor — structure only</span></div>
-        </div>
-      </div>
-      <div class="btn-row">
-        <a class="btn-primary" href="#what">Read the handbook</a>
-        <a class="tb-btn" href="/spec.md">For your agents ↗</a>
-      </div>
-    </div>
-  </section>
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Specline — the spec lives in the codebase</title>
+    <meta name="description" content="Specline is a methodology for defining product work as specs that live in the codebase — structured so an AI agent knows what to build, what's out of scope, when it's done, and who decides." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("specline-theme");
+        if (t === "paper" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <style>
+      /* The homepage has no TOC sidebar — undo the handbook layout's sidebar-era
+         offsets and the two-column cover body. Page-scoped: only this page. */
+      .cover { margin-left: 0; min-height: auto; padding: 76px 0 12px; align-items: start; }
+      .book, .book-footer { margin-left: 0; }
+      .cover-body { display: block; }
+      .cover-lead { max-width: 60ch; }
+      .cover-lead + .cover-lead { margin-top: 1.15rem; }
+      .wrap { max-width: 1040px; }
+      @media (min-width: 721px) { .doc-cards { grid-template-columns: repeat(3, 1fr); } }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="glyph" aria-hidden="true"></span>
+      <span class="wordmark">Specline</span>
+      <span class="canon">{canon}</span>
+      <span class="tb-spacer"></span>
+      <a class="tb-btn" href="/handbook/the-problem">Handbook</a>
+      <a class="tb-btn" href="/docs/reference">Reference</a>
+      <a class="tb-btn" href="/docs">Docs</a>
+      <a class="tb-btn" href="/spec.md">For agents ↗</a>
+      <button class="tb-btn" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
+    </header>
 
-  <main class="book">
-    <div class="wrap">
-
-      <section class="chapter" id="what">
-        <div class="head-eyebrow">01 · What this is</div>
-        <h2>The structure, made real</h2>
-        <p class="lead">
-          You write a plan, hand it to a model, it more or less follows it. The next
-          feature has a different shape and different gaps. Nothing is wrong, but nothing
-          is consistent — and inconsistency is where things get missed.
-        </p>
-        <p>
-          Specline fixes the shape. Every feature becomes the same kind of folder, with
-          the same sections, and a checker (<strong>doctor</strong>) that tells you when a
-          plan doesn't fit. A convention everyone agrees to but nothing enforces is just a
-          suggestion; Specline makes it something you can actually rely on.
-        </p>
-        <p class="pull">A convention without a validator is a suggestion.</p>
-      </section>
-
-      <section class="chapter" id="loop">
-        <div class="head-eyebrow">02 · The loop</div>
-        <h2>Four moves</h2>
-        <p>
-          A feature moves through four steps. You're only ever on the two ends — shaping
-          the intent and approving the result. The middle — the build — runs itself, in an
-          autonomous loop we open up in <a href="#build">chapter 11</a>.
-        </p>
-        <figure>
-          <div class="loop-fig">
-            <div class="loop-nodes">
-              <div class="loop-node"><div class="ln">01</div><h5>Shape</h5><div class="who">you + agent</div><span class="arr">→</span></div>
-              <div class="loop-node"><div class="ln">02</div><h5>Ratify</h5><div class="who">you — gate</div><span class="arr">→</span></div>
-              <div class="loop-node"><div class="ln">03</div><h5>Build</h5><div class="who">agent</div><span class="arr">→</span></div>
-              <div class="loop-node"><div class="ln">04</div><h5>Graduate</h5><div class="who">agent · archive</div></div>
-            </div>
-            <div class="loop-return"><span class="tip">↩</span><span class="lbl">reshape is normal</span></div>
+    <section class="cover">
+      <div class="cover-inner">
+        <div class="cover-top">Specline · {canon}</div>
+        <h1>Specs your agents<br />can build from.</h1>
+        <div class="cover-body">
+          <p class="cover-lead">
+            Specline is a methodology for defining product work as <strong>specs that live in
+            your codebase</strong> — every feature in one consistent shape, so an AI agent
+            knows exactly what to build, what's out of scope, when it's done, and who decides.
+          </p>
+          <p class="cover-lead">
+            It exists because the usual way fails. Hand an agent a feature and it builds what
+            you said, then confidently invents the parts you didn't — and you find out at
+            review. A plan in a task tracker, apart from the code, can't constrain that.
+            Specline moves the spec into the repo, where it can.
+          </p>
+          <div class="btn-row">
+            <a class="btn-primary" href="/handbook/the-problem">Start with the problem →</a>
+            <a class="tb-btn" href="/spec.md">For your agents ↗</a>
           </div>
-          <figcaption>SHAPE → RATIFY → BUILD → GRADUATE. Reshaping returns to shaping at any time — a transition, not a failure.</figcaption>
-        </figure>
-        <p>
-          <strong>Shape</strong> — you and an agent talk the feature through and write the
-          spec; unknowns become logged questions with a default, so nothing blocks.
-          <strong>Ratify</strong> — you read it in one sitting and approve.
-          <strong>Build</strong> — the agent implements against the ratified spec, in an
-          autonomous loop (chapter 11).
-          <strong>Graduate</strong> — on ship, the spec is archived and a short knowledge
-          note records why the code is the way it is.
-        </p>
-      </section>
-
-      <section class="chapter" id="spec">
-        <div class="head-eyebrow">03 · The spec folder</div>
-        <h2>The same files, every time</h2>
-        <p>That sameness <em>is</em> the benefit. Read one spec and you can read them all.</p>
-        <pre class="tree"><span class="dir">docs/specs/0007-trade-in-quote/</span>
-  <span class="req">spec.md</span>            <span class="cmt"># the contract — what we're building and why</span>
-  <span class="req">relations.md</span>       <span class="cmt"># how this feature connects to others</span>
-  status.md          <span class="cmt"># the build's memory (once you start building)</span>
-  open-questions.md  <span class="cmt"># decisions not yet made (optional)</span></pre>
-        <p><code>spec.md</code> always carries the same sections, in the same order:</p>
-        <div class="codeblock">
-          <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">spec.md</span></div>
-          <pre><span class="dl">---</span>
-<span class="k">id:</span> <span class="v">0007</span>
-<span class="k">slug:</span> <span class="v">trade-in-quote</span>
-<span class="k">status:</span> <span class="v">draft</span>
-<span class="k">decider:</span> <span class="v">jonathan</span>
-<span class="dl">---</span>
-
-<span class="v"># Trade-In Quote</span>
-
-<span class="k">## Intent</span>        <span class="cmt"># what + why, and the appetite (review size — one sitting)</span>
-<span class="k">## Goal</span>          <span class="cmt"># the one falsifiable outcome the build loop targets</span>
-<span class="k">## Non-goals</span>     <span class="cmt"># what this deliberately won't do</span>
-<span class="k">## Behavior</span>      <span class="cmt"># numbered, observable statements</span>
-<span class="k">## Business rules</span> <span class="cmt"># the must / must-not constraints</span>
-<span class="k">## Acceptance checks</span> <span class="cmt"># how you know it's done</span>
-<span class="k">## Out of scope</span>   <span class="cmt"># deferred for later</span></pre>
         </div>
-        <p>
-          <em>Why the number <code>0007</code>?</em> So features can reference each other by a
-          name that never changes even if you rename or move them. It's bookkeeping — the
-          agent assigns it; you can mostly ignore it.
-        </p>
-      </section>
+      </div>
+    </section>
 
-      <section class="chapter" id="layout">
-        <div class="head-eyebrow">04 · The product record</div>
-        <h2>One structured home for the whole product</h2>
-        <p class="lead">
-          Specline isn't just a folder for specs. It defines <code>docs/</code> as the
-          product's source of truth — one structured place holding everything that
-          determines the product: its intent, its decisions, its strategy, what actually
-          shipped, and the trail of what was promised.
+    <main class="book">
+      <div class="wrap">
+        <h2 style="margin-bottom:0.5rem">Three ways in</h2>
+        <p class="lead" style="margin-bottom:1.5rem">Learn it, look it up, or run it.</p>
+        <div class="doc-cards">
+          <a class="doc-card" href="/handbook/the-problem">
+            <div class="dc-t">Learn it — the handbook →</div>
+            <div class="dc-d">The argument, start to finish: the problem, the bet, and how the methodology works. Read this first.</div>
+          </a>
+          <a class="doc-card" href="/docs/reference">
+            <div class="dc-t">Look it up — reference →</div>
+            <div class="dc-d">The operational detail: folders, frontmatter fields, <code>specline.yml</code>, the lifecycle, the boundaries.</div>
+          </a>
+          <a class="doc-card" href="/docs/setup">
+            <div class="dc-t">Run it — get started →</div>
+            <div class="dc-d">Install the tooling and point an agent at your repo: shape a spec, check it, build from it.</div>
+          </a>
+        </div>
+        <p class="doc-note" style="margin-top:1.5rem">
+          Also: <a href="/spec.md">the canon</a> (the full methodology as raw markdown, for agents) ·
+          <a href="/honest-pitch">the honest pitch</a> (every claim, with how it breaks) ·
+          <a href="/docs/why">why now</a> (why this helps more as models get stronger).
         </p>
-        <p>
-          "docs" usually means afterthought — written late, read never. Here it's the
-          reverse: the primary, prescriptive record the product is built <em>from</em>, and
-          the descriptive memory of what it became. Every directory earns its place.
-        </p>
-        <pre class="tree"><span class="dir">docs/</span>
-  architecture.md     <span class="cmt"># system shape — read first</span>
-  <span class="dir">conventions/</span>        <span class="cmt"># standards, templates, the canon + tier pin</span>
-  <span class="dir">decisions/</span>          <span class="cmt"># repo-local ADRs — append-only (ADR &gt; spec &gt; knowledge)</span>
-  <span class="dir">strategy/</span>           <span class="cmt"># vision, roadmap, launch contracts — dated, archived</span>
-  <span class="dir">technical/</span>          <span class="cmt"># cross-cutting patterns — only when non-obvious</span>
-  <span class="dir">specs/</span>              <span class="cmt"># IN-FLIGHT — prescriptive, temporary</span>
-  <span class="dir">knowledge/</span>          <span class="cmt"># SHIPPED — descriptive, permanent</span>
-  <span class="dir">archive/</span>            <span class="cmt"># TERMINAL — contracts, read-only</span>
-  relations-index.yml <span class="cmt"># generated reverse-edge index</span></pre>
-        <p>
-          Some of these doctor <strong>enforces</strong>; the rest are conventions the canon
-          defines and you maintain. Knowing which is which is the difference between a rule
-          and a habit.
-        </p>
-        <div class="tbl-wrap"><table class="book-table">
-          <thead><tr><th>Directory</th><th>Holds</th><th>doctor</th></tr></thead>
-          <tbody>
-            <tr><td>architecture.md</td><td>System shape; the read-first orientation.</td><td>convention</td></tr>
-            <tr><td>conventions/</td><td>Standards, templates, the canon-version + tier pin.</td><td>reads the pin</td></tr>
-            <tr><td>decisions/</td><td>Repo-local ADRs, append-only. Precedence: ADR &gt; spec &gt; knowledge.</td><td>convention</td></tr>
-            <tr><td>strategy/</td><td>Vision, roadmap snapshots, launch contracts.</td><td>convention</td></tr>
-            <tr><td>technical/</td><td>Cross-cutting implementation patterns.</td><td>convention</td></tr>
-            <tr><td>specs/</td><td>In-flight features — prescriptive, temporary.</td><td>enforced</td></tr>
-            <tr><td>knowledge/</td><td>Shipped reality — descriptive, permanent.</td><td>enforced</td></tr>
-            <tr><td>archive/</td><td>Terminal contracts — permanent, read-only.</td><td>enforced</td></tr>
-          </tbody>
-        </table></div>
-        <p class="doc-note">doctor validates the lifecycle-core — <code>specs/</code>, <code>knowledge/</code>, <code>archive/</code>, the pin, ids, links. <code>decisions/</code>, <code>strategy/</code>, and <code>technical/</code> are defined by the canon but maintained by you: convention, not policed.</p>
-      </section>
+      </div>
+    </main>
 
-      <section class="chapter" id="features">
-        <div class="head-eyebrow">05 · Feature memory</div>
-        <h2>How a feature is documented</h2>
-        <p>
-          A feature's documentation changes <em>posture</em> as it moves through the loop —
-          from a contract you're building toward, to a description of what you built.
-        </p>
-        <p>
-          <strong>In flight</strong>, it lives in <code>docs/specs/NNNN-slug/</code>:
-          prescriptive — what we intend to build. Temporary by design.
-        </p>
-        <p><strong>When it ships, it graduates into two permanent homes at once:</strong></p>
-        <div class="bcard">
-          <h3>archive/NNNN/spec.md — the contract</h3>
-          <p>The final spec, verbatim, <code>status: shipped</code>, acceptance results linked. Read-only forever. <em>What was promised.</em></p>
-          <div class="gate"><span class="gate-tag gate-doctor">doctor · read-only</span> prescriptive</div>
-        </div>
-        <div class="bcard">
-          <h3>knowledge/NNNN/ — the living description</h3>
-          <p>Present-tense docs of what's true now — intent, rules, and rationale, reorganized for a reader. <em>What it became.</em></p>
-          <div class="gate"><span class="gate-tag gate-human">gate · judgment</span> descriptive</div>
-        </div>
-        <p>The in-flight spec is then <strong>deleted</strong> — the contract survives only in <code>archive/</code>. A feature is never in <code>specs/</code> and <code>archive/</code> at once.</p>
-        <p class="pull">If a knowledge doc would lose an argument with the code, it shouldn't exist. If it records why the code is the way it is, it can't lose that argument.</p>
-        <p>
-          That's the test for what belongs in <code>knowledge/</code>: keep intent, rules, and
-          rationale; cut anything the code already says. Tense and posture are a judgment call
-          at the gate — doctor only checks that <code>knowledge/</code> carries no lifecycle files.
-        </p>
-        <h3>Migrating an existing repo</h3>
-        <p>
-          Already-shipped features never had a Specline spec, so there's no contract to
-          archive. In practice you populate <code>knowledge/NNNN-slug/</code> directly from
-          your existing descriptive docs — they're usually already knowledge-shaped — assign an
-          id, and let <code>archive/</code> fill as features go forward. Backfill a minimal
-          contract only where the original still carries value. doctor permits knowledge
-          without an archived spec, so a migrated repo is conformant from day one.
-        </p>
-      </section>
+    <footer class="book-footer">
+      <span>Specline · {canon} · this site re-reviews when the canon amends</span>
+      <span><a href="/spec.md">/spec.md</a> · <a href="/llms.txt">/llms.txt</a> · "Specline" is a working name</span>
+    </footer>
 
-      <section class="chapter" id="gates">
-        <div class="head-eyebrow">06 · The split</div>
-        <h2>Two gates, one machine</h2>
-        <p>
-          Specline draws one hard line: <strong>structure is checked by a machine; meaning
-          is judged by you.</strong>
-        </p>
-        <div class="bcard">
-          <h3>doctor — the machine</h3>
-          <p>Checks structure only: is the folder shaped right, do the links resolve, are the IDs consistent. Deterministic, runs no AI, makes no judgment. Same answer every time.</p>
-          <div class="gate"><span class="gate-tag gate-doctor">doctor · enforced</span> structure</div>
-        </div>
-        <div class="bcard">
-          <h3>you — the two gates</h3>
-          <p>Judge meaning: is this the right thing to build, is it sized right, is the spec actually good. A machine can't and shouldn't do that.</p>
-          <div class="gate"><span class="gate-tag gate-human">gate · ratify</span><span class="gate-tag gate-human">gate · accept</span> judgment</div>
-        </div>
-        <p>So you're only ever on the two ends. The middle runs itself — and <a href="#build">chapter 11</a> is what "runs itself" actually means.</p>
-      </section>
-
-      <section class="chapter" id="claims">
-        <div class="head-eyebrow">07 · Honest marketing</div>
-        <h2>Claims &amp; failure modes</h2>
-        <p class="pull">A claim without a failure mode is marketing.</p>
-        <p>Every promise Specline makes names the condition under which it breaks.</p>
-        <div class="tbl-wrap">
-          <table class="book-table">
-            <thead><tr><th>Claim</th><th>Mechanism</th><th>Fails when</th></tr></thead>
-            <tbody>
-              <tr><td>Consistent structure, every feature</td><td>One fixed folder shape, checked by doctor</td><td>You skip the checker — then it's a convention again</td></tr>
-              <tr><td>Rework caught at the cheapest moment</td><td>Acceptance checks run inside the work, not at a demo</td><td>Checks are written unfalsifiably</td></tr>
-              <tr><td>Memory that survives staff &amp; models</td><td>Graduation writes knowledge; archive preserves contracts</td><td>Graduation is skipped</td></tr>
-              <tr><td>An agent can plan with you, not just code</td><td>The methodology is served to the agent as a tool</td><td>The repo never carries the brief, so the agent isn't aware</td></tr>
-              <tr><td>Audit trail</td><td>Every shipped feature resolves to an archived spec</td><td>Archive integrity breaks — a doctor error</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="chapter" id="tiers">
-        <div class="head-eyebrow">08 · Adoption</div>
-        <h2>Start light</h2>
-        <p>You do <strong>not</strong> adopt all of Specline at once. You pick a tier, and doctor enforces only the one you declare.</p>
-        <div class="tiers">
-          <div class="tier"><div class="tn">Tier 0</div><div class="td"><strong>One spec.</strong> A single feature in the Specline shape. An afternoon. See if the structure helps before anything else.</div></div>
-          <div class="tier"><div class="tn">Tier 1 · start here</div><div class="td"><strong>The loop.</strong> The folder shape, the four moves, the ratify gate. Almost certainly all you need as a solo planner.</div></div>
-          <div class="tier"><div class="tn">Tier 2 · later</div><div class="td"><strong>Parallel-work governance.</strong> Expiry timers, decision budgets, quarantine — for a team running many features at once. Noise for one person.</div></div>
-        </div>
-        <div class="callout"><span class="ci">▲</span><p>If a rule isn't earning its keep for you, you're at the wrong tier. That's a setting, not a failure.</p></div>
-      </section>
-
-      <section class="chapter" id="use">
-        <div class="head-eyebrow">09 · Day to day</div>
-        <h2>How you use it</h2>
-        <p>When you're ready, you do almost nothing to brief the agent:</p>
-        <p>
-          Drop the <code>CLAUDE.md</code> brief into your repo. Open a fresh agent chat and
-          say, in your own words — <em>"Let's shape a new feature: …"</em> or <em>"Migrate
-          this plan into Specline with me: …".</em> The agent pulls the methodology itself,
-          asks you the shaping questions, and produces the spec folder, checking its own
-          work with doctor as it goes. You read the result in one sitting and approve it.
-        </p>
-        <div class="endpoint">
-          <h3>Point your agent here</h3>
-          <p>Everything an agent needs to operate Specline, in the format it reads best — the raw canon, served at a stable URL.</p>
-          <div class="curl"><span class="prompt">$</span><span class="cmd">curl -s</span> <span class="flag">https://specline.dev/spec.md</span></div>
-        </div>
-        <p>You don't memorize the rules and you don't paste the canon. The agent learns the methodology from the tool; you bring the judgment.</p>
-      </section>
-
-      <section class="chapter" id="doctor">
-        <div class="head-eyebrow">10 · The checker</div>
-        <h2>The doctor</h2>
-        <p>
-          <strong>doctor</strong> is the deterministic validator. It reads only markdown,
-          YAML, and folder structure — it never runs your code, never calls a model, never
-          touches the network. One question, the same answer every time:
-          <em>is this repo structurally valid?</em>
-        </p>
-        <p>It checks things like:</p>
-        <div class="tbl-wrap">
-          <table class="book-table">
-            <thead><tr><th>Check</th><th>Severity</th></tr></thead>
-            <tbody>
-              <tr><td>Every spec folder has spec.md and relations.md</td><td>error</td></tr>
-              <tr><td>Frontmatter parses; id &amp; slug match the directory</td><td>error</td></tr>
-              <tr><td>IDs are unique and accounted for</td><td>error</td></tr>
-              <tr><td>Every relative link resolves</td><td>error</td></tr>
-              <tr><td>status.md has the required sections</td><td>error</td></tr>
-              <tr><td>Unknown keys or sections (newer canon)</td><td>warning</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p>
-          It runs at your command, in CI, or as a tool the agent calls while it writes. What
-          it never does is judge meaning — tense, sizing, whether the spec is <em>right</em>.
-          That stays yours, at the two gates.
-        </p>
-        <p class="pull">Same input, same output, every run.</p>
-      </section>
-
-      <section class="chapter" id="build">
-        <div class="head-eyebrow">11 · The autonomous half</div>
-        <h2>How agents build, between your gates</h2>
-        <p class="lead">
-          "The middle runs itself" — here's the middle. Once a spec is ratified, a feature
-          isn't built in one pass; it's built by an <strong>autonomous loop</strong> that runs
-          without you in each turn. The spec's whole job on the build side is to give that
-          loop everything it needs to run on its own.
-        </p>
-        <p>The loop reads four things from the spec, and your two gates bracket it:</p>
-        <div class="tbl-wrap"><table class="book-table">
-          <thead><tr><th>The loop needs</th><th>The spec provides</th></tr></thead>
-          <tbody>
-            <tr><td>A target</td><td><strong>Goal</strong> — the one falsifiable outcome it converges toward</td></tr>
-            <tr><td>An exit condition</td><td><strong>Agent-loopable acceptance checks</strong> — runnable commands; the loop stops when they pass</td></tr>
-            <tr><td>Memory</td><td><strong>status.md</strong> — the last green checkpoint to resume from, and the dead ends not to re-walk</td></tr>
-            <tr><td>An autonomy grant</td><td><strong>loop_budget</strong> — how long it may run unattended before calling you (ch. 12)</td></tr>
-          </tbody>
-        </table></div>
-        <p>A single iteration of the loop:</p>
-        <p>
-          <strong>Resume</strong> from <code>status.md</code> (the last green checkpoint) →
-          <strong>work</strong> toward the Goal → <strong>run</strong> the acceptance checks →
-          if a check goes red→green, <strong>record</strong> a new green checkpoint; if not,
-          <strong>burn</strong> a cycle of the loop budget → repeat.
-        </p>
-        <p class="pull">The Goal is the destination. The acceptance checks are the exit.</p>
-        <p>
-          That distinction is the whole trick: the checks, not the Goal, are the loop's
-          <em>mechanical</em> exit — it stops when they pass. The Goal is what they're chosen
-          to <em>prove</em>. Your two <strong>gates are the loop's boundary conditions</strong>,
-          not interruptions: you set the target at <em>ratify</em>, you confirm the result at
-          <em>accept</em>, and everything between is the loop.
-        </p>
-        <p>
-          That's the <strong>inner loop</strong> — mechanical, bounded, the verifier deliberately
-          absent. Wrapping it is an <strong>outer loop</strong>: once the provable checks are
-          green, a <strong>fresh-context verifier</strong> judges the spec's <code>judgeable</code>
-          acceptance items — claims settled not by a command but against a <em>named spec
-          section</em> — and bounces work back a bounded number of rounds
-          (<code>review_rounds_before_human</code>) before handing you the result. Deterministic
-          inner loop, bounded-judgment outer loop, your unbounded judgment at the gate.
-        </p>
-        <p>
-          The thing that <em>runs</em> the loop — the <strong>orchestrator</strong> — is
-          <a href="/docs/orchestrator">external and pluggable</a>: a capable agent plus a loop
-          harness runs a single spec today; a fuller external runner handles parallel and
-          unattended builds. Specline defines the loop and checks the spec carries its inputs —
-          it doesn't build the runner.
-        </p>
-      </section>
-
-      <section class="chapter" id="escalation">
-        <div class="head-eyebrow">12 · Escalation</div>
-        <h2>When the loop calls you back</h2>
-        <p>
-          An autonomous loop needs a brake — two, actually. A build hands control back to a
-          human gate at the <strong>first</strong> of two independent triggers:
-        </p>
-        <div class="bcard">
-          <h3>stale_after — the time trigger</h3>
-          <p>Wall-clock staleness: a build left open too long. Catches <em>abandonment</em> — a build everyone forgot about.</p>
-          <div class="gate"><span class="gate-tag gate-warn">escalate · time</span></div>
-        </div>
-        <div class="bcard">
-          <h3>loop_budget — the progress trigger</h3>
-          <p>The cap on build cycles with no green-checkpoint advance. Catches <em>thrashing</em> — an agent looping fast but not converging, which can exhaust the budget in minutes, long before the clock runs out.</p>
-          <div class="gate"><span class="gate-tag gate-warn">escalate · progress</span></div>
-        </div>
-        <p>
-          They never conflict: same outcome (autonomous → you), different axes (time vs.
-          progress), first one wins. <code>loop_budget</code> is your <strong>autonomy
-          grant</strong> — set at ratify, like blast_radius, it's how much you trust this build
-          to run unattended. A high-stakes feature gets a short leash.
-        </p>
-        <h3>Effort routing</h3>
-        <p>
-          The same risk judgment routes <em>how hard</em> the loop runs. A spec's
-          <code>blast_radius</code> (low / medium / high) maps to model effort and reviewer
-          depth via <code>target_model</code>: a low-risk spec runs on a cheaper model with a
-          light review; a high-blast-radius one runs at full effort with a fresh-context
-          verifier checking against the acceptance set. The spec is the routing table — you
-          declare the risk once, and the loop spends compute in proportion.
-        </p>
-        <div class="callout"><span class="ci">▲</span><p>None of this is tier-0 work. Escalation, autonomy budgets, and routing matter once you're running builds unattended and in parallel — they're the governance of the autonomous half, not the price of writing one good spec.</p></div>
-      </section>
-
-    </div>
-  </main>
-</Book>
+    <script>
+      const root = document.documentElement;
+      document.getElementById("themeBtn")?.addEventListener("click", () => {
+        const next = root.dataset.theme === "paper" ? "dark" : "paper";
+        root.dataset.theme = next;
+        try { localStorage.setItem("specline-theme", next); } catch (e) {}
+      });
+    </script>
+  </body>
+</html>

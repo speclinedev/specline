@@ -1,0 +1,40 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Start light" slug="start-light">
+  <section class="chapter">
+    <div class="head-eyebrow">10 · Adoption</div>
+    <h2>Start light</h2>
+    <p class="lead">
+      You don't adopt all of Specline at once. You pick a tier, and Specline enforces only the
+      tier you declare — so you get the value of the parts you need without paying for the
+      governance you don't. For one person planning features, that's almost always the loop
+      and nothing more.
+    </p>
+    <div class="tbl-wrap"><table class="book-table">
+      <thead><tr><th>Tier</th><th>What it adds</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Tier 0</strong></td><td>One spec, in the Specline shape. An afternoon, to feel whether the structure helps before committing.</td><td>Trying it</td></tr>
+        <tr><td><strong>Tier 1</strong></td><td>The loop — the folder shape, shaping, the ratify gate, building, review, graduation. The whole methodology for a single stream of work.</td><td><strong>Start here</strong></td></tr>
+        <tr><td><strong>Tier 2</strong></td><td>Parallel-work governance — staleness timers, the decider budget, the coupling ceiling. For running many features and agents at once.</td><td>Later, if ever</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      Tier 1 is where almost everyone lives. It's the full shape-ratify-build-review-graduate
+      loop, and it's enough to hand an agent a feature and trust what comes back. Tier 2 only
+      starts earning its keep when you have enough features and agents in flight that you need
+      to govern <em>which</em> work happens and how the queue is bounded — concerns that are
+      pure noise for a solo planner with one feature at a time.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>If a rule isn't earning its keep, you're at the wrong tier. That's a setting to change, not a failure to push through.</p></div>
+    <h3>How you actually start</h3>
+    <p>
+      The setup is almost nothing. Drop the brief into your repo, open a fresh chat, and say
+      <em>"let's shape a feature."</em> The agent pulls the methodology itself, runs the moves
+      from chapter 6, and checks its own work with Specline as it goes. You bring the product
+      judgment; it brings the shape. From there, the rest of the handbook is just what happens
+      next.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/setup">getting set up</a> and the <a href="/docs/reference/config">repo configuration</a> — where you declare your tier and tune what Specline enforces.</p></div>
+  </section>
+</Chapter>

@@ -1,0 +1,121 @@
+---
+import "../styles/global.css";
+import { CHAPTERS, chapterNav } from "../data/handbook.ts";
+
+interface Props { title: string; slug: string; canon?: string; }
+const { title, slug, canon = "canon 2.4.0-draft" } = Astro.props;
+const { prev, next } = chapterNav(slug);
+const here = (s: string) => s === slug;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} — Specline handbook</title>
+    <meta name="description" content="Specline — spec-driven development where a machine-checkable spec is the contract, humans hold the two gates, and an agent runs the loop between them." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem("specline-theme");
+        if (t === "paper" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+
+    <header class="topbar">
+      <button class="tb-btn tb-menu" id="menuBtn" aria-label="Open contents">☰</button>
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <span class="glyph" aria-hidden="true"></span>
+        <span class="wordmark">Specline</span>
+      </a>
+      <span class="canon">{canon}</span>
+      <span class="tb-spacer"></span>
+      <a class="tb-btn" href="/docs/reference">Reference</a>
+      <a class="tb-btn" href="/docs">Docs</a>
+      <a class="tb-btn" href="/spec.md">For agents ↗</a>
+      <button class="tb-btn" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
+    </header>
+
+    <nav class="toc" id="toc" aria-label="Handbook contents">
+      <div class="toc-k">The handbook</div>
+      {CHAPTERS.map((c) => (
+        <a href={`/handbook/${c.slug}`} class={here(c.slug) ? "active" : ""}>
+          <span class="num">{c.num}</span>{c.title}
+        </a>
+      ))}
+    </nav>
+    <div class="toc-backdrop" id="tocBackdrop"></div>
+
+    <main class="book">
+      <div class="wrap">
+        <article class="doc">
+          <slot />
+          <nav class="chapter-nav" aria-label="Pagination">
+            {prev ? (
+              <a class="cn-prev" href={`/handbook/${prev.slug}`}>
+                <span class="cn-dir">← previous</span>
+                <span class="cn-title"><span class="num">{prev.num}</span>{prev.title}</span>
+              </a>
+            ) : (
+              <a class="cn-prev" href="/"><span class="cn-dir">← cover</span><span class="cn-title">Specline</span></a>
+            )}
+            {next ? (
+              <a class="cn-next" href={`/handbook/${next.slug}`}>
+                <span class="cn-dir">next →</span>
+                <span class="cn-title"><span class="num">{next.num}</span>{next.title}</span>
+              </a>
+            ) : (
+              <a class="cn-next" href="/docs/reference"><span class="cn-dir">reference →</span><span class="cn-title">Look up the detail</span></a>
+            )}
+          </nav>
+        </article>
+      </div>
+    </main>
+
+    <footer class="book-footer">
+      <span>Specline · {canon} · this site re-reviews when the canon amends</span>
+      <span><a href="/spec.md">/spec.md</a> · <a href="/llms.txt">/llms.txt</a> · "Specline" is a working name</span>
+    </footer>
+
+    <style>
+      .chapter-nav { display: flex; gap: 1rem; justify-content: space-between; margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--rule, #2a2a2a); }
+      .chapter-nav a { display: flex; flex-direction: column; gap: 4px; text-decoration: none; max-width: 48%; }
+      .chapter-nav .cn-next { text-align: right; margin-left: auto; }
+      .chapter-nav .cn-dir { font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; letter-spacing: 0.04em; opacity: 0.6; }
+      .chapter-nav .cn-title { font-family: "Space Grotesk", sans-serif; font-weight: 600; }
+      .chapter-nav .cn-title .num { font-family: "IBM Plex Mono", monospace; opacity: 0.5; margin-right: 6px; font-size: 0.85em; }
+      .chapter-nav a:hover .cn-title { text-decoration: underline; }
+    </style>
+
+    <script>
+      const root = document.documentElement;
+      document.getElementById("themeBtn")?.addEventListener("click", () => {
+        const next = root.dataset.theme === "paper" ? "dark" : "paper";
+        root.dataset.theme = next;
+        try { localStorage.setItem("specline-theme", next); } catch (e) {}
+      });
+      const body = document.body;
+      const close = () => body.classList.remove("toc-open");
+      document.getElementById("menuBtn")?.addEventListener("click", () => body.classList.toggle("toc-open"));
+      document.getElementById("tocBackdrop")?.addEventListener("click", close);
+      document.querySelectorAll(".toc a").forEach((a) => a.addEventListener("click", close));
+      const progress = document.getElementById("progress");
+      const onScroll = () => {
+        const h = document.documentElement;
+        const max = h.scrollHeight - h.clientHeight;
+        if (progress) progress.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : "0%";
+      };
+      document.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    </script>
+  </body>
+</html>

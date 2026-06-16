@@ -1,21 +1,21 @@
 ---
 import Docs from "../../layouts/Docs.astro";
 ---
-<Docs title="CLI — doctor">
-  <div class="doc-kicker">Doctor · CLI</div>
+<Docs title="CLI — Specline">
+  <div class="doc-kicker">Specline · CLI</div>
   <h1>CLI reference</h1>
-  <p class="doc-lead">One umbrella command, <code>specline</code>, with three subcommands. <code>doctor</code> validates; <code>rules</code> and <code>spec</code> are self-describing and need no repo.</p>
+  <p class="doc-lead">One umbrella command, <code>specline</code>, with three subcommands. <code>Specline</code> is the checker — point it at a repo. <code>rules</code> and <code>spec</code> describe themselves and need no repo at all.</p>
 
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">usage</span></div>
-    <pre>specline doctor [PATH] [--mode author|gate] [--format json|human]
+    <pre>specline check [PATH] [--mode author|gate] [--format json|human]
                        [--changed &lt;file&gt;...] [--now &lt;iso-date&gt;] [--tier 0|1|2]
 specline rules  [--format json|markdown]
 specline spec</pre>
   </div>
 
-  <h2>specline doctor</h2>
-  <p>Walks <code>docs/</code> beneath <code>PATH</code> (default <code>.</code>), runs the tier's rules, and emits findings. JSON is the source of truth; human is a projection of it.</p>
+  <h2>specline check</h2>
+  <p>This is where the checking happens. Specline walks <code>docs/</code> beneath <code>PATH</code> (default <code>.</code>), runs the tier's rules, and emits findings. JSON is the source of truth; the human output is just a view onto it.</p>
   <div class="tbl-wrap">
     <table class="book-table">
       <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
@@ -23,7 +23,7 @@ specline spec</pre>
         <tr><td>--mode</td><td><code>gate</code> (default) is strict; <code>author</code> reports missing required elements as <code>distance_to_ratifiable</code> (info) instead of errors — for shaping in progress.</td></tr>
         <tr><td>--format</td><td><code>human</code> (default at a terminal) or <code>json</code> (agents, CI).</td></tr>
         <tr><td>--changed</td><td>Repo-relative paths you touched. Spec-scoped findings error only for specs in this set; otherwise they warn (quarantine).</td></tr>
-        <tr><td>--now</td><td>Reference ISO date for time-dependent checks. doctor never reads the wall clock — determinism.</td></tr>
+        <tr><td>--now</td><td>Reference ISO date for time-dependent checks. Specline never reads the wall clock — determinism.</td></tr>
         <tr><td>--tier</td><td>Override the repo's declared tier (0, 1, 2) for testing.</td></tr>
       </tbody>
     </table>
@@ -44,7 +44,7 @@ specline spec</pre>
 
   <h3>Output contract</h3>
   <div class="codeblock">
-    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline doctor . --format json</span></div>
+    <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline check . --format json</span></div>
     <pre><span class="dl">{</span>
   <span class="k">"tool_version"</span>: <span class="v">"0.1.0"</span>,
   <span class="k">"canon"</span>: <span class="v">"2.4.0-draft"</span>,
@@ -53,11 +53,11 @@ specline spec</pre>
   <span class="k">"findings"</span>: <span class="dl">[</span> <span class="cmt">/* rule_id, severity, scope, file, line, message, fix_hint */</span> <span class="dl">]</span>
 <span class="dl">}</span></pre>
   </div>
-  <p>Output is deterministic — findings sort by <code>file</code>, then <code>line</code> (null first), then <code>rule_id</code>. Two runs on the same input and <code>--now</code> are byte-identical.</p>
+  <p>The output never surprises you. Findings sort by <code>file</code>, then <code>line</code> (null first), then <code>rule_id</code> — so two runs on the same input and the same <code>--now</code> come out byte-identical.</p>
 
   <h2>specline rules</h2>
-  <p>Prints the full <a href="/docs/rules">rule catalog</a> — every <code>rule_id</code> with its severity, scope, tier, and downgradable flag — as <code>--format markdown</code> (default) or <code>json</code>. Needs no repo.</p>
+  <p>Prints the full <a href="/docs/rules">rule catalog</a> — every <code>rule_id</code> with its severity, scope, tier, and downgradable flag — as <code>--format markdown</code> (default) or <code>json</code>. No repo required; the catalog is the catalog.</p>
 
   <h2>specline spec</h2>
-  <p>Prints the pinned canon to stdout — for injecting Specline into an agent's context. Needs no repo. (The web twin is <a href="/spec.md">/spec.md</a>.)</p>
+  <p>Prints the pinned canon to stdout. Use it to drop Specline straight into an agent's context. No repo required. (The web twin is <a href="/spec.md">/spec.md</a>.)</p>
 </Docs>

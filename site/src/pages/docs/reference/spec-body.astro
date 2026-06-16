@@ -1,0 +1,34 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const sections = [
+  { name: "Intent", holds: "The product outcome in plain language, and the appetite — the one-sitting scope this spec deliberately fits. This is the why, for the human." },
+  { name: "Goal", holds: "A single falsifiable sentence: the observable outcome that means done. The target the autonomous loop converges toward. If you can't state it falsifiably in one line, the feature isn't shaped yet." },
+  { name: "Non-goals", holds: "Explicit. The most valuable section for strong models — it is where over-building is fenced off." },
+  { name: "Behavior", holds: "Observable behaviors, numbered, each verifiable from outside." },
+  { name: "Business rules", holds: "The rules, sorted Must / Should / May." },
+  { name: "Assumptions / external dependencies", holds: "What this spec takes as given about systems it does not control, and what to do at a contradiction. Contradictions live at the seams; naming them tells the agent where to escalate fast instead of hacking around a system it cannot change." },
+  { name: "Critical files", holds: "Pointers into existing code, not restatements of it. The builder reads code; this just aims it." },
+  { name: "Acceptance checks", holds: "Falsifiable and partitioned by altitude: agent-loopable (provable — leads with a runnable command, is the loop's mechanical exit), judgeable (settled by a fresh-context agent against a named section), and human-gate (tasteable — verified once by a person)." },
+  { name: "Out of scope / deferred", holds: "What's deliberately excluded or pushed out, with IDs if already allocated." },
+];
+---
+<Docs title="Reference — the spec.md body">
+  <div class="doc-kicker">Reference · Spec body</div>
+  <h1>The <code>spec.md</code> body</h1>
+  <p class="doc-lead">
+    The build contract's sections, in order. Each carries one kind of thing, and the order runs
+    from the human's <em>why</em> (Intent) down to the loop's mechanical exit (Acceptance checks).
+    Write intent and rules <strong>richly</strong>; write mechanics <strong>sparsely</strong> (B6) —
+    the builder reads code, and over-specified mechanics measurably degrade frontier output.
+  </p>
+  <p>Knowing what each section holds — and what belongs in another — is what keeps the contract reviewable in one sitting:</p>
+  {sections.map((s, i) => (
+    <div class="bcard">
+      <h3>{i + 1}. {s.name}</h3>
+      <p>{s.holds}</p>
+    </div>
+  ))}
+  <div class="callout"><span class="ci">▸</span><p><strong>Acceptance partitions are the build loop.</strong> The <span class="gate-tag gate-doctor">agent-loopable</span> set <em>is</em> the inner loop's exit condition, run in the implementation PR. The <span class="gate-tag gate-human">judgeable</span> set is the outer loop, owned by a fresh-context verifier against a named section. The <span class="gate-tag gate-human">human-gate</span> set is settled once by a person. Judgment is layered, not banished.</p></div>
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/shaping">handbook — shaping</a>. The law: <a href="/spec.md">the canon, "spec.md body"</a>.</p></div>
+</Docs>

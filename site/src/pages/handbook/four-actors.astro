@@ -1,0 +1,40 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Four actors, one line" slug="four-actors">
+  <section class="chapter">
+    <div class="head-eyebrow">04 · Who does what</div>
+    <h2>Four actors, one line</h2>
+    <p class="lead">
+      Specline isn't one experience — it's four, connected, with a hard line running through
+      them. The line is simple: <strong>a machine checks that the spec is complete; people
+      and agents judge whether the work is right.</strong> Specline never judges meaning, because
+      the moment a tool grades <em>good</em> instead of <em>present</em>, it's wrong in ways you
+      can't predict. So judgment stays with the four who can carry it.
+    </p>
+    <div class="bcard">
+      <h3>The product owner — writes the spec</h3>
+      <p>Defines what the feature is for, what "done" means in checkable terms, and what's deliberately out. Brings product judgment; doesn't write code. This is who the assistant helps and who holds the two gates.</p>
+    </div>
+    <div class="bcard">
+      <h3>Specline — checks the spec is buildable</h3>
+      <p>In the planning phase, confirms the spec folder has everything an agent needs. Deterministic, structural, no judgment. Guarantees the spec is <em>answerable</em> — not that it's good.</p>
+    </div>
+    <div class="bcard">
+      <h3>The implementer agent — builds it</h3>
+      <p>Equipped with the codebase's standards (<code>conventions/</code>, <code>technical/</code>) and what already exists (the relations graph), it builds from the spec until it can establish the goal is met — then stops and hands to review.</p>
+    </div>
+    <div class="bcard">
+      <h3>The reviewer agent — checks the interpretation</h3>
+      <p>A fresh, outside agent that judges how the implementer interpreted the spec against the goal and the standards — including the nuanced bars, like performance and security, the goal can't fully state.</p>
+    </div>
+    <p>
+      And bracketing all of it: <strong>you, at the two gates</strong> — <em>ratify</em> the
+      spec before the build, <em>accept</em> the result after. The whole point of the
+      consistent shape is that it equips the agents in the middle; the whole point of the gates
+      is that the irreducible judgment stays human. The rest of the handbook walks these four
+      through one feature — but first, the thing they all read: the spec itself.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/boundaries">the seven boundaries</a> that define the line.</p></div>
+  </section>
+</Chapter>

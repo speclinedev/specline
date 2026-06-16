@@ -1,0 +1,42 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const fields = [
+  { field: "id", values: "four-digit, zero-padded", when: "Always. Matches the folder; never reused, never renumbered." },
+  { field: "slug", values: "kebab-case", when: "Always. Matches the folder's slug." },
+  { field: "type", values: "feature | bug | chore | parent", when: "Always. A bug is a spec with type: bug; a decomposition parent is type: parent." },
+  { field: "status", values: "draft | ratified | building | blocked | shipped | killed", when: "Always. shipped and killed are set during archiving and exist only in archive/." },
+  { field: "decider", values: "a named human", when: "Always. The PO accountable for this spec." },
+  { field: "blast_radius", values: "low | medium | high", when: "Required to ratify. Declared risk surface; drives reviewer depth, implementer effort, and model tier." },
+  { field: "size", values: "small | large", when: "Declared build size (default small). small = one slice; large = an atomic batch. The build axis — distinct from appetite (the review axis)." },
+  { field: "target_model", values: "light | standard | frontier", when: "Optional. Pins a capability tier; if absent, derived from blast_radius and the coupling proxy." },
+  { field: "ratified_by", values: "a named human", when: "Set by the ratifying human's approving commit (B3)." },
+  { field: "ratified_at", values: "date", when: "Set on ratification; re-bumped on reshape." },
+  { field: "created", values: "date", when: "Always. Spec authoring date; the lead-time clock starts here." },
+  { field: "stale_after", values: "date", when: "Set on entering building or blocked — the staleness / abandonment trigger (B4)." },
+  { field: "loop_budget", values: "positive integer", when: "Optional. The PO's autonomy grant — the cap on autonomous build cycles with no green-checkpoint advance." },
+  { field: "acceptance_results", values: "a link", when: "On archived specs only — the structural proxy that graduation ran the acceptance checks (B5)." },
+];
+---
+<Docs title="Reference — spec frontmatter">
+  <div class="doc-kicker">Reference · Frontmatter</div>
+  <h1>Spec frontmatter</h1>
+  <p class="doc-lead">
+    The per-spec fields, set on <code>spec.md</code> at ratification. Frontmatter is
+    <strong>identity, state, and routing — nothing else</strong>; the graph lives only in
+    <code>relations.md</code>. An agent triages any spec from its first ten lines: who owns it,
+    what state it's in, how much breaks if it's wrong, and how much autonomy the build was granted.
+  </p>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead><tr><th>Field</th><th>Values</th><th>When</th></tr></thead>
+      <tbody>
+        {fields.map((f) => (
+          <tr><td><code>{f.field}</code></td><td>{f.values}</td><td>{f.when}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><span class="ci">▸</span><p><strong>These are per-spec, set at ratify.</strong> <code>loop_budget</code> lives <em>here</em>, in the spec's frontmatter — it is the PO's autonomy grant for <em>this</em> build, not a repo-wide setting in <code>specline.yml</code>. The build escalates back to a human gate at the first of two triggers: <code>loop_budget</code> exhausted (no progress) or <code>stale_after</code> reached (too much time).</p></div>
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Frontmatter"</a>.</p></div>
+</Docs>

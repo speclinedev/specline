@@ -6,11 +6,27 @@ const { title, canon = "canon 2.4.0-draft" } = Astro.props;
 
 const nav = [
   { group: "Handbook", items: [
-    { href: "/", label: "The handbook" },
+    { href: "/handbook/the-problem", label: "The handbook" },
     { href: "/docs/why", label: "Why now" },
+    { href: "/honest-pitch", label: "Honest pitch" },
   ] },
   {
-    group: "Doctor",
+    group: "Reference",
+    items: [
+      { href: "/docs/reference", label: "Overview" },
+      { href: "/docs/reference/docs-layout", label: "The docs/ layout" },
+      { href: "/docs/reference/spec-folder", label: "The spec folder" },
+      { href: "/docs/reference/frontmatter", label: "Frontmatter fields" },
+      { href: "/docs/reference/config", label: "Repo configuration" },
+      { href: "/docs/reference/spec-body", label: "Spec body sections" },
+      { href: "/docs/reference/lifecycle", label: "Lifecycle & states" },
+      { href: "/docs/reference/altitudes", label: "Acceptance altitudes" },
+      { href: "/docs/reference/boundaries", label: "The boundaries" },
+      { href: "/docs/reference/glossary", label: "Glossary" },
+    ],
+  },
+  {
+    group: "Tooling",
     items: [
       { href: "/docs/setup", label: "Getting started" },
       { href: "/docs/install", label: "Install" },
@@ -58,7 +74,7 @@ const here = Astro.url.pathname.replace(/\/$/, "") || "/";
       </a>
       <span class="canon">{canon}</span>
       <span class="tb-spacer"></span>
-      <a class="tb-btn" href="/">Handbook</a>
+      <a class="tb-btn" href="/handbook/the-problem">Handbook</a>
       <a class="tb-btn" href="/spec.md">For agents ↗</a>
       <button class="tb-btn" id="themeBtn" aria-label="Toggle theme">◐ theme</button>
     </header>

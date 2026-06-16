@@ -1,0 +1,34 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const files = [
+  { name: "spec.md", role: "required", purpose: "The build contract — the one artifact that carries the whole decision so a fresh-context agent can build from it.", when: "Always. A spec folder is its spec.md; everything else orbits this file." },
+  { name: "relations.md", role: "required", purpose: "Forward edges only, authored — depends_on / part_of / supersedes / conflicts_with, each with a one-line why.", when: 'Always. "none" is a valid value; the file\'s absence is not. Reverse edges live in the generated relations-index.yml.' },
+  { name: "open-questions.md", role: "required", purpose: "Unresolved decisions, each carrying who decides, the options, the default, and the deadline.", when: "Required while unresolved decisions exist. An entry with a default and a future deadline is legal during building — indecision becomes a logged choice with an override window." },
+  { name: "status.md", role: "required", purpose: "The build's memory across fresh-context iterations — the resume point and the dead ends a stateless re-entry cannot reconstruct from the diff.", when: "Required for autonomous builds. Fixed schema (State / Done / In progress / Last green checkpoint / Dead ends); Specline checks shape, never prose." },
+  { name: "discovery.md", role: "optional", purpose: "Customer evidence, code research, rationale — the why behind the shape.", when: "Optional. Loaded for product thinking and reshape, not for the build." },
+  { name: "design.md", role: "optional", purpose: "The build plan / mechanics scratch — the how-to that B6 keeps out of spec.md. Adopts the DESIGN.md format (Google Labs), not a bespoke one.", when: "Optional. Relocate detailed mechanics here, NOT into spec.md. It does not graduate." },
+  { name: "api.md", role: "optional", purpose: "A feature-specific API contract.", when: "Optional. Only when the spec defines an interface worth pinning separately." },
+];
+---
+<Docs title="Reference — the spec folder">
+  <div class="doc-kicker">Reference · Spec folder</div>
+  <h1>The spec folder</h1>
+  <p class="doc-lead">
+    One folder per in-flight feature, living in <code>docs/specs/NNNN-slug/</code>. The folder
+    <em>is</em> its <code>spec.md</code> — the build contract — and everything else orbits it:
+    the graph that connects it, the questions still open, the build's own memory, and optional
+    research and plan. Three files are always present, one more whenever a build runs autonomously,
+    the rest only when there's something to put in them.
+  </p>
+  <p>Knowing which file a thing belongs in — and which it does <em>not</em> — is what lets a fresh-context agent load only what the task needs:</p>
+  {files.map((f) => (
+    <div class="bcard">
+      <h3><code>{f.name}</code> <span class="gate-tag" class:list={[f.role === "required" ? "gate-doctor" : "gate-human"]}>{f.role === "required" ? "required" : "optional"}</span></h3>
+      <p><strong>Its purpose.</strong> {f.purpose}</p>
+      <p><strong>When present.</strong> {f.when}</p>
+    </div>
+  ))}
+  <div class="callout"><span class="ci">▸</span><p><strong>No recursion.</strong> Sub-folders inside a spec folder are prohibited. A module needing sub-specs gives each its own ID with <code>part_of: NNNN</code> — flat folders with explicit edges beat nested trees.</p></div>
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/anatomy">handbook — anatomy of a spec</a>. The law: <a href="/spec.md">the canon, "Spec folder anatomy"</a>.</p></div>
+</Docs>

@@ -1,0 +1,51 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const terms = [
+  { term: "appetite", def: "How much review the spec is worth — the one-sitting scope it deliberately fits; the unit of human attention (B1), governing the spec's reviewability, not the build's size (that's size)." },
+  { term: "blast_radius", def: "The spec's declared risk surface — how much breaks if this is wrong; a ratification-time judgment (low | medium | high) that routes reviewer depth, implementer effort, and model tier, replacing a one-size build process." },
+  { term: "coupling ceiling", def: "The cap on a spec plus everything its relations force an agent to load (B2); a structural ceiling measured once at shaping time, replacing the v2.3 \"context budget\" — and protecting signal quality, not just capacity." },
+  { term: "decider", def: "The product owner who decides what to build and that it's done — the non-delegable human at the two gates, replacing a committee or a backlog-grooming ritual." },
+  { term: "deputy", def: "The one named stand-in who decides when the decider is unavailable; the fallback that degrades the system to paused rather than improvised, replacing a stalled queue." },
+  { term: "Specline", def: "The deterministic validator that checks a spec's structure in author mode (advisory) and gate mode (CI, strict); it adds assurance, not validity, replacing a human reading the schema by eye." },
+  { term: "graduate", def: "The agent-executed editing pass, wired to the implementation PR, that turns a shipped spec into present-tense knowledge and archives the contract; it replaces an unowned, never-happening \"write the docs\" step." },
+  { term: "judgeable", def: "The acceptance altitude settled by a fresh-context agent judging against a named spec section (its falsifiability gate); the bounded-judgment middle, replacing a human reading every check." },
+  { term: "knowledge", def: "The permanent, present-tense description of shipped reality (docs/knowledge/); intent and rules and rationale that code can't say, replacing the in-flight, prescriptive spec once it ships." },
+  { term: "loop_budget", def: "The PO's autonomy grant — the cap on build cycles with no green-checkpoint advance; the progress trigger of escalation, the twin of stale_after's time trigger, replacing an agent thrashing indefinitely." },
+  { term: "parent-map", def: "A spec of type: parent that holds intent, shared non-goals, invariants, and an index of child scopes — a map, not a plan; it replaces a big \"bet\" and forbids all mechanics." },
+  { term: "provable", def: "The acceptance altitude settled by a runnable command (agent-loopable); the build loop's mechanical exit, executed in the implementation PR, replacing prose a human re-interprets each pass." },
+  { term: "ratify", def: "The act of a named human approving a spec's contract by commit — setting ratified_by / ratified_at, with merge to main as the event; the first gate, replacing a verbal sign-off no one can audit." },
+  { term: "size", def: "The declared build size (small | large) set at ratification; the build axis — replacing the old One-Sitting overload, which now governs review (appetite) alone." },
+  { term: "spec folder", def: "The per-feature directory in docs/specs/NNNN-slug/ holding the build contract and its lifecycle files; the flat, in-flight unit of work, replacing the ambiguous word \"feature.\"" },
+  { term: "stale_after", def: "The date a build is presumed abandoned; not deleted, handed back to you — the time trigger of escalation that quarantines the spec, replacing the v2.3 TTL, which meant discard-on-expiry." },
+  { term: "tasteable", def: "The acceptance altitude settled once by the decider (human-gate) — taste, product-fit, anything no check can falsify; the unbounded-judgment end, replacing a pretend-automatable taste check." },
+  { term: "tier", def: "The adoption level a repo declares (0 one spec, 1 the loop, 2 the full system); Specline checks only the declared tier's rules, replacing all-or-nothing adoption." },
+];
+---
+<Docs title="Reference — glossary">
+  <div class="doc-kicker">Reference · Glossary</div>
+  <h1>Glossary</h1>
+  <p class="doc-lead">
+    The load-bearing vocabulary, alphabetical. Each definition leads with what the term
+    <em>does</em> and what it <em>replaces</em> — the fast way in. For the full law, every term
+    traces back to <a href="/spec.md">the canon</a>.
+  </p>
+
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead>
+        <tr><th>Term</th><th>Definition</th></tr>
+      </thead>
+      <tbody>
+        {terms.map((t) => (
+          <tr>
+            <td><code>{t.term}</code></td>
+            <td>{t.def}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/the-problem">handbook — the problem</a>. The law: <a href="/spec.md">the canon</a>.</p></div>
+</Docs>

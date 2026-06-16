@@ -1,0 +1,37 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Why it has to be consistent" slug="why-consistency">
+  <section class="chapter">
+    <div class="head-eyebrow">03 · What the bet demands</div>
+    <h2>Why it has to be consistent</h2>
+    <p class="lead">
+      Putting the spec in the repo only helps if an agent can <em>count on</em> what it finds
+      there. A different shape every time is no better than a ticket — the agent still has to
+      guess where the goal is, what's out of scope, how "done" is defined. Consistency is
+      what turns a folder of docs into something an agent can build from reliably.
+    </p>
+    <p>So the bet demands three things, and they're the whole of what Specline provides:</p>
+    <ul>
+      <li><strong>One fixed shape.</strong> Every feature is the same folder with the same
+        files and the same sections, in the same order. Read one, you can read them all — and
+        so can the agent. The sameness isn't tidiness; it's what lets the builder find the
+        goal, the scope fence, and the acceptance bar in known places every time.</li>
+      <li><strong>A checker — Specline.</strong> A consistent shape is only real if something
+        enforces it. <code>Specline</code> reads the spec's structure — never your code, never a
+        model — and answers one question in the planning phase: <em>does this spec have
+        everything an agent needs to build it?</em> It's the gate that stops a half-formed
+        spec from reaching a builder.</li>
+      <li><strong>An assistant.</strong> You shouldn't have to memorize the shape. An agent
+        that knows the methodology helps you write the spec and checks its own work with
+        Specline as it goes — so producing a conformant spec is a conversation, not a form.</li>
+    </ul>
+    <p>
+      Shape, checker, assistant — together they make the in-repo spec dependable enough to
+      hand to a builder. <strong>Specline's job is the planning phase</strong>: it guarantees the
+      spec is <em>answerable</em>. It does not, and cannot, judge whether the built result is
+      <em>good</em> — that comes later, from people and from review. Keeping those apart is the
+      next chapter.
+    </p>
+  </section>
+</Chapter>

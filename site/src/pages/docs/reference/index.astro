@@ -1,0 +1,25 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+---
+<Docs title="Specline reference">
+  <div class="doc-kicker">Reference</div>
+  <h1>Reference</h1>
+  <p class="doc-lead">
+    The operational truth — folders, files, fields, config, states. The handbook makes the
+    argument; this is where you look things up. Every page is single-sourced from
+    <a href="/spec.md">the canon</a> and links back up to the handbook chapter that explains
+    the <em>why</em>.
+  </p>
+  <div class="doc-cards">
+    <a class="doc-card" href="/docs/reference/docs-layout"><div class="dc-t">The <code>docs/</code> layout →</div><div class="dc-d">Every directory: what's here, how to write it, what does <em>not</em> belong.</div></a>
+    <a class="doc-card" href="/docs/reference/spec-folder"><div class="dc-t">The spec folder →</div><div class="dc-d">Every file in a spec folder, and when it's present.</div></a>
+    <a class="doc-card" href="/docs/reference/frontmatter"><div class="dc-t">Frontmatter fields →</div><div class="dc-d">Per-spec config — incl. <code>loop_budget</code>. Meaning, values, when set.</div></a>
+    <a class="doc-card" href="/docs/reference/config"><div class="dc-t">Repo configuration →</div><div class="dc-d">Per-repo config: <code>specline.yml</code> — tier, staleness, limits, models.</div></a>
+    <a class="doc-card" href="/docs/reference/spec-body"><div class="dc-t">Spec body sections →</div><div class="dc-d">Intent, Goal, Behavior, Acceptance… what each section holds.</div></a>
+    <a class="doc-card" href="/docs/reference/lifecycle"><div class="dc-t">Lifecycle &amp; states →</div><div class="dc-d">The status values and the four moves between them.</div></a>
+    <a class="doc-card" href="/docs/reference/altitudes"><div class="dc-t">Acceptance altitudes →</div><div class="dc-d">provable / judgeable / tasteable — how each check gets settled.</div></a>
+    <a class="doc-card" href="/docs/reference/boundaries"><div class="dc-t">The boundaries →</div><div class="dc-d">The seven rules (B1–B7) that define the methodology.</div></a>
+    <a class="doc-card" href="/docs/reference/glossary"><div class="dc-t">Glossary →</div><div class="dc-d">One-line definitions. The fast way in.</div></a>
+  </div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Two scopes of config, two homes.</strong> <a href="/docs/reference/frontmatter">Frontmatter</a> is <em>per-spec</em>, set at ratification (that's where <code>loop_budget</code> lives). <a href="/docs/reference/config"><code>specline.yml</code></a> is <em>per-repo</em>, set once. They are not the same file.</p></div>
+</Docs>

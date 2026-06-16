@@ -1,0 +1,43 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Anatomy of a spec" slug="anatomy">
+  <section class="chapter">
+    <div class="head-eyebrow">05 · The artifact</div>
+    <h2>Anatomy of a spec</h2>
+    <p class="lead">
+      A spec is a folder, and its sections aren't a template to fill — each one exists because
+      a specific actor needs it. This is the center of the whole methodology, so it's worth
+      walking section by section and naming <em>who each part is for</em>.
+    </p>
+    <div class="tbl-wrap"><table class="book-table">
+      <thead><tr><th>Section</th><th>What it holds</th><th>Who it's for</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Intent</strong></td><td>What the feature is and why — the product outcome in plain language.</td><td>The PO, and anyone later asking "why does this exist?"</td></tr>
+        <tr><td><strong>Goal</strong></td><td>The one checkable outcome that means done.</td><td>The implementer — its target — and the reviewer, who judges against it.</td></tr>
+        <tr><td><strong>Non-goals</strong></td><td>What this deliberately won't do.</td><td>The implementer — the fence that stops it gold-plating the unasked.</td></tr>
+        <tr><td><strong>Behavior</strong></td><td>Numbered, observable statements of what it does.</td><td>The implementer (what to build) and the reviewer (what to check against).</td></tr>
+        <tr><td><strong>Business rules</strong></td><td>Must / should / may constraints.</td><td>The implementer and reviewer — the hard limits.</td></tr>
+        <tr><td><strong>Assumptions</strong></td><td>What it takes as given about systems it doesn't control — and what to do at a contradiction.</td><td>The implementer — where to <em>escalate fast</em> instead of hacking around a seam.</td></tr>
+        <tr><td><strong>Acceptance checks</strong></td><td>How done is certified, at three altitudes (next chapters).</td><td>All three: the implementer (provable), the reviewer (judgeable), you (tasteable).</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      Two more files travel in the folder. <code>relations.md</code> tells the implementer
+      what this feature depends on and what's coming — so it builds with the rest of the system
+      in view. <code>design.md</code> (optional) is the build-scratch: the detailed,
+      line-level <em>how</em> — kept for the builder, but never graduated, because mechanics
+      rot. And the frontmatter carries routing and governance — <code>blast_radius</code>,
+      <code>size</code>, <code>loop_budget</code> — which set how hard the build runs and when
+      it calls you back.
+    </p>
+    <p>
+      The discipline is one line: <strong>the spec carries the feature's delta, nothing
+      universal.</strong> Detailed mechanics go to <code>design.md</code>; baseline hygiene
+      ("tests pass, lint clean") belongs to the codebase's standards, not the spec; and
+      acceptance proves <em>the goal</em>, never restates the floor. That's what keeps a spec
+      specific without becoming a manual.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/spec-body">spec body sections</a>, <a href="/docs/reference/frontmatter">frontmatter fields</a>, <a href="/docs/reference/spec-folder">the spec folder</a>.</p></div>
+  </section>
+</Chapter>

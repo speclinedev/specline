@@ -1,31 +1,31 @@
 ---
 import Docs from "../../layouts/Docs.astro";
 ---
-<Docs title="Agent setup — doctor">
-  <div class="doc-kicker">Doctor · Agent setup</div>
+<Docs title="Agent setup — Specline">
+  <div class="doc-kicker">Specline · Agent setup</div>
   <h1>Agent setup</h1>
   <p class="doc-lead">
-    The point of Specline is that <em>you</em> don't carry the methodology and you don't
-    paste the canon — the agent learns it from the tool, and you bring the judgment. Two
-    pieces make that automatic.
+    You don't carry the methodology in your head, and you don't paste the canon into a chat.
+    The agent learns the rules from the tool; you bring the judgment. Two pieces make that
+    automatic.
   </p>
 
-  <h2>1. The repo carries a brief</h2>
+  <h2>1. The repo carries its own brief</h2>
   <p>
     Drop a <code>CLAUDE.md</code> at the repo root. Claude Code reads it on open, so any
-    agent you start there is briefed without you saying a word. A ready template lives at
+    agent you start there is briefed before you've said a word. A ready template lives at
     <code>specline/templates/specline-CLAUDE.md</code>; it tells the agent it's a Specline
-    repo, how to shape and migrate plans with you, and to use the doctor tools.
+    repo, how to shape and migrate plans with you, and to reach for Specline tools.
   </p>
 
-  <h2>2. doctor is available as a tool</h2>
+  <h2>2. Specline is sitting right there as a tool</h2>
   <p>
     With the <a href="/docs/mcp">MCP server</a> registered at user scope, the agent
-    discovers <code>doctor_spec</code> / <code>doctor_rules</code> / <code>doctor_check</code>
-    in every repo. The brief plus the tools mean the agent self-onboards.
+    discovers <code>specline_spec</code> / <code>specline_rules</code> / <code>specline_check</code>
+    in every repo. The brief tells it where it is; the tools let it act. It onboards itself.
   </p>
 
-  <h2>The day-to-day flow</h2>
+  <h2>What a day looks like</h2>
   <ol>
     <li>Open a fresh agent chat in the repo (with <code>CLAUDE.md</code> present).</li>
     <li>Say it in your own words:
@@ -36,12 +36,12 @@ import Docs from "../../layouts/Docs.astro";
 Migrate this plan into Specline with me: &lt;the file&gt;.</pre>
       </div>
     </li>
-    <li>The agent pulls the canon (<code>doctor_spec</code>), asks you the shaping questions, and writes the spec folder — checking itself with <code>doctor_check</code> (author mode) as it goes.</li>
-    <li>You read the result in one sitting and approve it, or send it back. That's the ratify gate — your call, not the machine's.</li>
+    <li>The agent pulls the canon (<code>specline_spec</code>), asks you the shaping questions, and writes the spec folder — checking itself with <code>specline_check</code> (author mode) as it goes.</li>
+    <li>You read the result in one sitting and sign it, or send it back. That's the ratify gate — your call, not the machine's.</li>
   </ol>
 
-  <div class="callout"><span class="ci">▲</span><p>What's <em>not</em> your job: remembering the spec structure, checking it's right, or knowing the rules before you start. The agent knows the structure (from <code>doctor_spec</code>), doctor checks it, and <code>doctor_rules</code> lists the checks on demand.</p></div>
+  <div class="callout"><span class="ci">▲</span><p>Here's what you <em>don't</em> have to do: remember the spec structure, check it's right by hand, or learn the rules before you start. The agent knows the structure (from <code>specline_spec</code>), Specline checks it, and <code>specline_rules</code> lists the checks on demand.</p></div>
 
-  <h2>Without Claude Code</h2>
-  <p>The same works for any agent with shell access: have it run <code>specline spec</code> to load the canon and <code>specline doctor --mode author --format json</code> to check its work. MCP just makes discovery automatic.</p>
+  <h2>You don't need Claude Code for this</h2>
+  <p>Any agent with shell access does the same: have it run <code>specline spec</code> to load the canon and <code>specline check --mode author --format json</code> to check its work. MCP just makes the discovery automatic.</p>
 </Docs>

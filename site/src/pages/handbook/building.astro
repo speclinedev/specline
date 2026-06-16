@@ -1,0 +1,56 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Building: the implementer and the goal" slug="building">
+  <section class="chapter">
+    <div class="head-eyebrow">07 · Building</div>
+    <h2>Building: the implementer and the goal</h2>
+    <p class="lead">
+      Once you ratify the spec, an implementer agent builds the feature without you in each
+      turn. It can do that because it arrives fully equipped: it has the codebase's standards
+      (<code>conventions/</code>, <code>technical/</code>), the relations graph (what already
+      exists and what's coming), and the spec itself. It doesn't need you in the room, because
+      everything it needs to decide is on the page or in the repo.
+    </p>
+    <p>
+      It works toward one thing: the <strong>Goal</strong>. Intent tells it why the feature
+      exists; the Goal is the destination it converges on. It builds, and then it has to
+      <em>establish the goal is met</em> — not by hope, but by evidence. Where a runnable
+      check fits the Goal, it runs it and the command settles the question. Where one doesn't,
+      it makes a grounded assessment against the code and its own tool results — evidence, not
+      opinion. A runnable command is the strongest form of that evidence. It is not the
+      required form.
+    </p>
+    <p class="pull">The exit is "the goal is met, grounded in evidence" — not "a suite went green."</p>
+    <p>
+      That distinction is the whole point of this chapter. The old framing said the build
+      exits when tests pass. But not every goal has a suite that proves it, and a green suite
+      proves only what the suite asserts. So the implementer's exit condition is broader and
+      stricter at once: it builds until it can <em>show</em> the goal is met — running checks
+      where they fit, assessing against the code where they don't — and a passing suite is the
+      strongest evidence of that, never a substitute for it.
+    </p>
+    <h3>The inner loop, and its two brakes</h3>
+    <p>
+      The build is a loop, not a single pass. Each iteration resumes from <code>status.md</code>
+      — the loop's memory: the last green checkpoint to start from, and the dead ends not to
+      re-walk — works toward the Goal, and either advances (a check moves red to green, a new
+      checkpoint recorded) or burns a cycle making no progress. It runs autonomously, which
+      means it needs brakes. There are two, and the <em>first</em> to fire hands control back:
+    </p>
+    <div class="tbl-wrap"><table class="book-table">
+      <thead><tr><th>Brake</th><th>Axis</th><th>What it catches</th></tr></thead>
+      <tbody>
+        <tr><td><code>loop_budget</code></td><td>Progress — cycles with no advance</td><td>Thrashing. It's the PO's autonomy grant, set at ratification: how long the build may run unattended before calling you.</td></tr>
+        <tr><td><code>stale_after</code></td><td>Time — wall-clock since the build opened</td><td>Abandonment. A build left open too long, regardless of progress.</td></tr>
+      </tbody>
+    </table></div>
+    <p>
+      Same outcome, different axes, first one wins — a high-stakes feature gets a short leash.
+      When the implementer judges the goal met, it stops and hands to review. The reviewer is
+      deliberately absent from this inner loop: this is the implementer's own word, grounded
+      in evidence. Whether that word holds up is the next chapter's job.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/frontmatter">frontmatter fields</a> (<code>loop_budget</code>, <code>stale_after</code>) and the <a href="/docs/reference/altitudes">acceptance altitudes</a> — where <em>provable</em> is defined.</p></div>
+  </section>
+</Chapter>

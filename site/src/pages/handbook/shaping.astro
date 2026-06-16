@@ -1,0 +1,72 @@
+---
+import Chapter from "../../layouts/Chapter.astro";
+---
+<Chapter title="Shaping: writing the contract" slug="shaping">
+  <section class="chapter">
+    <div class="head-eyebrow">06 · Shaping</div>
+    <h2>Shaping: writing the contract</h2>
+    <p class="lead">
+      Shaping is how the product owner and an assistant turn a want into a contract a stranger
+      can build. The output isn't a sketch or a ticket — it's a spec precise enough that an
+      agent who wasn't in the room can build the right thing without asking you a single
+      question. Everything in this chapter is in service of that one bar.
+    </p>
+    <p class="pull">The builder won't be in the room. The page has to hold the whole decision.</p>
+    <p>
+      Hold that fact through every move below. The agent that builds this feature is a fresh,
+      different agent — it starts cold, reads what's on the page, and builds it. It can't tap
+      you on the shoulder. So the spec carries the whole decision, or the decision gets made by
+      a stochastic builder filling your gaps with guesses. The moves of shaping all exist to
+      get the decision out of your head and onto the page tightly enough that it can't.
+    </p>
+    <div class="bcard">
+      <h3>Go after the why before the solution</h3>
+      <p>The assistant doesn't start filling in boxes. It asks who this is for, what changes
+      for them, what winning looks like. You don't reach the <em>what</em> until the
+      <em>why</em> is solid — because solutions are cheap and seductive, and grabbing one
+      early means building the wrong thing well. The why is also what survives to memory; the
+      solution will be rewritten ten times.</p>
+    </div>
+    <div class="bcard">
+      <h3>Force a falsifiable Goal</h3>
+      <p>This is the hinge — the move a spec is built around. State, out loud, how you'll
+      both know it's done, as an outcome you could check rather than a feeling.
+      <em>"Improve the quote flow"</em> doesn't survive. <em>"A customer with a valid VIN sees
+      a dollar figure in under three seconds"</em> does. That sentence is the moment a want
+      becomes a contract — and it's the target the implementer builds toward.</p>
+    </div>
+    <div class="bcard">
+      <h3>Fence the non-goals</h3>
+      <p>A strong model over-builds on purpose, so write down the fence that stops it.
+      "Should it also quote things you don't carry? Save quotes? Email them?" Every
+      <em>no</em> gets recorded. This is the most valuable part of the session and the part
+      everyone skips — an unfenced agent will gold-plate the thing you never asked for, and
+      you'll find out at review when it's expensive to unwind.</p>
+    </div>
+    <div class="bcard">
+      <h3>Defer unknowns with defaults</h3>
+      <p>When you hit something undecided, the assistant writes the question down, picks a
+      sensible default, and keeps moving. Indecision becomes a logged choice with your
+      override still open — never a roadblock. Nothing stalls the session, and the one or two
+      things you couldn't settle arrive at the build marked, with instructions for what to do
+      when the build hits them.</p>
+    </div>
+    <p>
+      Two of these moves shape <em>what's on the page</em>, and one move shapes what
+      <em>isn't</em>. Build mechanics — "change line 412, branch the proration here" — are
+      gold for the builder and poison for the contract, because they're right today and wrong
+      next week. They get relocated to <code>design.md</code>, the build-scratch slot, not
+      discarded: kept for the builder, dropped at graduation, never allowed to rot in the
+      part that becomes permanent memory.
+    </p>
+    <p>
+      And acceptance proves the Goal, never the floor. "Tests pass, lint clean" is baseline
+      hygiene every branch is held to, not acceptance — the razor is <em>would this check
+      appear in every spec?</em> If yes, it's a baseline; the codebase's standards own it.
+      Each acceptance check is the Goal decomposed into something settleable, tracing back to
+      a clause of the Goal or a numbered behavior. That's what keeps a spec specific without
+      turning into a manual.
+    </p>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/spec-body">spec body sections</a> (Goal, Non-goals, Acceptance), and the <a href="/docs/reference/frontmatter">frontmatter fields</a> that route and govern the build.</p></div>
+  </section>
+</Chapter>

@@ -20,23 +20,31 @@ const rules = [
   ["ID-DUPLICATE", "error", "repo", "1", "false", "an id appears in more than one spec-bearing location."],
   ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
   ["GOAL-MISSING", "warning", "spec", "1", "false", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
-  ["ACCEPTANCE-NOT-RUNNABLE", "warning", "spec", "1", "false", "agent-loopable acceptance checks carry no runnable command — the loop must interpret prose."],
   ["LOOP-BUDGET-INVALID", "warning", "spec", "1", "false", "loop_budget is present but not a positive integer (the autonomy grant)."],
   ["JUDGEABLE-NO-SECTION", "warning", "spec", "1", "false", "a judgeable acceptance check names no spec section to judge against — its falsifiability gate (B5)."],
   ["SCOPE-EXCEEDS-SIZE", "warning", "spec", "1", "false", "size: small but the measured size (acceptance/Behavior count) is over suggest_slicing_past — slice it, or declare size: large."],
   ["PARENT-HAS-MECHANICS", "warning", "spec", "1", "false", "a type: parent carries Behavior or acceptance — a parent is a map, not a plan; decompose into scopes."],
   ["PARENT-NO-SCOPES", "warning", "spec", "1", "false", "a type: parent lists no child scopes — a misfiled scope."],
+  ["RATIFIED-NO-BLAST-RADIUS", "error", "spec", "1", "true", "a ratified/building spec has no blast_radius — the risk judgment that routes effort (B5)."],
+  ["RATIFIED-ACCEPTANCE-UNPARTITIONED", "error", "spec", "1", "true", "a ratified/building spec has no agent-loopable acceptance set — the build loop has no mechanical exit (B5)."],
+  ["ARCHIVE-NO-ACCEPTANCE", "error", "repo", "1", "false", "a shipped, archived spec carries no linked acceptance_results — graduation skipped its run (B5)."],
+  ["OPEN-QUESTION-INCOMPLETE", "error", "spec", "1", "true", "a ratified/building spec has an open question missing a decider or default."],
+  ["OPEN-QUESTION-OVERDUE", "error", "spec", "1", "false", "a building/blocked spec has an open question past its deadline."],
+  ["STALE-QUARANTINE", "error", "spec", "2", "false", "a building/blocked spec is past stale_after — quarantined until reshape or kill (B4)."],
+  ["DECIDER-OVER-BUDGET", "error", "repo", "2", "false", "a decider is over the focus_limit for building or active specs (B7)."],
+  ["COUPLING-CEILING", "warning", "spec", "2", "false", "spec + transitively forced loads exceeds coupling_ceiling% of context_window — too entangled (B2)."],
 ];
 ---
-<Docs title="Rule catalog — doctor">
-  <div class="doc-kicker">Doctor · Rules</div>
+<Docs title="Rule catalog — Specline">
+  <div class="doc-kicker">Specline · Rules</div>
   <h1>Rule catalog</h1>
   <p class="doc-lead">
-    Every check doctor can emit, from a single registry that the engine and
-    <code>specline rules</code> share — so a finding can never carry a <code>rule_id</code>
-    the catalog lacks, and the catalog can never drift from what fires.
+    Every check Specline can emit, in one place. The engine and <code>specline rules</code>
+    read from the same registry, so a finding can never carry a <code>rule_id</code> the
+    catalog lacks — and the catalog can never drift from what actually fires.
   </p>
   <p>
+    Two columns decide where a finding bites.
     <strong>Scope</strong> — <code>repo</code> findings fail everywhere; <code>spec</code>
     findings fail only when that spec is in <code>--changed</code> (quarantine), else warn.
     <strong>Downgradable</strong> — in <code>author</code> mode a downgradable rule that
@@ -52,5 +60,5 @@ const rules = [
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This mirrors <code>specline rules --format json</code>, which is the authoritative, machine-readable catalog. Currently 24 rules at tier 1 (the canon 2.4 structural subset, plus loop-orientation nudges). Lifecycle/state rules are deferred to a later spec.</p>
+  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Today it's 31 rules: the structural core, the loop-orientation nudges, the lifecycle-completeness checks (tier 1), and the governance rules — staleness, decider focus limit, coupling ceiling — at tier 2. A few canon checks that need git history (<code>specline diff</code>, no-silent-extension) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
 </Docs>

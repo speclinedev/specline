@@ -1,0 +1,63 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const yaml = `# specline.yml
+canon: 2.4.0-draft
+tier: 1
+deciders: [jonathan]
+deputy: null
+staleness:            # the staleness windows (durations), per state
+  building: 30 days   # frontmatter stale_after is computed from these
+  blocked:  14 days
+focus_limit:          # decider WIP — the B7 ceiling (per decider)
+  building: 3
+  active:   6
+coupling_ceiling: 50%        # B2 — spec + forced loads, as % of context_window
+context_window: 400000       # chars in the weakest in-use model's window (the coupling denominator)
+suggest_slicing_past: 6      # acceptance/Behavior count above which Specline nudges to slice (while size: small)
+review_rounds_before_human: 2  # outer-loop verifier↔implementer bounce budget
+models:               # capability tier → real model
+  light:    claude-haiku
+  standard: claude-sonnet
+  frontier: claude-opus`;
+
+const keys = [
+  { key: "canon", values: "version string", when: "The canon version this repo pins. This contract changes first; repo conventions follow." },
+  { key: "tier", values: "0 | 1 | 2", when: "The adoption tier. Specline checks only the rules of the declared tier; tier-2 governance fires only at tier: 2." },
+  { key: "deciders", values: "list of names", when: "The named POs who may ratify and accept." },
+  { key: "deputy", values: "a name | null", when: "Who decides when a decider is unavailable. With no deputy, the agent applies the entry's stated default and parks blocked." },
+  { key: "staleness.building", values: "duration (default 30 days)", when: "The window before a building spec is presumed abandoned. stale_after is computed from this (B4)." },
+  { key: "staleness.blocked", values: "duration (default 14 days)", when: "The window before a blocked spec is presumed abandoned (B4)." },
+  { key: "focus_limit.building", values: "int (default 3)", when: "Max specs a decider may have in building at once (B7)." },
+  { key: "focus_limit.active", values: "int (default 6)", when: "Max specs a decider may have in active states (ratified|building|blocked) at once (B7)." },
+  { key: "coupling_ceiling", values: "% (default 50%)", when: "B2 — spec.md + transitively forced loads, as a percentage of context_window. Specline warns on breach." },
+  { key: "context_window", values: "chars (default 400000)", when: "Chars in the weakest in-use model's window — the denominator for the coupling ceiling." },
+  { key: "suggest_slicing_past", values: "int (default 6)", when: "Acceptance/Behavior count above which Specline nudges to slice, while size: small." },
+  { key: "review_rounds_before_human", values: "int (default 2)", when: "The outer-loop verifier↔implementer bounce budget before the human gate." },
+  { key: "models", values: "tier → model map", when: "Binds each capability tier (light/standard/frontier) to a real model, so specs stay agent-agnostic." },
+];
+---
+<Docs title="Reference — specline.yml">
+  <div class="doc-kicker">Reference · Config</div>
+  <h1>The <code>specline.yml</code> config</h1>
+  <p class="doc-lead">
+    A repo's <strong>tunables</strong> — the numbers and names it calibrates to its own scale —
+    live in <code>specline.yml</code> at the repo root, read deterministically by Specline. It is
+    the source of truth for pins and thresholds. <code>specline.yml</code> tunes the <em>grain</em>,
+    not the <em>methodology</em>: it does not configure rules, schema, or partitions. Absent → Specline
+    falls back to canon defaults.
+  </p>
+  <pre class="code"><code>{yaml}</code></pre>
+  <div class="tbl-wrap">
+    <table class="book-table">
+      <thead><tr><th>Key</th><th>Values</th><th>What it tunes</th></tr></thead>
+      <tbody>
+        {keys.map((k) => (
+          <tr><td><code>{k.key}</code></td><td>{k.values}</td><td>{k.when}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Per-repo, set once.</strong> <code>specline.yml</code> is the repo's calibration — the thresholds and pins every spec is measured against. Contrast it with <a href="/docs/reference/frontmatter">frontmatter</a>, which is per-spec and set at every ratification. Tune the numbers here; the rules are the canon's.</p></div>
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/start-light">handbook — start light</a>. The law: <a href="/spec.md">the canon, "Configuration — specline.yml"</a>.</p></div>
+</Docs>

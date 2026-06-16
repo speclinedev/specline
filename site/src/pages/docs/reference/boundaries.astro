@@ -1,0 +1,55 @@
+---
+import Docs from "../../../layouts/Docs.astro";
+
+const boundaries = [
+  {
+    id: "B1", name: "The One-Sitting Rule", gate: "human", gateLabel: "ratification · judgment-only",
+    plain: "A spec must be small enough that the PO can read and judge the contract in a single review sitting. Human attention is the appetite unit — appetite governs the spec's reviewability, not the build's size. A large atomic build with a tight spec is eligible. If you can't review it in one pass, split it or decompose it (parent-map); IDs are cheap.",
+  },
+  {
+    id: "B2", name: "The Coupling Ceiling", gate: "doctor", gateLabel: "Specline · warn",
+    plain: "A spec plus everything its relations force an agent to load must fit under the repo's pinned ceiling with room left to think — measured once, at shaping time, as a structural property, not a runtime budget. With million-token windows the binding constraint isn't fitting but signal quality: irrelevant forced loads measurably degrade a frontier model's output. Read a breach as \"too entangled\" — slice it or decouple it.",
+  },
+  {
+    id: "B3", name: "The Human Gate", gate: "doctor", gateLabel: "Specline · enforced",
+    plain: "Humans ratify and humans accept. Ratification is recorded — ratified_by + ratified_at, set by the named human's approving commit — so a rubber stamp at least has a name on it. Everything else is delegable to agents. A spec no human read before ratification did not need to exist. Specline errors on ratified without ratified_by; whether the human actually read it stays judgment.",
+  },
+  {
+    id: "B4", name: "Staleness", gate: "doctor", gateLabel: "Specline · enforced",
+    plain: "building and blocked each carry a stale_after date — the point past which an untouched build is presumed abandoned, not the point it is discarded. Going stale quarantines the spec: Specline errors on that spec's own PRs and warns repo-wide, never blocking unrelated work. Exit is an explicit reshape (re-ratification) or kill. Moving stale_after without a same-commit ratified_at update is an error — no silent extension.",
+  },
+  {
+    id: "B5", name: "Falsifiable or Draft", gate: "doctor", gateLabel: "Specline · enforced",
+    plain: "Falsifiable means settleable the same way twice, in one of three forms: by a runnable command (agent-loopable), by a fresh-context agent judging against a named spec section (judgeable), or by the decider in one sitting (human-gate). A spec can't ratify until its checks meet one — and the agent-loopable subset is actually executed in the implementation PR before graduation. A judgeable item citing no section is not falsifiable. \"Improve the dashboard\" fails all three and stays draft forever.",
+  },
+  {
+    id: "B6", name: "Intent Over Description", gate: "human", gateLabel: "graduation · spec-critic",
+    plain: "Documentation records what code cannot say: goals, non-goals, rejected options, evidence, rules, boundaries. Code is the source of truth for mechanics; never compete with it. This is a performance requirement, not a style note — frontier models read code better than a spec can describe it, and over-specified mechanics measurably degrade their output. A spec that says how rather than what and why is a defect. Strong models read code; what they can't read is your mind.",
+  },
+  {
+    id: "B7", name: "The Decider Budget", gate: "doctor", gateLabel: "Specline · enforced",
+    plain: "A named decider may have at most 3 specs in building and 6 in active states (ratified | building | blocked) at once, per-repo override allowed. Agent capacity is not the constraint; the decider's queue is. WIP limits on humans, not on machines.",
+  },
+];
+---
+<Docs title="Reference — the boundaries">
+  <div class="doc-kicker">Reference · Boundaries</div>
+  <h1>The seven boundaries</h1>
+  <p class="doc-lead">
+    Scrum rations human time; Shape Up rations risk. Specline rations <strong>judgment, context,
+    and verification</strong>. These seven rules <em>are</em> the system — everything else is
+    implementation. Each is either <strong>Specline-enforced</strong> or names the human gate it's
+    checked at.
+  </p>
+
+  {boundaries.map((b) => (
+    <div class="bcard">
+      <h3><code>{b.id}</code> · {b.name} <span class="gate-tag" class:list={[b.gate === "doctor" ? "gate-doctor" : "gate-human"]}>{b.gateLabel}</span></h3>
+      <p>{b.plain}</p>
+    </div>
+  ))}
+
+  <div class="callout"><span class="ci">▸</span><p><strong>Two enforcers, one rule set.</strong> Specline is deterministic — it checks structure (B2, B3, B4, B5, B7). Meaning — one-sitting sizing (B1), mechanics-creep (B6), blast-radius <em>correctness</em> — is judgment, and lives at the two human gates. Specline adds assurance, not validity.</p></div>
+
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/four-actors">handbook — four actors, one line</a>. The law: <a href="/spec.md">the canon, "The Boundaries"</a>.</p></div>
+</Docs>
