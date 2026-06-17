@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
-      - "specline-2.3.md"
+      - "specline-2.4.md"
   workflow_dispatch:
 permissions:
   contents: read
