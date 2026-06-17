@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "Deterministic structural validator for Specline repos.",
   "type": "module",
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "private": true,
   "bin": {
     "specline": "./src/cli/index.ts"
   },

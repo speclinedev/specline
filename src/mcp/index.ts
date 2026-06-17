@@ -1,14 +1,18 @@
 #!/usr/bin/env node
-// MCP adapter — a thin wrapper exposing the doctor engine as agent tools over the
-// Model Context Protocol (stdio, newline-delimited JSON-RPC 2.0). It shares the
-// exact engine and output contract as the CLI; it only changes the transport.
-// Zero dependencies: the protocol surface doctor needs is small.
+// MCP adapter — a thin wrapper exposing the Specline engine as agent tools + prompts
+// over the Model Context Protocol (stdio, newline-delimited JSON-RPC 2.0). It shares
+// the exact engine and output contract as the CLI; it only changes the transport.
+// Zero dependencies: the protocol surface Specline needs is small.
 //
 // Tools:
 //   specline_check  — validate a repo; returns the JSON report (the source of truth)
 //   specline_spec   — the pinned canon, for injecting Specline into an agent's context
 //   specline_rules  — the rule catalog the agent will be checked against
+// Prompts (surface as slash commands, e.g. /specline:shape):
+//   shape           — adopt the planning persona and shape a feature into a spec
 
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { run } from "../engine/run.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
@@ -19,6 +23,18 @@ const DEFAULT_PROTOCOL = "2025-06-18";
 function canonText(): string {
   return loadCanon().text;
 }
+
+function plannerPersona(): string {
+  return readFileSync(fileURLToPath(new URL("../../prompts/planner.md", import.meta.url)), "utf8");
+}
+
+const PROMPTS = [
+  {
+    name: "shape",
+    description: "Adopt the Specline planning persona and shape a feature into a spec with the product owner.",
+    arguments: [{ name: "feature", description: "The feature you want to shape (optional — you can also just describe it after).", required: false }],
+  },
+];
 
 const TOOLS = [
   {
@@ -104,7 +120,7 @@ function handle(req: Rpc): void {
           id,
           result: {
             protocolVersion: typeof requested === "string" ? requested : DEFAULT_PROTOCOL,
-            capabilities: { tools: {} },
+            capabilities: { tools: {}, prompts: {} },
             serverInfo: { name: "specline", version: TOOL_VERSION },
           },
         });
@@ -117,6 +133,29 @@ function handle(req: Rpc): void {
         const name = String(params?.name ?? "");
         const args = (params?.arguments as Record<string, unknown>) ?? {};
         send({ jsonrpc: "2.0", id, result: callTool(name, args) });
+        return;
+      }
+      case "prompts/list":
+        send({ jsonrpc: "2.0", id, result: { prompts: PROMPTS } });
+        return;
+      case "prompts/get": {
+        const name = String(params?.name ?? "");
+        if (name !== "shape") {
+          send({ jsonrpc: "2.0", id, error: { code: -32602, message: `unknown prompt: ${name}` } });
+          return;
+        }
+        const feature = (params?.arguments as Record<string, unknown>)?.feature;
+        const intro = typeof feature === "string" && feature.trim() !== ""
+          ? `The product owner wants to shape this feature: ${feature.trim()}\n\nAdopt the role below and begin.\n\n---\n\n`
+          : "";
+        send({
+          jsonrpc: "2.0",
+          id,
+          result: {
+            description: "Specline planning persona",
+            messages: [{ role: "user", content: { type: "text", text: intro + plannerPersona() } }],
+          },
+        });
         return;
       }
       case "ping":
