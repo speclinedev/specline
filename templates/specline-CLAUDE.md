@@ -2,19 +2,26 @@
 
 > Drop this file in at a repo's root as `CLAUDE.md`. Claude Code reads it
 > automatically, so any agent you open here is briefed without you pasting
-> anything. The `doctor` MCP tools referenced below are available because the
-> doctor server is registered at user scope.
+> anything. The `specline` MCP tools referenced below are available because the
+> specline server is registered at user scope.
 
 This repo uses **Specline**: spec-driven development where a machine-checkable
 *spec* is the contract, humans hold the **two gates** (ratify, final review), and
 the agent runs the loop in between. Your job is to help the product owner (PO)
 shape and migrate plans into this model — collaboratively, never autonomously.
 
+## Planning a new feature
+
+To shape a new feature with the PO, invoke the **`/specline:shape`** prompt (or, if
+your client can't, ask to adopt the Specline planning persona). It pulls the canon
+and runs the shaping conversation — the PO speaks in product terms; you translate to
+the spec. Migrating an existing plan? See the steps below.
+
 ## Before you write anything
 
-1. Call **`doctor_spec`** → loads the current Specline canon into your context.
+1. Call **`specline_spec`** → loads the current Specline canon into your context.
    That is the authoritative methodology. Do not work from memory of it.
-2. Call **`doctor_rules`** → the exact checklist this repo's structure is graded
+2. Call **`specline_rules`** → the exact checklist this repo's structure is graded
    against (every `rule_id`, its severity and scope). Write to pass these.
 
 ## How to migrate an existing plan with the PO
@@ -66,11 +73,11 @@ tasteable, a person decides once. A `parent` spec carries no acceptance at all.
 
 ## Check your work continuously
 
-While shaping, run **`doctor_check`** in **author** mode, naming the files you
+While shaping, run **`specline_check`** in **author** mode, naming the files you
 touched:
 
 ```
-doctor_check(path=".", mode="author", changed=["docs/specs/0007-slug/spec.md", ...])
+specline_check(path=".", mode="author", changed=["docs/specs/0007-slug/spec.md", ...])
 ```
 
 - `author` mode reports missing required elements as `distance_to_ratifiable`
@@ -80,5 +87,5 @@ doctor_check(path=".", mode="author", changed=["docs/specs/0007-slug/spec.md", .
   gate.
 - Before handoff, run once in **gate** mode to confirm zero `error` findings.
 
-doctor is deterministic and reads only structure — it never judges meaning.
+specline check is deterministic and reads only structure — it never judges meaning.
 Tense, sizing, and whether the spec is *right* are the PO's call at the gates.
