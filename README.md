@@ -11,17 +11,18 @@ This repo is the **contract**. It changes first; implementations follow.
 
 | Path | What |
 |---|---|
-| `specline-2.3.md` | The current canon (`2.3.0-draft`). The governing rulebook. |
+| `specline-2.5.md` | The current canon (`2.5.0-draft`). The governing rulebook. Stays at repo root — the site and CLI resolve it by globbing `specline-*.md` here. |
+| `handbook.md` | The readable companion to the canon — the version you read to *understand* it. |
 | `examples/` | The worked `0012-trade-in-quote` example — one feature, end to end. |
-| `history/` | Prior canon versions (`spec-flow-v2`, `v1`), kept for the audit trail. |
-| `thesis/` | Positioning and rationale docs. |
-| `site/` | Landing-page draft and design notes. |
+| `docs/` | Everything else: research, amendment records, prior versions, templates. See `docs/README.md`. |
+| `site/` | The `specline.dev` site (Astro). Serves the raw canon at `/spec.md`. |
 
 ## Versioning
 
 The canon is pinned by version. Implementations declare which canon they
-implement (`doctor@2.3` ↔ canon `2.3.0`). The contract moves first; tooling
-tracks it.
+implement (`doctor@2.5` ↔ canon `2.5.0`). The contract moves first; tooling
+tracks it. Amendments are shaped as proposals in `docs/proposals/`, then folded
+into the canon and retired to provenance.
 
 ## The validator
 
