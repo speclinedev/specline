@@ -16,6 +16,7 @@ This repo is the **contract**. It changes first; implementations follow.
 | `examples/` | The worked `0012-trade-in-quote` example — one feature, end to end. |
 | `docs/` | Everything else: research, amendment records, prior versions, templates. See `docs/README.md`. |
 | `site/` | The `specline.dev` site (Astro). Serves the raw canon at `/spec.md`. |
+| `cli/` | The `@specline/cli` validator (`doctor`) — version-locked to the canon, published to npm. |
 
 ## Versioning
 
@@ -27,5 +28,5 @@ into the canon and retired to provenance.
 ## The validator
 
 `doctor` — the deterministic structural validator for Specline repos — lives in
-the sibling [`cli`](../cli) repo (`speclinedev/cli`). It reads only
-markdown, YAML, and directory structure; it makes no judgment calls.
+[`cli/`](cli/) (the `@specline/cli` package), version-locked to the canon. It reads
+only markdown, YAML, and directory structure; it makes no judgment calls.

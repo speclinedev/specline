@@ -1,6 +1,6 @@
 # doctor
 
-The deterministic structural validator for [Specline](../specline) repos. One
+The deterministic structural validator for [Specline](../) repos. One
 question — *"is this repo structurally valid?"* — answered the same way, with the
 same exit code, for every consumer: CI, the orchestrator, an agent mid-loop, and
 the human at a gate.
