@@ -1,7 +1,7 @@
-# Specline — Canon Proposal v2.4
+# Specline — Canon Proposal v2.5
 
-**Status:** PROPOSAL — supersedes Canon v2.3 when ratified.
-**Canon version:** 2.4.0-draft. Repos pin a canon version in `specline.yml` at
+**Status:** PROPOSAL — supersedes Canon v2.4 when ratified.
+**Canon version:** 2.5.0-draft. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 "Specline" is the working name. Branding is an open question; the rules are
@@ -62,6 +62,29 @@ A refinement at one seam — between *shaped* and *built/verified* — all
     *discard on expiry*; we *escalate*. Context Budget → **coupling ceiling** — it is
     a structural ceiling measured at shaping, not a runtime budget. `blast_radius`,
     `ratify`, `quarantine`, `deputy`, `tombstone` stay: honest borrows.
+
+## Changes from v2.4
+
+Three changes at the *shaped → built* seam, all **additive and non-breaking** (a
+v2.4 spec stays valid). Shaped against loop-engineering research and three
+independent review passes; deliberately *small* — runner concerns and an
+unearned learning-corpus were cut. (Shaping record: `docs/proposals/v2.5-amendment.md`.)
+
+16. **The provable exit can't be self-gamed.** Acceptance checks are authored at
+    ratification and **frozen relative to the implementer** for the build run — the
+    builder never weakens the ruler it's measured by; a mid-build check change is
+    legitimate **only** via re-ratification (a `ratified_at` bump). And `loop_budget`
+    exhaustion is an explicit **failure**, never a passing exit — the cheapest way out
+    of the inner loop must be a real pass, not a drained budget.
+17. **Corrections graduate into house rules.** A correction that **recurs across
+    distinct specs** may be promoted one altitude — tasteable → a cited convention
+    (judgeable) → a check (provable) — gated by recurrence + decider ratification,
+    never automatic; one-off taste stays taste. Recorded in a required, shape-checked
+    `## Corrections` section of `status.md` (with *who caught it*), folded into the
+    permanent knowledge doc at graduation so the record survives the spec.
+18. **Operator-scope fence.** Cross-project learnings about the *operator* (the
+    decider's own taste across repos) are out of scope — they live in the operator's
+    own memory, not any repo's `conventions/`.
 
 ---
 
@@ -173,7 +196,11 @@ flavors of test:
 - **provable** (`agent-loopable`) — the **implementer's** exit condition. The goal is
   met, established by a runnable command where one fits, **or by the implementer's
   grounded assessment** against the code and its own tool results (evidence, not
-  opinion). A runnable command is the strongest form, not the required form.
+  opinion). A runnable command is the strongest form, not the required form. Provable
+  checks are **authored at ratification and frozen relative to the implementer** for
+  the build run: the builder does not weaken the ruler it is measured by. A mid-build
+  check change is legitimate only via re-ratification (a `ratified_at` bump); an
+  un-ratified one is a defect, not a pass.
 - **judgeable** — the **reviewer's** gate. A fresh-context agent judges the
   implementer's *interpretation* against a named spec section and the repo's
   standards. The named section is its falsifiability gate.
@@ -439,6 +466,8 @@ they are well-formed. Do not merge them — one measures time, the other progres
      — exits 0`), **or by the implementer's grounded assessment** against the code and
      its tool results. A command is the strongest evidence, not a requirement; what is
      required is that the implementer can establish the goal is met before handing off.
+     These checks are **frozen relative to the implementer** once ratified (B5): the
+     builder does not author or weaken the checks it is measured by.
    - `judgeable` — the **reviewer's** gate. A fresh-context agent judges the
      implementer's *interpretation* against a **named spec section** and the repo's
      standards (`conventions/`, `technical/`) — including nuanced bars the goal
@@ -467,12 +496,16 @@ Fixed sections, in order:
 ## In progress    — the unit being worked now, if any
 ## Last green checkpoint — most recent state known to pass its checks; the resume point
 ## Dead ends      — approaches tried and rejected, with the reason
+## Corrections    — corrections made this build, each tagged by altitude and who caught it
 ```
 
 Specline checks the **shape** (sections present and parseable), never the prose —
 content is judgment. *Last green checkpoint* and *Dead ends* are the load-bearing
 sections: they stop a fresh-context iteration from re-deriving history and
-re-walking abandoned paths.
+re-walking abandoned paths. *Corrections* is the promotion substrate (see Promotion):
+it is **required and shape-checked** like the other load-bearing sections, so the
+record a promotion reads from is never left to goodwill — and it **graduates into the
+permanent knowledge doc** so it survives the spec folder's deletion.
 
 **Machine-parseable entries** *(new in v2.3)*. The two load-bearing sections carry a
 fixed *entry* convention so a fresh-context loop (or the orchestrator) reads the
@@ -480,10 +513,30 @@ resume point and skips dead ends without interpreting prose:
 - **Last green checkpoint** — one entry: `<ref> — <what passes here>`, where `<ref>`
   is a commit, tag, or check id (`none — <reason>` while still pre-green).
 - **Dead ends** — one entry per line: `<approach> — <why it failed>`.
+- **Corrections** — one entry per line:
+  `<what was corrected> — <altitude: provable|judgeable|tasteable> — <who caught it: implementer|reviewer|decider>`.
 
 It stays **markdown** — one human-readable file, no second data format. The
 convention is enough for a tool to parse *and* a person to glance at; Specline checks
 the entry shape, never the prose.
+
+### Promotion — corrections become house rules
+
+A correction has an altitude. A correction that **recurs across distinct specs** may
+be promoted down one altitude — tasteable → a cited convention (judgeable, in
+`conventions/`) → a check (provable) — **gated by recurrence + decider ratification
+(B3)**. Promotion is human-decided at the gate, never automatic; Specline does not
+adjudicate it. A one-off correction **stays a one-off** — promoting it early buys
+rigidity, not leverage. What separates a promoted rule from a flat note in a
+project's agent file: it is **cited at acceptance** (B5) and **graded by the fresh
+verifier** — enforced, not merely written down. Recurrence is observed by reading the
+graduated `## Corrections` records across knowledge docs; a tool may assist once there
+is data, but the canon names only the discipline, not the harvester.
+
+Cross-project learnings about the **operator** — the decider's own taste and decision
+patterns that recur across repos, independent of any one domain — are **out of
+Specline's scope**. They belong in the operator's own memory layer (e.g. a global
+agent file), **not** any repo's `conventions/`.
 
 ### `open-questions.md`
 
@@ -591,7 +644,9 @@ it needs to run *without a human in each turn*. Drawn as a circle:
 5. **Escalate at a boundary.** The loop runs autonomously until the **first** of
    two triggers fires: `loop_budget` exhausted (no progress) or `stale_after`
    reached (too much time). Either hands control back to a **human gate** — the
-   gates are the loop's *boundary conditions*, not interruptions to it.
+   gates are the loop's *boundary conditions*, not interruptions to it. Exhaustion
+   is an explicit **failure handback** (the work is unconverged), never a passing
+   exit: the cheapest way out of the loop must be a real pass, not a drained budget.
 6. **Hand back via artifacts.** Across iterations and at handback, the loop
    communicates through **artifacts, tool results, and `status.md`** — never a
    reasoning transcript (see Agent-execution notes).
@@ -734,10 +789,13 @@ at `docs/conventions/graduation.md` and:
 3. Writes knowledge docs: imperative → present descriptive, corrected to what
    actually shipped; applies B6 — keep intent, rules, rationale; cut anything
    code already says.
-4. Folds in ADRs accepted during the build that changed behavior.
-5. Carries forward edges into the knowledge folder's `relations.md`; runs
+4. Carries the `## Corrections` records into the knowledge doc as the permanent
+   promotion record — the cross-spec recurrence signal Promotion reads from, which
+   would otherwise die with the spec folder (step 7).
+5. Folds in ADRs accepted during the build that changed behavior.
+6. Carries forward edges into the knowledge folder's `relations.md`; runs
    `Specline --fix` to regenerate `relations-index.yml`.
-6. Deletes the spec folder (the contract now lives in `archive/`).
+7. Deletes the spec folder (the contract now lives in `archive/`).
 
 The result must read shorter and more confident than the spec. The human
 acceptance gate reviews the graduated knowledge doc with the archived checks and
@@ -806,7 +864,9 @@ layer, not the working-tree engine).* `Specline diff <before> <after>` classifie
 between two versions of a spec — substantive (Behavior, Business rules,
 Acceptance) vs. status-only — and flags a behavior change unaccompanied by a
 `ratified_at` bump. This is what makes the mid-build revision-rate instrument
-mechanical rather than a manual read.
+mechanical rather than a manual read — and it is the same rule that enforces the
+**frozen provable checks** (B5): an acceptance-check change without a `ratified_at`
+bump is a defect, since the builder must not weaken the ruler it is measured by.
 
 Checks (v2.3 additions in **bold**):
 
@@ -826,7 +886,10 @@ Checks (v2.3 additions in **bold**):
 - **`type: parent` carrying Behavior/acceptance → error (`PARENT-HAS-MECHANICS`);
   `type: parent` listing no child scopes → error (`PARENT-NO-SCOPES`).**
 - **`status.md`, when present, conforms to the schema (required sections present
-  and parseable). Shape only; never prose.**
+  and parseable). Shape only; never prose.** This now includes a `## Corrections`
+  section whose entries carry the fixed `<what> — <altitude> — <who caught it>` shape
+  (`CORRECTIONS-MALFORMED`); a graduating spec missing it is flagged so the promotion
+  record survives into `knowledge/`.
 - **`target_model`/`blast_radius` values, if present, are from the allowed sets
   (`ENUM-INVALID`).** Resolving `target_model` against the repo's configured
   `models` map is *(planned — only the fixed set is checked today).*

@@ -6,7 +6,7 @@ const BODY = `# Specline
 
 > Spec-driven development where a machine-checkable spec is the contract, humans hold
 > the two gates (ratify, accept), and an agent runs the loop between them. Canon
-> 2.4.0-draft.
+> 2.5.0-draft.
 
 ## Canon
 - [Specline canon, raw markdown](https://specline.dev/spec.md): the full normative

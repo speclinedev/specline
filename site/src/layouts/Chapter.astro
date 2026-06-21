@@ -3,7 +3,7 @@ import "../styles/global.css";
 import { CHAPTERS, chapterNav } from "../data/handbook.ts";
 
 interface Props { title: string; slug: string; canon?: string; }
-const { title, slug, canon = "canon 2.4.0-draft" } = Astro.props;
+const { title, slug, canon = "canon 2.5.0-draft" } = Astro.props;
 const { prev, next } = chapterNav(slug);
 const here = (s: string) => s === slug;
 ---

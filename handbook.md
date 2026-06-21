@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.4.md`). The canon is the
+> The readable companion to the canon (`specline-2.5.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
