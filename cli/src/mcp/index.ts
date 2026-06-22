@@ -17,6 +17,7 @@ import { run } from "../engine/run.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
 import { loadCanon } from "../canon.ts";
+import { refreshLatest, staleness } from "../staleness.ts";
 
 const DEFAULT_PROTOCOL = "2025-06-18";
 
@@ -99,8 +100,11 @@ function callTool(name: string, args: Record<string, unknown>): unknown {
     }
     case "specline_spec":
       return textResult(canonText());
-    case "specline_rules":
-      return textResult(JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, rules: REGISTRY }, null, 2));
+    case "specline_rules": {
+      const stale = staleness(CANON);
+      const update = stale !== null ? { update_available: stale.latest } : {};
+      return textResult(JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, ...update, rules: REGISTRY }, null, 2));
+    }
     default:
       return textResult(`unknown tool: ${name}`, true);
   }
@@ -169,6 +173,10 @@ function handle(req: Rpc): void {
     send({ jsonrpc: "2.0", id, result: textResult(`specline error: ${err instanceof Error ? err.message : String(err)}`, true) });
   }
 }
+
+// Warm the staleness cache in the background; specline_rules reads it synchronously
+// (cache-only, no network in the request path) and reports if the bundle is behind.
+void refreshLatest();
 
 let buffer = "";
 process.stdin.setEncoding("utf8");

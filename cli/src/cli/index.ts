@@ -11,6 +11,7 @@ import { REGISTRY } from "../engine/rules.ts";
 import { init, sync, type RunResult } from "../init/scaffold.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
 import { loadCanon } from "../canon.ts";
+import { refreshLatest, staleness } from "../staleness.ts";
 
 const USAGE = `specline — spec-driven development tooling
 
@@ -229,6 +230,11 @@ async function main(): Promise<void> {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   } else {
     process.stdout.write(`${renderHuman(report, args.path)}\n`);
+    await refreshLatest();
+    const stale = staleness(CANON);
+    if (stale !== null) {
+      process.stderr.write(`\nnote: serving canon ${stale.current}; ${stale.latest} is the latest release — update your speclinedev/specline@ ref.\n`);
+    }
   }
   process.exit(exitCodeFor(report));
 }
