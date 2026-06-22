@@ -58,6 +58,11 @@ no Bun/install needed). Bun reserved for the `--compile` binary (Q3) later.
   runs), so the source stays real TypeScript with zero build step and zero deps.
   Bun stays the distribution/compile tool, not a dev prerequisite.
 
+## Corrections
+
+None yet — pre-build. Corrections are logged here during the build loop (one per
+line, `what — altitude — who caught it`) and graduate into the knowledge doc.
+
 ---
 
 ### Proposed `status.md` schema (for canon 2.3)
@@ -71,6 +76,8 @@ A build-loop `status.md` carries exactly these sections, in this order:
    the resume point.
 5. **Dead ends** — approaches tried and rejected, with the reason, so fresh
    context does not re-walk them.
+6. **Corrections** — corrections made this build, each `what — altitude — who
+   caught it`; graduates into the knowledge doc as the promotion record.
 
 Rationale: items 4 and 5 are what a stateless re-entry cannot reconstruct from
 the diff. `doctor` would check this file's *shape* (sections present, parseable)
