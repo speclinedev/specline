@@ -83,6 +83,15 @@ test("relation-killed: edge to a killed id is a warning, exit 0", () => {
   assert.equal(r.summary.errors, 0);
 });
 
+test("corrections-malformed: a bad ## Corrections entry warns; a well-formed one does not", () => {
+  const r = gate("corrections-malformed");
+  const hits = r.findings.filter((f) => f.rule_id === "CORRECTIONS-MALFORMED");
+  assert.equal(hits.length, 1, `expected exactly one CORRECTIONS-MALFORMED, got ${JSON.stringify(ruleIds(r))}`);
+  assert.equal(hits[0]!.severity, "warning");
+  assert.equal(r.summary.errors, 0);
+  assert.equal(exitCodeFor(r), 0);
+});
+
 test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation) passes", () => {
   const run1 = (opts: { changed?: string[]; modified?: string[] }) =>
     run(fx("archive-edited"), { mode: "gate", changed: opts.changed ?? [], modified: opts.modified ?? [], now: "2026-06-15" });

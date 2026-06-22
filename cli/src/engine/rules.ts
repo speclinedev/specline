@@ -34,6 +34,8 @@ export const REGISTRY: RuleMeta[] = [
   { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-HAS-MECHANICS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  // v2.5 cluster — corrections-log entry shape (warn-only while the format settles).
+  { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   // lifecycle completeness — required to ratify / graduate (downgradable ones become
   // distance_to_ratifiable in author mode).
   { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "error", scope: "spec", tier: 1, downgradable: true },
@@ -65,7 +67,7 @@ const ALLOWED_BLAST_RADIUS = new Set(["low", "medium", "high"]);
 const ALLOWED_SIZE = new Set(["small", "large"]);
 const ALLOWED_TYPE = new Set(["feature", "bug", "chore", "parent"]);
 const ALLOWED_TARGET_MODEL = new Set(["light", "standard", "frontier"]);
-const STATUS_REQUIRED_SECTIONS = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends"];
+const STATUS_REQUIRED_SECTIONS = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends", "Corrections"];
 const RATIFIED_STATES = new Set(["ratified", "building"]);
 const RELATION_KEYS = ["depends_on", "part_of", "supersedes", "conflicts_with"];
 
@@ -344,6 +346,37 @@ const parentNoScopes: Rule = ({ repo }) => {
       out.push({ rule_id: "PARENT-NO-SCOPES", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
         message: `parent-map ${f.id} has no child scopes (nothing declares part_of: ${f.id}) — it is a misfiled scope`,
         fix_hint: "give the parent child scopes (each an ordinary spec with part_of: this id), or make this an ordinary scope (type: feature)" });
+    }
+  }
+  return out;
+};
+
+// ── v2.5 cluster: corrections-log entry shape (warn-only nudge) ──────────────
+
+// A corrections entry is "<what> — <altitude> — <who caught it>", altitude and
+// source from fixed vocabularies. Only list-item lines under ## Corrections are
+// checked; prose and a blank section are legal (shape, never content). Tolerant
+// of em/en/hyphen dashes as the separator.
+const CORRECTION_TAIL = /[—–-]\s+(provable|judgeable|tasteable)\s+[—–-]\s+(implementer|reviewer|decider)\s*$/i;
+
+const correctionsMalformed: Rule = ({ repo }) => {
+  const out: RawFinding[] = [];
+  for (const f of repo.allFolders) {
+    if (f.statusContent === null) continue;
+    const lines = f.statusContent.split(/\r?\n/);
+    const heads = headings(f.statusContent).filter((h) => h.level === 2);
+    const start = heads.find((h) => h.title.toLowerCase().startsWith("corrections"));
+    if (!start) continue;
+    const next = heads.find((h) => h.line > start.line);
+    const end = next ? next.line - 1 : lines.length;
+    for (let i = start.line; i < end; i++) {
+      const item = (lines[i] ?? "").match(/^\s*(?:[-*]|\d+[.)])\s+(.*\S)\s*$/);
+      if (!item) continue; // only list-item entries are checked
+      if (!CORRECTION_TAIL.test(item[1]!)) {
+        out.push({ rule_id: "CORRECTIONS-MALFORMED", file: `${f.rel}/status.md`, line: i + 1, specDir: f.dirName,
+          message: "corrections entry does not match \"<what> — <altitude> — <who caught it>\" (altitude: provable|judgeable|tasteable; who: implementer|reviewer|decider)",
+          fix_hint: 'one entry per line, e.g. "- default limit too high — tasteable — decider"' });
+      }
     }
   }
   return out;
@@ -674,6 +707,7 @@ export const RULES: Rule[] = [
   scopeExceedsSize,
   parentHasMechanics,
   parentNoScopes,
+  correctionsMalformed,
   ratifiedNeedsBlastRadius,
   ratifiedNeedsPartition,
   archiveNeedsAcceptance,
