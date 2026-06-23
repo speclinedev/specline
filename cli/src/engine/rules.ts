@@ -717,7 +717,7 @@ const canonPinMismatch: Rule = (ctx) => {
   return [{
     rule_id: "CANON-PIN-MISMATCH", file: pin.file, line: pin.line, specDir: null,
     message: `repo pins canon ${pin.version} but this tool serves canon ${CANON}`,
-    fix_hint: `bump the pin to ${CANON} (run: specline sync), or run a tool pinned to canon ${got}` }];
+    fix_hint: `bump the pin to ${CANON} (run: specline upgrade), or run a tool pinned to canon ${got}` }];
 };
 
 export const RULES: Rule[] = [
