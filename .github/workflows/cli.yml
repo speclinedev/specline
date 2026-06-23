@@ -1,0 +1,31 @@
+# CI for the cli/ subtree. GitHub only runs workflows from .github/workflows/ at
+# the repo root, so the cli's own cli/.github/workflows/specline.yml never fires
+# here — this is its replacement at monorepo root. Runs the engine tests and the
+# bundle-integrity gate: if the canon source (specline-*.md) moves, the bundled
+# copy under cli/canon/ must be re-synced in the same PR or this fails.
+name: cli
+on:
+  pull_request:
+    paths:
+      - "cli/**"
+      - "specline-*.md"
+defaults:
+  run:
+    working-directory: cli
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test test/*.test.ts
+  bundle-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/sync-canon.mjs --check
