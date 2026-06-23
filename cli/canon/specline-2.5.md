@@ -1,7 +1,7 @@
 # Specline — Canon Proposal v2.5
 
 **Status:** PROPOSAL — supersedes Canon v2.4 when ratified.
-**Canon version:** 2.5.0-draft. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.5.0. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 "Specline" is the working name. Branding is an open question; the rules are
