@@ -113,7 +113,7 @@ test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation)
 
 test("every --format json report validates against the published schema", () => {
   const names = ["clean", "clean-0012", "dup-id", "id-mismatch", "dangling-link",
-    "relation-dangling", "version-skew", "archive-edited"];
+    "relation-dangling", "version-skew", "archive-edited", "canon-pin-skew"];
   for (const name of names) {
     const errs = validate(reportSchema, gate(name, changedAll));
     assert.deepEqual(errs, [], `${name}: ${errs.join("; ")}`);
@@ -152,6 +152,21 @@ test("version skew: unknown key + unknown section warn (exit 0)", () => {
   assert.equal(exitCodeFor(r), 0);
 });
 
+test("canon-pin-skew: a repo pinning an older canon warns (CANON-PIN-MISMATCH), exit 0", () => {
+  const r = gate("canon-pin-skew");
+  const f = r.findings.find((x) => x.rule_id === "CANON-PIN-MISMATCH");
+  assert.ok(f, `expected CANON-PIN-MISMATCH, got ${JSON.stringify(ruleIds(r))}`);
+  assert.equal(f!.severity, "warning");
+  assert.equal(f!.file, "specline.yml");
+  assert.equal(r.summary.errors, 0);
+  assert.equal(exitCodeFor(r), 0);
+});
+
+test("canon pin matching the served canon does not warn", () => {
+  assert.ok(!ruleIds(gate("clean")).includes("CANON-PIN-MISMATCH"), "no pin → no finding");
+  assert.ok(!ruleIds(gate("lifecycle-gaps")).includes("CANON-PIN-MISMATCH"), "current pin → no finding");
+});
+
 test("determinism: two evaluations of the same model are byte-identical", () => {
   const repo = loadRepo(fx("dup-id"));
   const a = JSON.stringify(evaluate(repo, { mode: "gate", changed: [], now: "2026-06-14" }));
@@ -161,7 +176,7 @@ test("determinism: two evaluations of the same model are byte-identical", () => 
 
 test("catalog completeness: every emitted rule_id exists in the registry", () => {
   const names = ["clean", "id-mismatch", "missing-relations", "building-no-ratified",
-    "dup-id", "counter-gap", "dangling-link", "knowledge-status", "version-skew"];
+    "dup-id", "counter-gap", "dangling-link", "knowledge-status", "version-skew", "canon-pin-skew"];
   for (const name of names) {
     for (const f of gate(name, changedAll).findings) {
       assert.ok(REGISTRY_BY_ID.has(f.rule_id), `finding rule_id ${f.rule_id} absent from registry`);

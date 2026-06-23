@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { parseFlatYaml, headings, links } from "./parse.ts";
 import type { Repo, RawFinding, RuleMeta, SpecFolder } from "./model.ts";
+import { CANON } from "../version.ts";
 
 export const REGISTRY: RuleMeta[] = [
   { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", tier: 1, downgradable: true },
@@ -36,6 +37,8 @@ export const REGISTRY: RuleMeta[] = [
   { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   // v2.5 cluster — corrections-log entry shape (warn-only while the format settles).
   { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  // canon pin hygiene — the repo's declared pin must track the tool's canon (MAJOR.MINOR).
+  { rule_id: "CANON-PIN-MISMATCH", severity: "warning", scope: "repo", tier: 1, downgradable: false },
   // lifecycle completeness — required to ratify / graduate (downgradable ones become
   // distance_to_ratifiable in author mode).
   { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "error", scope: "spec", tier: 1, downgradable: true },
@@ -693,6 +696,30 @@ const idIntegrity: Rule = ({ repo }) => {
   return out;
 };
 
+/** "2.4.0-draft" -> "2.4"; null if unparseable. The canon contract is tracked at
+ *  MAJOR.MINOR (doctor@MAJOR.MINOR ↔ canon MAJOR.MINOR), so patch/prerelease
+ *  differences are not skew. */
+function majorMinor(v: string): string | null {
+  const m = v.trim().replace(/^v/i, "").match(/^(\d+)\.(\d+)/);
+  return m ? `${m[1]}.${m[2]}` : null;
+}
+
+// CANON-PIN-MISMATCH: the repo's declared canon pin must track the canon this
+// tool actually serves. A drift means the repo is being gated by a different
+// contract than it claims to follow — warn-only, since the fix is a pin bump,
+// not a structural defect.
+const canonPinMismatch: Rule = (ctx) => {
+  const pin = ctx.repo.canonPin;
+  if (pin === null) return [];
+  const want = majorMinor(CANON);
+  const got = majorMinor(pin.version);
+  if (want === null || got === null || want === got) return [];
+  return [{
+    rule_id: "CANON-PIN-MISMATCH", file: pin.file, line: pin.line, specDir: null,
+    message: `repo pins canon ${pin.version} but this tool serves canon ${CANON}`,
+    fix_hint: `bump the pin to ${CANON} (run: specline sync), or run a tool pinned to canon ${got}` }];
+};
+
 export const RULES: Rule[] = [
   structMissing,
   frontmatterWellFormed,
@@ -721,4 +748,5 @@ export const RULES: Rule[] = [
   knowledgeHasStatus,
   archiveEdited,
   idIntegrity,
+  canonPinMismatch,
 ];

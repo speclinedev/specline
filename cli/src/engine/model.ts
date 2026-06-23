@@ -67,6 +67,15 @@ export interface MdFile {
   content: string;
 }
 
+export interface CanonPin {
+  /** the pinned version string, verbatim, e.g. "2.4.0-draft". */
+  version: string;
+  /** repo-root-relative POSIX path of the file the pin was read from. */
+  file: string;
+  /** 1-based line number of the pin within that file. */
+  line: number;
+}
+
 export interface RepoConfig {
   /** acceptance + Behavior item count above which SCOPE-EXCEEDS-SIZE nudges while size: small. */
   suggestSlicingPast: number;
@@ -86,6 +95,8 @@ export interface Repo {
   tier: number;
   tierSource: "declared" | "override" | "default";
   config: RepoConfig;
+  /** the repo's declared canon pin, or null when none is declared. */
+  canonPin: CanonPin | null;
   counter: number | null;
   specs: SpecFolder[];
   knowledge: SpecFolder[];
@@ -217,6 +228,29 @@ function readSpeclineConfig(root: string): { tier: number | null; config: RepoCo
   return { tier: tierM ? Number(tierM[1]) : null, config };
 }
 
+/** Read the repo's declared canon pin. specline.yml `canon:` is the source of
+ *  truth; the doc-architecture.md `| **Canon** | Specline `X` |` row is the
+ *  demoted fallback — mirrors how the tier is read. Null when neither declares one. */
+function readCanonPin(root: string): CanonPin | null {
+  const yml = join(root, "specline.yml");
+  if (existsSync(yml)) {
+    const lines = readFileSync(yml, "utf8").split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i]!.match(/^canon:\s*(\S+)/);
+      if (m) return { version: m[1]!, file: "specline.yml", line: i + 1 };
+    }
+  }
+  const arch = join(root, "docs", "conventions", "doc-architecture.md");
+  if (existsSync(arch)) {
+    const lines = readFileSync(arch, "utf8").split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i]!.match(/\*\*Canon\*\*\s*\|\s*Specline\s*`?([0-9][^`\s|]*)/);
+      if (m) return { version: m[1]!, file: "docs/conventions/doc-architecture.md", line: i + 1 };
+    }
+  }
+  return null;
+}
+
 function readCounter(specsDir: string): number | null {
   const f = join(specsDir, ".id-counter");
   if (!existsSync(f)) return null;
@@ -263,6 +297,7 @@ export function loadRepo(root: string, opts: LoadOptions = {}): Repo {
     tier,
     tierSource,
     config,
+    canonPin: readCanonPin(root),
     counter: readCounter(specsDir),
     specs,
     knowledge,
