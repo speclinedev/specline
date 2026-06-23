@@ -4,10 +4,11 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { init, sync } from "../src/init/scaffold.ts";
+import { init, sync, upgrade } from "../src/init/scaffold.ts";
 import { isGenerated } from "../src/init/content.ts";
 import { run, exitCodeFor } from "../src/engine/run.ts";
 import { loadCanon } from "../src/canon.ts";
+import { CANON } from "../src/version.ts";
 
 const fresh = () => mkdtempSync(join(tmpdir(), "specline-init-"));
 const base = { tier: 1, decider: "jonathan", check: false } as const;
@@ -67,6 +68,45 @@ test("--check writes nothing and flags a missing/stale repo", () => {
   assert.ok(!existsSync(join(t, "docs")), "check mode must not write");
   init(t, { ...base, githubAction: false });
   assert.equal(init(t, { ...base, githubAction: false, check: true }).clean, true);
+});
+
+const hasPinMismatch = (root: string) =>
+  run(root, { mode: "gate", changed: [], now: "2026-06-15" }).findings.some((f) => f.rule_id === "CANON-PIN-MISMATCH");
+
+test("upgrade on a current repo is a no-op", () => {
+  const t = fresh();
+  init(t, { ...base, githubAction: false });
+  const res = upgrade(t, { check: false });
+  assert.equal(res.wrote, false);
+  assert.equal(res.clean, true);
+});
+
+test("upgrade rewrites a stale pin in both files and clears CANON-PIN-MISMATCH", () => {
+  const t = fresh();
+  init(t, { ...base, githubAction: false });
+  const yml = join(t, "specline.yml");
+  const arch = join(t, "docs/conventions/doc-architecture.md");
+  // age the repo back to an older canon
+  writeFileSync(yml, readFileSync(yml, "utf8").replace(/^canon:.*$/m, "canon: 2.4.0"));
+  writeFileSync(arch, readFileSync(arch, "utf8").replace(/Specline 2\.5\.0/, "Specline 2.4.0"));
+  assert.ok(hasPinMismatch(t), "stale pin should trip CANON-PIN-MISMATCH");
+
+  const res = upgrade(t, { check: false });
+  assert.equal(res.wrote, true);
+  assert.match(readFileSync(yml, "utf8"), new RegExp(`^canon: ${CANON.replace(/\./g, "\\.")}$`, "m"));
+  assert.match(readFileSync(arch, "utf8"), new RegExp(`Specline ${CANON.replace(/\./g, "\\.")}`));
+  assert.ok(!hasPinMismatch(t), "after upgrade the pin should match the served canon");
+});
+
+test("upgrade --check flags a stale pin without writing", () => {
+  const t = fresh();
+  init(t, { ...base, githubAction: false });
+  const yml = join(t, "specline.yml");
+  writeFileSync(yml, readFileSync(yml, "utf8").replace(/^canon:.*$/m, "canon: 2.4.0"));
+  const dry = upgrade(t, { check: true });
+  assert.equal(dry.clean, false);
+  assert.equal(dry.wrote, false);
+  assert.match(readFileSync(yml, "utf8"), /^canon: 2\.4\.0$/m, "check mode must not rewrite the pin");
 });
 
 test("github-action flag controls workflow generation", () => {

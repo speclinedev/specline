@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { run, exitCodeFor, type Mode, type Report } from "../engine/run.ts";
 import { REGISTRY } from "../engine/rules.ts";
-import { init, sync, type RunResult } from "../init/scaffold.ts";
+import { init, sync, upgrade, type RunResult } from "../init/scaffold.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
 import { loadCanon } from "../canon.ts";
 import { refreshLatest, staleness } from "../staleness.ts";
@@ -17,20 +17,23 @@ const USAGE = `specline — spec-driven development tooling
 
   specline check  [PATH] [--mode author|gate] [--format json|human]
                          [--changed <file>...] [--now <iso-date>] [--tier 0|1|2]
-  specline init   [PATH] [--tier 0|1|2] [--decider <name>]
-                         [--github-action | --no-github-action] [--check] [--yes]
-  specline sync   [PATH] [--check]
-  specline rules  [--format json|markdown]
+  specline init    [PATH] [--tier 0|1|2] [--decider <name>]
+                          [--github-action | --no-github-action] [--check] [--yes]
+  specline sync    [PATH] [--check]
+  specline upgrade [PATH] [--check]
+  specline rules   [--format json|markdown]
   specline spec
 
   check validates a repo's structure (read-only). init/sync write generated artifacts.
+  upgrade bumps the canon pin (specline.yml + doc-architecture.md) to this tool's
+  canon and regenerates generated files.
 
 Exit: 0 = ok, 1 = errors / --check stale, 2 = usage error, 3 = internal error.`;
 
 type Format = "json" | "human" | "markdown";
 
 interface Args {
-  command: "check" | "rules" | "spec" | "init" | "sync";
+  command: "check" | "rules" | "spec" | "init" | "sync" | "upgrade";
   path: string;
   mode: Mode;
   format: Format | null;
@@ -64,7 +67,8 @@ function parseArgs(argv: string[]): Args {
   else if (sub === "spec") a.command = "spec";
   else if (sub === "init") a.command = "init";
   else if (sub === "sync") a.command = "sync";
-  else if (sub.startsWith("-")) fail(`the first argument must be a command (check, init, sync, rules, spec), not ${sub}`);
+  else if (sub === "upgrade") a.command = "upgrade";
+  else if (sub.startsWith("-")) fail(`the first argument must be a command (check, init, sync, upgrade, rules, spec), not ${sub}`);
   else fail(`unknown command "${sub}" — did you mean: specline check ${sub}`);
 
   let sawPath = false;
@@ -217,6 +221,11 @@ async function main(): Promise<void> {
   if (args.command === "sync") {
     const res = sync(args.path, { check: args.check });
     process.stdout.write(renderScaffold("sync", args.path, res, args.check));
+    process.exit(args.check && !res.clean ? 1 : 0);
+  }
+  if (args.command === "upgrade") {
+    const res = upgrade(args.path, { check: args.check });
+    process.stdout.write(renderScaffold("upgrade", args.path, res, args.check));
     process.exit(args.check && !res.clean ? 1 : 0);
   }
 
