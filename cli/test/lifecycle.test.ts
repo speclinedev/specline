@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { run } from "../src/engine/run.ts";
+import { run, exitCodeFor } from "../src/engine/run.ts";
 
 const fx = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 const ids = (r: ReturnType<typeof run>) => new Set(r.findings.map((f) => f.rule_id));
@@ -23,12 +23,12 @@ test("lifecycle-gaps: tier-1 completeness rules fire; tier-2 rules stay silent",
   }
 });
 
-test("lifecycle-gaps: downgradable completeness becomes distance_to_ratifiable in author mode", () => {
-  const r = run(fx("lifecycle-gaps"), { mode: "author", changed: [], modified: [], now: "2026-06-16" });
+test("lifecycle-gaps: build-readiness gaps are advisory warnings and never block", () => {
+  const r = run(fx("lifecycle-gaps"), { mode: "gate", changed: [], modified: [], now: "2026-06-16" });
   const f = r.findings.find((x) => x.rule_id === "RATIFIED-NO-BLAST-RADIUS");
-  assert.ok(f, "rule should still be reported in author mode");
-  assert.equal(f!.severity, "info");
-  assert.equal(f!.label, "distance_to_ratifiable");
+  assert.ok(f, "rule should still be reported");
+  assert.equal(f!.severity, "warning");
+  assert.equal(exitCodeFor(r), 0, JSON.stringify(r.summary));
 });
 
 test("governance: tier-2 rules fire when the repo declares tier 2", () => {

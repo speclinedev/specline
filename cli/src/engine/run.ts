@@ -67,13 +67,7 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
     if (meta.tier > repo.tier) continue; // tier-gated off for this repo
 
     let severity = meta.severity;
-    let label: string | undefined;
 
-    // author mode: a missing required element is guidance, not failure.
-    if (opts.mode === "author" && meta.downgradable && severity === "error") {
-      severity = "info";
-      label = "distance_to_ratifiable";
-    }
     // quarantine: a spec's own error fails only when that spec is in --changed.
     if (meta.scope === "spec" && severity === "error") {
       const dir = r.specDir ?? null;
@@ -88,7 +82,6 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
       line: r.line,
       message: r.message,
       fix_hint: r.fix_hint,
-      ...(label ? { label } : {}),
     });
   }
 

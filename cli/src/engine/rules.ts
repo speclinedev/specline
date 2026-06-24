@@ -10,45 +10,50 @@ import { parseFlatYaml, headings, links } from "./parse.ts";
 import type { Repo, RawFinding, RuleMeta, SpecFolder } from "./model.ts";
 import { CANON } from "../version.ts";
 
+// Two layers (canon 2.6). LAYER 1 — INTEGRITY: facts about the repo that are true
+// or false independent of any opinion about good specs. These are the only rules
+// that error and block the gate. LAYER 2 — ADVISORY: every judgment about whether a
+// spec is *good* (completeness, sizing, mechanics, lifecycle readiness). These warn,
+// never block; the decider owns "enough". `downgradable` is retained as metadata but
+// no longer drives behaviour now that author-mode downgrade is retired.
 export const REGISTRY: RuleMeta[] = [
-  { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", tier: 1, downgradable: true },
-  { rule_id: "STRUCT-MISSING-RELATIONS", severity: "error", scope: "spec", tier: 1, downgradable: true },
+  // ── Layer 1: integrity (error, blocks) ──────────────────────────────────────
   { rule_id: "FRONTMATTER-UNPARSEABLE", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "FRONTMATTER-ID-MISMATCH", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "FRONTMATTER-MISSING-RATIFIED", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "STATUS-SCHEMA", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "ENUM-INVALID", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "UNKNOWN-FRONTMATTER-KEY", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "UNKNOWN-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "RELATION-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "RELATION-CROSS-REPO", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "RELATION-KILLED", severity: "warning", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "LINK-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "ID-DUPLICATE", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "ID-COUNTER-GAP", severity: "error", scope: "repo", tier: 1, downgradable: false },
+  { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", tier: 1, downgradable: false },
+  { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", tier: 1, downgradable: false },
+  // ── Layer 2: advisory (warning, never blocks) ───────────────────────────────
+  // structure & completeness
+  { rule_id: "STRUCT-MISSING-SPEC", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "STRUCT-MISSING-RELATIONS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "STATUS-SCHEMA", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "UNKNOWN-FRONTMATTER-KEY", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "UNKNOWN-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "RELATION-CROSS-REPO", severity: "warning", scope: "repo", tier: 1, downgradable: false },
+  { rule_id: "RELATION-KILLED", severity: "warning", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "GOAL-MISSING", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "LOOP-BUDGET-INVALID", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  // v2.4 cluster — warnings first, while the altitude/parent-map format settles.
+  // intent/altitude (B6 is advisory — an indicator, not a defect)
   { rule_id: "JUDGEABLE-NO-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-HAS-MECHANICS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  // v2.5 cluster — corrections-log entry shape (warn-only while the format settles).
   { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  // canon pin hygiene — the repo's declared pin must track the tool's canon (MAJOR.MINOR).
   { rule_id: "CANON-PIN-MISMATCH", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  // lifecycle completeness — required to ratify / graduate (downgradable ones become
-  // distance_to_ratifiable in author mode).
-  { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "error", scope: "spec", tier: 1, downgradable: true },
-  { rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", severity: "error", scope: "spec", tier: 1, downgradable: true },
-  { rule_id: "ARCHIVE-NO-ACCEPTANCE", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "OPEN-QUESTION-INCOMPLETE", severity: "error", scope: "spec", tier: 1, downgradable: true },
-  { rule_id: "OPEN-QUESTION-OVERDUE", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  // tier-2 governance — only enforced when a repo declares tier 2.
-  { rule_id: "STALE-QUARANTINE", severity: "error", scope: "spec", tier: 2, downgradable: false },
-  { rule_id: "DECIDER-OVER-BUDGET", severity: "error", scope: "repo", tier: 2, downgradable: false },
+  // build-readiness (advisory: routing/verification metadata, not a gate)
+  { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "ARCHIVE-NO-ACCEPTANCE", severity: "warning", scope: "repo", tier: 1, downgradable: false },
+  { rule_id: "OPEN-QUESTION-INCOMPLETE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "OPEN-QUESTION-OVERDUE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  // tier-2 governance — advisory, and only surfaced when a repo declares tier 2.
+  { rule_id: "STALE-QUARANTINE", severity: "warning", scope: "spec", tier: 2, downgradable: false },
+  { rule_id: "DECIDER-OVER-BUDGET", severity: "warning", scope: "repo", tier: 2, downgradable: false },
   { rule_id: "COUPLING-CEILING", severity: "warning", scope: "spec", tier: 2, downgradable: false },
 ];
 
@@ -71,7 +76,6 @@ const ALLOWED_SIZE = new Set(["small", "large"]);
 const ALLOWED_TYPE = new Set(["feature", "bug", "chore", "parent"]);
 const ALLOWED_TARGET_MODEL = new Set(["light", "standard", "frontier"]);
 const STATUS_REQUIRED_SECTIONS = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends", "Corrections"];
-const RATIFIED_STATES = new Set(["ratified", "building"]);
 const RELATION_KEYS = ["depends_on", "part_of", "supersedes", "conflicts_with"];
 
 export interface RuleContext {
@@ -143,22 +147,9 @@ const frontmatterWellFormed: Rule = ({ repo }) => {
   return out;
 };
 
-const ratifiedFields: Rule = ({ repo }) => {
-  const out: RawFinding[] = [];
-  for (const f of [...repo.specs, ...repo.archive]) {
-    if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status === null || !RATIFIED_STATES.has(status)) continue;
-    for (const key of ["ratified_by", "ratified_at"]) {
-      if (fmString(f, key) === null) {
-        out.push({ rule_id: "FRONTMATTER-MISSING-RATIFIED", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName,
-          message: `status "${status}" requires ${key} (B3)`,
-          fix_hint: `add ${key} — set by the approving commit at ratification` });
-      }
-    }
-  }
-  return out;
-};
+// Ratification attestation (ratified_by/ratified_at) is no longer modelled: the
+// approving merge to the main branch is the ratification record, and git owns the
+// author + timestamp. Specline does not duplicate or check it (canon 2.6).
 
 const statusSchema: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
@@ -723,7 +714,6 @@ const canonPinMismatch: Rule = (ctx) => {
 export const RULES: Rule[] = [
   structMissing,
   frontmatterWellFormed,
-  ratifiedFields,
   statusSchema,
   enumValues,
   loopBudgetValid,

@@ -58,18 +58,26 @@ for (const [name, rule] of repoScoped) {
   });
 }
 
+// Spec-scoped INTEGRITY errors (Layer 1) still error and quarantine to --changed.
 const specScoped: [string, string][] = [
   ["id-mismatch", "FRONTMATTER-ID-MISMATCH"],
-  ["missing-relations", "STRUCT-MISSING-RELATIONS"],
-  ["building-no-ratified", "FRONTMATTER-MISSING-RATIFIED"],
 ];
 for (const [name, rule] of specScoped) {
-  test(`${name} -> ${rule} (spec-scoped, errors only with --changed)`, () => {
+  test(`${name} -> ${rule} (spec-scoped integrity, errors only with --changed)`, () => {
     const r = gate(name, changedAll);
     assert.ok(errorIds(r).includes(rule), `expected ${rule}, got ${JSON.stringify(ruleIds(r))}`);
     assert.equal(exitCodeFor(r), 1);
   });
 }
+
+// Completeness gaps (Layer 2) surface as warnings and never block, with or without --changed.
+test("missing-relations: STRUCT-MISSING-RELATIONS is advisory (warning, exit 0)", () => {
+  const r = gate("missing-relations", changedAll);
+  const f = r.findings.find((x) => x.rule_id === "STRUCT-MISSING-RELATIONS");
+  assert.ok(f, `expected STRUCT-MISSING-RELATIONS, got ${JSON.stringify(ruleIds(r))}`);
+  assert.equal(f!.severity, "warning");
+  assert.equal(exitCodeFor(r), 0);
+});
 
 test("relation-cross-repo: repo: edge is a warning, exit 0", () => {
   const r = gate("relation-cross-repo");
@@ -131,17 +139,20 @@ test("quarantine: spec-scoped violation warns without --changed (exit 0), errors
   assert.equal(exitCodeFor(withChanged), 1);
 });
 
-test("author mode: a missing required element is distance_to_ratifiable (info), exit 0", () => {
+test("completeness gaps never block: same warning in gate and author mode, exit 0", () => {
+  // canon 2.6: a missing required element is advisory, not a gate. Author mode no
+  // longer downgrades anything (distance_to_ratifiable is retired) because nothing
+  // about completeness errors in the first place.
   const author = run(fx("missing-relations"), { mode: "author", changed: changedAll, now: "2026-06-14" });
-  const f = author.findings.find((x) => x.rule_id === "STRUCT-MISSING-RELATIONS");
-  assert.ok(f, "expected the missing-relations finding");
-  assert.equal(f!.severity, "info");
-  assert.equal(f!.label, "distance_to_ratifiable");
+  const fa = author.findings.find((x) => x.rule_id === "STRUCT-MISSING-RELATIONS");
+  assert.ok(fa, "expected the missing-relations finding");
+  assert.equal(fa!.severity, "warning");
   assert.equal(exitCodeFor(author), 0);
 
-  // same fixture in gate mode, with --changed, is a hard error
   const g = gate("missing-relations", changedAll);
-  assert.equal(exitCodeFor(g), 1);
+  const fg = g.findings.find((x) => x.rule_id === "STRUCT-MISSING-RELATIONS");
+  assert.equal(fg!.severity, "warning");
+  assert.equal(exitCodeFor(g), 0);
 });
 
 test("version skew: unknown key + unknown section warn (exit 0)", () => {
