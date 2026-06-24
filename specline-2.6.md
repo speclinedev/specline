@@ -1,8 +1,18 @@
-# Specline — Canon Proposal v2.5
+# Specline — Canon v2.6
 
-**Status:** PROPOSAL — supersedes Canon v2.4 when ratified.
-**Canon version:** 2.5.0. Repos pin a canon version in `specline.yml` at
+**Status:** CURRENT — supersedes Canon v2.5.
+**Canon version:** 2.6.0. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
+
+> **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
+> (facts that are false regardless of any opinion about good specs: parse errors,
+> dangling references, ID collisions, malformed/invalid frontmatter, archive
+> edits). Every judgment about whether a spec is *good* — completeness, sizing,
+> mechanics (B6), build-readiness — is **advisory**: it warns, never blocks, and
+> the decider owns "enough." The practice is too young for taste to be law.
+> Corollary — **Specline never models what another source of truth already owns:
+> code owns mechanics, git owns history and approval.** So ratification is the
+> approving merge to main (git's record), not a frontmatter field.
 
 "Specline" is the working name. Branding is an open question; the rules are
 not.
@@ -30,8 +40,11 @@ most expensive to misdirect.
 5. **`blast_radius` frontmatter field** drives reviewer routing, implementer
    effort, and model selection (Frontmatter; Routing). The spec format and the
    cost-routing architecture are one decision.
-6. **B6 is now a performance requirement, not a style note.** Mechanics in a
-   spec measurably degrade frontier models; mechanics-in-spec is a defect.
+6. **B6 is an advisory indicator, not a hard line.** Prescribed mechanics can
+   anchor a strong implementer and go stale once code exists, so Specline flags
+   them — but it warns; it never blocks. The right amount of mechanical detail is
+   the decider's call (and depends on the target model), not the tool's. This is
+   not yet measured; we hold it as a heuristic, not a law.
 7. **Optional `target_model` / capability tier** (Frontmatter; Routing). Spec
    difficulty selects the planner; build difficulty selects the implementer.
 8. **Agent-execution notes** (new short section). Operational constraints for
@@ -126,8 +139,8 @@ which it fails. A claim without a failure mode is marketing.
   stale (Specline on main prevents this).
 - **Rework caught at the cheapest moment.** Mechanism: agent-loopable
   acceptance checks are executed inside the implementation PR (B5), not at a
-  demo. Fails when: checks are written unfalsifiably — which is why
-  unfalsifiable specs cannot ratify.
+  demo. Fails when: checks are written unfalsifiably — which is why Specline
+  flags an unfalsifiable acceptance for the decider before they merge.
 - **Right model on the right work.** Mechanism: `blast_radius` and the
   coupling-ceiling proxy let the orchestrator route effort and model per spec.
   Fails when: the spec under-declares its risk — which is why blast_radius is a
@@ -171,23 +184,22 @@ latency. Specline computes the proxy (total size of `spec.md` + transitively for
 loads) and warns on breach; read a breach as "this feature is too entangled," a
 design smell, not a loading problem — slice it or decouple it. *(Specline: warn.)*
 
-**3. The Human Gate.** Humans ratify and humans accept. Ratification is recorded
-— `ratified_by` + `ratified_at` in frontmatter, set by the named human's
-approving commit — so a rubber stamp at least has a name on it. Everything else
-is delegable to agents. A spec no human read before ratification did not need to
-exist. *(Specline: `ratified` without `ratified_by` is an error. Whether the human
-actually read it remains judgment — no system detects attention, only
-accountability.)*
+**3. The Human Gate.** Humans ratify and humans accept. Ratification is the named
+human's **approving merge to the main branch** — git records who and when, so the
+stamp already has a name on it; Specline does not duplicate that in frontmatter.
+Everything else is delegable to agents. A spec no human approved into the main
+tree did not need to exist. *(Specline: advisory only — ratification is a git
+fact, not a doc field. Whether the human actually read it remains judgment — no
+system detects attention, only the merge record.)*
 
 **4. Staleness.** `building` and `blocked` each carry a `stale_after` date — the
 point past which an untouched build is presumed abandoned, not the point it is
-discarded. Going stale **quarantines the spec**: Specline errors on that spec's own
-PRs and warns repo-wide — it never blocks unrelated work. Exit from quarantine is an explicit
-reshape (re-ratification) or kill (archive with tombstone). Moving `stale_after`
-without a same-commit `ratified_at` update is an error: no silent extension.
+discarded. Going stale **flags the spec**: Specline warns (it never blocks) so a
+human notices an abandoned build. Exit is an explicit
+reshape (a fresh approving merge) or kill (archive with tombstone).
 Staleness is the *time* trigger of build-loop escalation; its *progress* twin is
 `loop_budget` (see The build loop), which escalates on no convergence rather than
-on elapsed time. *(Specline: enforced.)*
+on elapsed time. *(Specline: advisory — staleness warns, it never blocks.)*
 
 **5. Falsifiable or Draft.** Falsifiable means **settleable the same way twice** —
 and the three altitudes are the **handoffs between who certifies *done***, not three
@@ -197,38 +209,45 @@ flavors of test:
   met, established by a runnable command where one fits, **or by the implementer's
   grounded assessment** against the code and its own tool results (evidence, not
   opinion). A runnable command is the strongest form, not the required form. Provable
-  checks are **authored at ratification and frozen relative to the implementer** for
-  the build run: the builder does not weaken the ruler it is measured by. A mid-build
-  check change is legitimate only via re-ratification (a `ratified_at` bump); an
-  un-ratified one is a defect, not a pass.
+  checks are **authored before the build and frozen relative to the implementer** for
+  the build run: the builder does not weaken the ruler it is measured by. Changing a
+  check mid-build is legitimate only as a fresh decider-approved change (a new merge),
+  not a unilateral implementer edit.
 - **judgeable** — the **reviewer's** gate. A fresh-context agent judges the
   implementer's *interpretation* against a named spec section and the repo's
   standards. The named section is its falsifiability gate.
 - **tasteable** (`human-gate`) — the **decider's** gate. Settled once, by a person.
 
-A spec is not `ratified` until its acceptance is partitioned this way. "Improve the
-dashboard" names nothing any of the three can settle — it stays draft forever.
-*(Specline, in the planning phase, checks the partition is present and that a
+Partitioning acceptance this way is what makes a spec buildable; "Improve the
+dashboard" names nothing any of the three can settle. Specline surfaces an
+unpartitioned acceptance as advisory — it is the decider's call, not a block.
+*(Specline, in the planning phase, warns when the partition is absent or a
 `judgeable` item names a section. It does **not** — and cannot — check that the
 implementer's grounded assessment was sound, or that the reviewer was right. That
 judgment is the reviewer's, then the human's. Specline guarantees the spec is
 *answerable*; the actors answer it.)*
 
 **6. Intent Over Description.** Documentation records what code cannot say:
-goals, non-goals, rejected options, evidence, business rules, boundaries. Code
-is the source of truth for mechanics; never compete with it. This is no longer
-only an economy rule. Frontier models read code better than a spec can describe
-it, and **over-specified mechanics measurably degrade their output** — a spec
-that tells the model *how* rather than *what* and *why* is a defect, not merely
-noise. Strong models read code; what they cannot read is your mind. *(Gate:
-graduation review and spec-critic. Judgment-only; the spec-critic agent flags
-"this sentence prescribes mechanics" the way Specline flags an unfalsifiable
-check.)*
+goals, non-goals, rejected options, evidence, business rules, boundaries. Once
+code exists it is the source of truth for mechanics, and prescribed mechanics in
+a spec then both compete with it and go stale — the same reason ratification
+belongs to git, not frontmatter: don't model what another source of truth owns.
+A frontier implementer reads code better than a spec can describe it, so for that
+target, mechanics in the spec tend to anchor and bloat rather than help. **But
+this is a tradeoff, not a law, and it is not yet measured.** A weaker target model,
+or a pre-build spec where no code exists yet, may legitimately carry worked
+mechanical detail — there it is load-bearing scaffolding, not noise. So B6 is an
+**advisory indicator**: the spec-critic flags "this prescribes mechanics" the way
+it flags a thin acceptance, and the decider — who knows the target model and
+whether code exists — decides. *(Advisory only; never blocks. The heavier
+mechanical detail is best kept in `knowledge/`/`technical/` and referenced, so a
+weak model still gets it in context without the ratified contract going stale.)*
 
 **7. The Decider Budget.** A named decider may have at most **3 specs in
 `building`** and **6 in active states** (`ratified|building|blocked`) at once,
 per-repo override allowed. Agent capacity is not the constraint; the decider's
-queue is. WIP limits on humans, not on machines. *(Specline: enforced.)*
+queue is. WIP limits on humans, not on machines. *(Specline: advisory — warns over
+the ceiling, never blocks.)*
 
 ---
 
@@ -395,12 +414,10 @@ slug: ranch-mgmt
 type: feature            # feature | bug | chore | parent
 status: building         # draft | ratified | building | blocked | shipped | killed
 decider: jonathan
-blast_radius: medium     # low | medium | high — declared risk; default required to ratify
+blast_radius: medium     # low | medium | high — declared risk; advised before build (routing)
 size: small              # small | large — declared BUILD size (small = one slice; large = an atomic batch). default small
 target_model: standard   # OPTIONAL: light | standard | frontier (capability tier, mapped in conventions)
-ratified_by: jonathan    # set by the ratifying human's commit
-ratified_at: 2026-06-11
-created: 2026-06-10
+created: 2026-06-10       # NOTE: ratification is the approving merge to main — git owns who/when; no ratified_by/at field
 stale_after: 2026-06-18  # set on entering building or blocked — staleness/abandonment trigger
 loop_budget: 5           # OPTIONAL: autonomy grant — see Escalation
 ---
@@ -543,9 +560,9 @@ agent file), **not** any repo's `conventions/`.
 Each entry is Specline-parsed and must carry: **who decides**, **the options**,
 **the default**, and **the deadline**. An entry with a stated default and a
 future deadline is **legal during `building`**: indecision becomes a logged
-choice with an override window, and agents keep moving. Specline errors only on
-entries past deadline or missing a default. A spec cannot *ratify* with entries
-lacking deciders or defaults.
+choice with an override window, and agents keep moving. Specline *warns* on
+entries past deadline or missing a default or decider — advice the decider weighs
+before merging, never a block.
 
 ### `relations.md`
 
@@ -852,10 +869,10 @@ will be checked against *before* it writes, not after.
 changing, so Specline's posture toward content it does not recognize is defined,
 not incidental: an unknown frontmatter key or unknown body section is
 **preserved and warned**, never an error; a malformed *known* field
-(unparseable frontmatter, an `id` that mismatches its directory) is always an
-error; a missing *required* element is an error in gate mode and
-`distance_to_ratifiable` in author mode; a duplicated *required* section is an
-error. The rule is: **fail the wrong, tolerate the unfamiliar** — a spec authored
+(unparseable frontmatter, an `id` that mismatches its directory, an out-of-set
+enum) is always an error — that is integrity; a *missing or incomplete* element —
+an absent section, an unpartitioned acceptance — is an **advisory warning**, never
+a block. The rule is: **fail the broken, advise on the rest** — a spec authored
 against a newer canon must not hard-fail an older Specline over a key it simply has
 not learned yet.
 
@@ -865,26 +882,31 @@ between two versions of a spec — substantive (Behavior, Business rules,
 Acceptance) vs. status-only — and flags a behavior change unaccompanied by a
 `ratified_at` bump. This is what makes the mid-build revision-rate instrument
 mechanical rather than a manual read — and it is the same rule that enforces the
-**frozen provable checks** (B5): an acceptance-check change without a `ratified_at`
-bump is a defect, since the builder must not weaken the ruler it is measured by.
+**frozen provable checks** (B5): an acceptance-check change the decider did not
+approve (a fresh merge) is flagged, since the builder must not weaken the ruler it
+is measured by.
 
-Checks (v2.3 additions in **bold**):
+Checks — **(I)** = integrity, blocks; **(A)** = advisory, warns only:
 
-- Every `specs/NNNN-*` has `spec.md` + `relations.md`; frontmatter parses and
-  matches directory ID and slug.
-- ID integrity: unique across `specs/` + `knowledge/` + `archive/`; no ID ≤
+- **(I)** Frontmatter parses and its `id`/`slug` match the directory; enum fields
+  are in their allowed sets (`ENUM-INVALID`).
+- **(I)** ID integrity: unique across `specs/` + `knowledge/` + `archive/`; no ID ≤
   `.id-counter` unaccounted for.
-- `ratified|building` requires `ratified_by`/`ratified_at` (B3).
-- **`ratified` requires a `blast_radius` value (`RATIFIED-NO-BLAST-RADIUS`) and
-  partitioned acceptance checks — at least the `agent-loopable` set present and
-  labeled (`RATIFIED-ACCEPTANCE-UNPARTITIONED`).**
+- **(A)** Every `specs/NNNN-*` has `spec.md` + `relations.md` (`STRUCT-MISSING-*`)
+  — completeness advice, not a gate.
+- Ratification is **not** modelled here: the approving merge to main is the record,
+  and git owns who/when (no `ratified_by`/`ratified_at` check).
+- **(A)** A spec marked building/ratified lacking a `blast_radius` value
+  (`RATIFIED-NO-BLAST-RADIUS`) or partitioned acceptance — the `agent-loopable`
+  set present and labeled (`RATIFIED-ACCEPTANCE-UNPARTITIONED`) — is *warned*:
+  build-readiness advice, not a block.
 - **A `judgeable` acceptance item cites a spec section to verify against
   (`JUDGEABLE-NO-SECTION`); else it is not falsifiable (B5).**
 - **`size: small` with measured size (acceptance/Behavior count) over
   `suggest_slicing_past` → warn (`SCOPE-EXCEEDS-SIZE`): slice it, or declare
   `size: large` if it's atomic. Specline raises the question; the human answers.**
-- **`type: parent` carrying Behavior/acceptance → error (`PARENT-HAS-MECHANICS`);
-  `type: parent` listing no child scopes → error (`PARENT-NO-SCOPES`).**
+- **(A)** `type: parent` carrying Behavior/acceptance → warn (`PARENT-HAS-MECHANICS`);
+  `type: parent` listing no child scopes → warn (`PARENT-NO-SCOPES`).
 - **`status.md`, when present, conforms to the schema (required sections present
   and parseable). Shape only; never prose.** This now includes a `## Corrections`
   section whose entries carry the fixed `<what> — <altitude> — <who caught it>` shape
@@ -898,25 +920,24 @@ Checks (v2.3 additions in **bold**):
 - `relations-index.yml` consistent with authored forward edges; `Specline --fix`
   regenerates it. *(planned — not yet enforced or generated.)*
 - `open-questions.md` entries parse (each a `##` heading carrying `decider:` /
-  `options:` / `default:` / `deadline:` lines); a `ratified|building` spec with an
-  entry missing a decider or default errors (`OPEN-QUESTION-INCOMPLETE`); a
-  `building|blocked` entry past its `deadline` errors (`OPEN-QUESTION-OVERDUE`).
-- `building|blocked` past `stale_after` → quarantine (`STALE-QUARANTINE`, tier 2,
-  B4). Moving `stale_after` without a same-commit `ratified_at` update is also an
-  error — *(planned; it needs commit history, so it lives at the diff/CI layer, not
-  the working-tree engine).*
-- Decider focus limit: over the configured `building`/`active` ceiling per decider
-  → error (`DECIDER-OVER-BUDGET`, tier 2, B7).
+  `options:` / `default:` / `deadline:` lines); an entry missing a decider or
+  default warns (`OPEN-QUESTION-INCOMPLETE`); an entry past its `deadline` warns
+  (`OPEN-QUESTION-OVERDUE`). **(A)**
+- **(A)** `building|blocked` past `stale_after` → warn (`STALE-QUARANTINE`, tier 2,
+  B4): an untouched build is presumed stale — advice to a human, never a block.
+- **(A)** Decider focus limit: over the configured `building`/`active` ceiling per
+  decider → warn (`DECIDER-OVER-BUDGET`, tier 2, B7).
 - Coupling-ceiling proxy (`spec.md` + transitively forced loads) vs.
   `coupling_ceiling`% of `context_window` → warn (`COUPLING-CEILING`, tier 2, B2).
-- A shipped, archived spec must carry a linked `acceptance_results`
+- **(A)** A shipped, archived spec without a linked `acceptance_results` is warned
   (`ARCHIVE-NO-ACCEPTANCE`, B5) — the structural proxy for "graduation ran the
   acceptance checks."
-- Every relative path link under `docs/**` resolves.
-- No `status.md`, open questions, or acceptance checks in `knowledge/`;
-  `archive/` is exempt and read-only.
-- **Unknown frontmatter key or body section → warn and preserve; duplicated
-  required section → error (version-skew posture above).**
+- **(I)** Every relative path link under `docs/**` resolves (`LINK-DANGLING`);
+  repo-local relation edges resolve (`RELATION-DANGLING`).
+- **(I)** No `status.md` in `knowledge/` (`KNOWLEDGE-HAS-STATUS`); `archive/` is
+  read-only (`ARCHIVE-EDITED`).
+- Unknown frontmatter key or body section → warn and preserve; a duplicated
+  required `status.md` section → warn (`STATUS-SCHEMA`). **(A)**
 
 Judgment-only rules (one-sitting sizing, B6 compliance, tense, confidence,
 blast-radius *correctness*) are out of Specline's scope and live at the two human

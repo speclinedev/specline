@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Canon** | Specline `2.5.0` (governing contract: `specline-2.5.md` in repo `speclinedev/specline`; supersedes `spec-flow-v2` when ratified) |
+| **Canon** | Specline `2.6.0` (governing contract: `specline-2.6.md` in repo `speclinedev/specline`; supersedes `spec-flow-v2` when ratified) |
 | **Note** | v2.3 adds the acceptance-check partition, the `status.md` schema, the Assumptions section, and `blast_radius`/`target_model` routing. `0001-doctor` builds the **structural** subset of these now; the **state-gate** rules (e.g. `ratified` requires `blast_radius` + partitioned acceptance) are deferred to the lifecycle spec. |
 | **Tier** | **1 — the loop.** Ratification frontmatter, the two-PR pattern, graduation + `archive/`, `knowledge/`. (Tier 2 enforcement — TTL/quarantine, decider budget, context budget — is exactly what `doctor` is being built to provide; this repo ratchets to Tier 2 once `doctor` self-validates.) |
 | **Decider** | `jonathan` (non-delegable per B3) |
