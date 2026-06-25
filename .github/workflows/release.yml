@@ -1,0 +1,56 @@
+# Build the standalone `specline` CLI as a single-file binary per platform and
+# attach it to the GitHub release. Each binary is smoke-tested on its native runner
+# BEFORE upload (it must serve its embedded canon), so a broken build fails the job
+# rather than shipping. Fires when a release is published; also dispatchable against
+# an existing tag (e.g. to backfill assets onto v2.6.1).
+name: release-binaries
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and upload binaries for (e.g. v2.6.1)"
+        required: true
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: bun-linux-x64
+            suffix: linux-x64
+          - os: macos-latest
+            target: bun-darwin-arm64
+            suffix: darwin-arm64
+          - os: macos-13
+            target: bun-darwin-x64
+            suffix: darwin-x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: cli
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - uses: oven-sh/setup-bun@v2
+      - name: Bundle integrity (canon file + embedded copy match the source)
+        run: node scripts/sync-canon.mjs --check
+      - name: Compile
+        run: |
+          mkdir -p dist
+          bun build src/cli/index.ts --compile --target=${{ matrix.target }} --outfile dist/specline-${{ matrix.suffix }}
+      - name: Smoke test (the embedded canon must be served from the binary)
+        run: |
+          ./dist/specline-${{ matrix.suffix }} spec | grep -q "Canon version:" || { echo "binary cannot serve its canon"; exit 1; }
+          ./dist/specline-${{ matrix.suffix }} rules | grep -q "STRUCT-MISSING-SPEC" || { echo "rule catalog missing"; exit 1; }
+          echo "smoke ok: $(./dist/specline-${{ matrix.suffix }} spec | grep -m1 'Canon version:')"
+      - name: Attach to release
+        run: gh release upload "$TAG" "dist/specline-${{ matrix.suffix }}" --clobber --repo "$GITHUB_REPOSITORY"
