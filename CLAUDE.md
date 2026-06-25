@@ -1,5 +1,15 @@
 # Specline — project guide for Claude
 
+## CI cost: never use GitHub macOS runners
+
+GitHub bills macOS runners at **~10× Linux**. **Do not add `runs-on: macos-*` to any
+workflow.** Build all platform binaries by cross-compiling on `ubuntu-latest`:
+`bun build --compile --target=bun-darwin-arm64 | bun-darwin-x64 | bun-linux-x64` all
+work from a Linux host. Smoke-test the native linux binary (it proves the embedded
+canon is served from a compiled binary — the only thing that can break); the
+cross-compiled macOS binaries come from the same embed and are size-checked. See
+`.github/workflows/release.yml`.
+
 ## Canon versioning: one source, derive everywhere
 
 The canon version lives in **exactly one place** — the `**Canon version:** X.Y.Z`
