@@ -43,8 +43,9 @@ const TOOLS = [
     description:
       "Validate a Specline repo's structure. Returns the deterministic JSON report " +
       "(findings with rule_id, severity, scope, file, line, message, fix_hint). " +
-      "Pass changed=[...] (repo-relative paths) so spec-scoped findings gate correctly; " +
-      "use mode='author' while shaping a spec to see distance_to_ratifiable instead of errors.",
+      "Only integrity rules are errors and fail the gate; everything about spec quality is an " +
+      "advisory warning. Pass changed=[...] (repo-relative paths) so spec-scoped integrity " +
+      "errors quarantine correctly.",
     inputSchema: {
       type: "object",
       properties: {

@@ -88,7 +88,7 @@ test("upgrade rewrites a stale pin in both files and clears CANON-PIN-MISMATCH",
   const arch = join(t, "docs/conventions/doc-architecture.md");
   // age the repo back to an older canon
   writeFileSync(yml, readFileSync(yml, "utf8").replace(/^canon:.*$/m, "canon: 2.4.0"));
-  writeFileSync(arch, readFileSync(arch, "utf8").replace(/Specline 2\.5\.0/, "Specline 2.4.0"));
+  writeFileSync(arch, readFileSync(arch, "utf8").replace(/Specline [\d.]+/, "Specline 2.4.0"));
   assert.ok(hasPinMismatch(t), "stale pin should trip CANON-PIN-MISMATCH");
 
   const res = upgrade(t, { check: false });

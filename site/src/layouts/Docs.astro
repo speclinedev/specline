@@ -1,8 +1,9 @@
 ---
 import "../styles/global.css";
+import { CANON_LABEL } from "../canon.ts";
 
 interface Props { title: string; canon?: string; }
-const { title, canon = "canon 2.5.0-draft" } = Astro.props;
+const { title, canon = CANON_LABEL } = Astro.props;
 
 const nav = [
   { group: "Handbook", items: [

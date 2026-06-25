@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
+import { CANON_VERSION } from "../canon.ts";
 
 export const prerender = true;
 
 const BODY = `# Specline
 
 > Spec-driven development where a machine-checkable spec is the contract, humans hold
-> the two gates (ratify, accept), and an agent runs the loop between them. Canon
-> 2.5.0-draft.
+> the gates (ratify by merging to main, accept), and an agent runs the loop between
+> them. Specline blocks only on integrity; spec quality is advisory. Canon ${CANON_VERSION}.
 
 ## Canon
 - [Specline canon, raw markdown](https://specline.dev/spec.md): the full normative

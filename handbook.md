@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.5.md`). The canon is the
+> The readable companion to the canon (`specline-2.6.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
@@ -109,9 +109,10 @@ migrated repo is conformant from day one.
 1. **Shape** — you and an agent talk through the feature and write the spec
    folder. Unknowns become logged open questions with a default, so nothing
    blocks. This is a conversation, not a form.
-2. **Sign** — you read the whole spec *in one sitting* and approve it. This is a
-   **human gate**: your judgment, not the machine's. (In the files it's the
-   `ratified_by` field.)
+2. **Sign** — you read the whole spec *in one sitting* and approve it by **merging
+   it to your main branch**. That merge *is* the ratification: git records who and
+   when, so there's no field to maintain by hand. This is a **human gate**: your
+   judgment, not the machine's.
 3. **Build** — the agent implements against the signed spec, keeping `status.md`
    as its memory so it can resume without re-deriving everything.
 4. **Graduate** — when it ships, the spec moves to an archive and a short
@@ -119,17 +120,22 @@ migrated repo is conformant from day one.
 
 ## Structure is checked by a machine. Meaning is judged by you.
 
-Specline draws one hard line. **Structure is checked by a machine; meaning is judged
-by you.** Everything follows from which side of that line a thing falls on.
+Specline draws one hard line, and it's narrow on purpose. **The machine blocks only
+on *integrity*; whether a spec is *good* is yours to judge.** Everything follows from
+which side of that line a thing falls on.
 
-- **`doctor` (the machine)** checks *structure only* — is the folder shaped right,
-  do the links resolve, are the IDs consistent. doctor checks the shape, never your
-  code. It runs no AI and makes no judgment. Same answer every time.
-- **You (the two gates)** judge *meaning* — is this the right thing to build, is it
-  sized right, is the spec actually good. A machine can't do that, and shouldn't try.
+- **`doctor` (the machine)** *blocks* only on **integrity** — facts that are broken
+  regardless of taste: frontmatter that won't parse, a link or relation that doesn't
+  resolve, a duplicate ID, an out-of-set value. It runs no AI, never reads your code,
+  and gives the same answer every time.
+- Everything else — is it sized right, complete, the right altitude, the mechanics
+  kept lean, actually *good* — doctor *surfaces as advice* (a warning), never a block.
+  **You (the gates)** decide whether it's enough. The practice is too young for a tool
+  to call taste for you.
 
-So you're only ever on the two ends: shaping the intent, and approving the result.
-The middle runs itself.
+So the gate is permissive by design: it stops you for a broken repo, not for a spec it
+merely dislikes. You're only ever on the two ends — shaping the intent, and approving
+the result by merging it. The middle runs itself.
 
 ## Start light: tiers
 

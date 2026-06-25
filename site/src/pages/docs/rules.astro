@@ -1,38 +1,45 @@
 ---
 import Docs from "../../layouts/Docs.astro";
 
+// Canon 2.6: severity is the layer. error = INTEGRITY (facts false regardless of
+// taste) and blocks the gate; warning = ADVISORY (any judgment about whether a spec
+// is good) and never blocks. Mirrors cli/src/engine/rules.ts — `specline rules` is
+// the authoritative machine-readable copy.
 const rules = [
-  ["STRUCT-MISSING-SPEC", "error", "spec", "1", "true", "A specs/ folder has no spec.md."],
-  ["STRUCT-MISSING-RELATIONS", "error", "spec", "1", "true", "A specs/ folder has no relations.md."],
-  ["FRONTMATTER-UNPARSEABLE", "error", "spec", "1", "false", "spec.md frontmatter is missing or doesn't parse."],
-  ["FRONTMATTER-ID-MISMATCH", "error", "spec", "1", "false", "frontmatter id or slug doesn't match the directory."],
-  ["FRONTMATTER-MISSING-RATIFIED", "error", "spec", "1", "false", "ratified/building spec lacks ratified_by or ratified_at (B3)."],
-  ["STATUS-SCHEMA", "error", "spec", "1", "false", "status.md is missing or duplicates a required section."],
-  ["ENUM-INVALID", "error", "spec", "1", "false", "blast_radius / target_model holds a value outside the allowed set."],
-  ["UNKNOWN-FRONTMATTER-KEY", "warning", "spec", "1", "false", "an unrecognized frontmatter key — preserved, not failed (newer canon)."],
-  ["UNKNOWN-SECTION", "warning", "spec", "1", "false", "an unrecognized body section — preserved, not failed."],
-  ["RELATION-DANGLING", "error", "repo", "1", "false", "a relations.md edge points to an id that exists nowhere."],
-  ["RELATION-CROSS-REPO", "warning", "repo", "1", "false", "a repo:NNNN-slug edge — validated weakly, warn only."],
-  ["RELATION-KILLED", "warning", "repo", "1", "false", "an edge points to a killed id — warn only."],
-  ["LINK-DANGLING", "error", "repo", "1", "false", "a relative link under docs/ doesn't resolve."],
-  ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "false", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
-  ["ARCHIVE-EDITED", "error", "repo", "1", "false", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
-  ["ID-DUPLICATE", "error", "repo", "1", "false", "an id appears in more than one spec-bearing location."],
-  ["ID-COUNTER-GAP", "error", "repo", "1", "false", "an id ≤ .id-counter is accounted for nowhere."],
-  ["GOAL-MISSING", "warning", "spec", "1", "false", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
-  ["LOOP-BUDGET-INVALID", "warning", "spec", "1", "false", "loop_budget is present but not a positive integer (the autonomy grant)."],
-  ["JUDGEABLE-NO-SECTION", "warning", "spec", "1", "false", "a judgeable acceptance check names no spec section to judge against — its falsifiability gate (B5)."],
-  ["SCOPE-EXCEEDS-SIZE", "warning", "spec", "1", "false", "size: small but the measured size (acceptance/Behavior count) is over suggest_slicing_past — slice it, or declare size: large."],
-  ["PARENT-HAS-MECHANICS", "warning", "spec", "1", "false", "a type: parent carries Behavior or acceptance — a parent is a map, not a plan; decompose into scopes."],
-  ["PARENT-NO-SCOPES", "warning", "spec", "1", "false", "a type: parent lists no child scopes — a misfiled scope."],
-  ["RATIFIED-NO-BLAST-RADIUS", "error", "spec", "1", "true", "a ratified/building spec has no blast_radius — the risk judgment that routes effort (B5)."],
-  ["RATIFIED-ACCEPTANCE-UNPARTITIONED", "error", "spec", "1", "true", "a ratified/building spec has no agent-loopable acceptance set — the build loop has no mechanical exit (B5)."],
-  ["ARCHIVE-NO-ACCEPTANCE", "error", "repo", "1", "false", "a shipped, archived spec carries no linked acceptance_results — graduation skipped its run (B5)."],
-  ["OPEN-QUESTION-INCOMPLETE", "error", "spec", "1", "true", "a ratified/building spec has an open question missing a decider or default."],
-  ["OPEN-QUESTION-OVERDUE", "error", "spec", "1", "false", "a building/blocked spec has an open question past its deadline."],
-  ["STALE-QUARANTINE", "error", "spec", "2", "false", "a building/blocked spec is past stale_after — quarantined until reshape or kill (B4)."],
-  ["DECIDER-OVER-BUDGET", "error", "repo", "2", "false", "a decider is over the focus_limit for building or active specs (B7)."],
-  ["COUPLING-CEILING", "warning", "spec", "2", "false", "spec + transitively forced loads exceeds coupling_ceiling% of context_window — too entangled (B2)."],
+  // Integrity — blocks
+  ["FRONTMATTER-UNPARSEABLE", "error", "spec", "1", "spec.md frontmatter is missing or doesn't parse."],
+  ["FRONTMATTER-ID-MISMATCH", "error", "spec", "1", "frontmatter id or slug doesn't match the directory."],
+  ["ENUM-INVALID", "error", "spec", "1", "blast_radius / target_model holds a value outside the allowed set."],
+  ["RELATION-DANGLING", "error", "repo", "1", "a relations.md edge points to an id that exists nowhere."],
+  ["LINK-DANGLING", "error", "repo", "1", "a relative link under docs/ doesn't resolve."],
+  ["ID-DUPLICATE", "error", "repo", "1", "an id appears in more than one spec-bearing location."],
+  ["ID-COUNTER-GAP", "error", "repo", "1", "an id ≤ .id-counter is accounted for nowhere."],
+  ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
+  ["ARCHIVE-EDITED", "error", "repo", "1", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
+  // Advisory — warns, never blocks
+  ["STRUCT-MISSING-SPEC", "warning", "spec", "1", "a specs/ folder has no spec.md."],
+  ["STRUCT-MISSING-RELATIONS", "warning", "spec", "1", "a specs/ folder has no relations.md."],
+  ["STATUS-SCHEMA", "warning", "spec", "1", "status.md is missing or duplicates a required section."],
+  ["UNKNOWN-FRONTMATTER-KEY", "warning", "spec", "1", "an unrecognized frontmatter key — preserved, not failed (newer canon)."],
+  ["UNKNOWN-SECTION", "warning", "spec", "1", "an unrecognized body section — preserved, not failed."],
+  ["RELATION-CROSS-REPO", "warning", "repo", "1", "a repo:NNNN-slug edge — validated weakly, warn only."],
+  ["RELATION-KILLED", "warning", "repo", "1", "an edge points to a killed id — warn only."],
+  ["GOAL-MISSING", "warning", "spec", "1", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
+  ["LOOP-BUDGET-INVALID", "warning", "spec", "1", "loop_budget is present but not a positive integer (the autonomy grant)."],
+  ["JUDGEABLE-NO-SECTION", "warning", "spec", "1", "a judgeable acceptance check names no spec section to judge against (B5)."],
+  ["SCOPE-EXCEEDS-SIZE", "warning", "spec", "1", "size: small but measured size is over suggest_slicing_past — slice it, or declare size: large."],
+  ["PARENT-HAS-MECHANICS", "warning", "spec", "1", "a type: parent carries Behavior or acceptance — a parent is a map, not a plan."],
+  ["PARENT-NO-SCOPES", "warning", "spec", "1", "a type: parent lists no child scopes — a misfiled scope."],
+  ["CORRECTIONS-MALFORMED", "warning", "spec", "1", "a status.md ## Corrections entry doesn't carry the `<what> — <altitude> — <who caught it>` shape."],
+  ["CANON-PIN-MISMATCH", "warning", "repo", "1", "the repo's pinned canon (specline.yml / doc-architecture.md) differs from the tool's served canon."],
+  ["RATIFIED-NO-BLAST-RADIUS", "warning", "spec", "1", "a building spec has no blast_radius — build-readiness advice; the risk judgment that routes effort."],
+  ["RATIFIED-ACCEPTANCE-UNPARTITIONED", "warning", "spec", "1", "a building spec has no agent-loopable acceptance set — the loop has no mechanical exit."],
+  ["ARCHIVE-NO-ACCEPTANCE", "warning", "repo", "1", "a shipped, archived spec carries no linked acceptance_results — graduation may have skipped its run."],
+  ["OPEN-QUESTION-INCOMPLETE", "warning", "spec", "1", "an open question is missing a decider or default."],
+  ["OPEN-QUESTION-OVERDUE", "warning", "spec", "1", "a building/blocked spec has an open question past its deadline."],
+  ["STALE-QUARANTINE", "warning", "spec", "2", "a building/blocked spec is past stale_after — flagged for a human (B4)."],
+  ["DECIDER-OVER-BUDGET", "warning", "repo", "2", "a decider is over the focus_limit for building or active specs (B7)."],
+  ["COUPLING-CEILING", "warning", "spec", "2", "spec + transitively forced loads exceeds coupling_ceiling% of context_window — too entangled (B2)."],
 ];
 ---
 <Docs title="Rule catalog — Specline">
@@ -44,21 +51,23 @@ const rules = [
     catalog lacks — and the catalog can never drift from what actually fires.
   </p>
   <p>
-    Two columns decide where a finding bites.
-    <strong>Scope</strong> — <code>repo</code> findings fail everywhere; <code>spec</code>
-    findings fail only when that spec is in <code>--changed</code> (quarantine), else warn.
-    <strong>Downgradable</strong> — in <code>author</code> mode a downgradable rule that
-    fires for a missing element becomes <code>distance_to_ratifiable</code> (info), not an error.
+    <strong>Severity is the line (canon 2.6).</strong> <code>error</code> means
+    <strong>integrity</strong> — a fact that's broken regardless of any opinion about
+    good specs; it fails the gate. <code>warning</code> means <strong>advisory</strong> —
+    a judgment about whether a spec is <em>good</em> (completeness, sizing, mechanics,
+    build-readiness); it's surfaced for the decider and <em>never</em> blocks.
+    <strong>Scope</strong> — <code>repo</code> findings consider the whole tree;
+    <code>spec</code> integrity errors quarantine to <code>--changed</code>.
   </p>
   <div class="tbl-wrap">
     <table class="book-table">
-      <thead><tr><th>rule_id</th><th>severity</th><th>scope</th><th>tier</th><th>downgradable</th><th>fires when</th></tr></thead>
+      <thead><tr><th>rule_id</th><th>severity</th><th>scope</th><th>tier</th><th>fires when</th></tr></thead>
       <tbody>
         {rules.map((r) => (
-          <tr><td><code>{r[0]}</code></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td><td>{r[5]}</td></tr>
+          <tr><td><code>{r[0]}</code></td><td>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td></tr>
         ))}
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Today it's 31 rules: the structural core, the loop-orientation nudges, the lifecycle-completeness checks (tier 1), and the governance rules — staleness, decider focus limit, coupling ceiling — at tier 2. A few canon checks that need git history (<code>specline diff</code>, no-silent-extension) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
+  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Only the nine integrity rules block; everything else is advice the decider weighs. A few canon checks that need git history (<code>specline diff</code>) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
 </Docs>

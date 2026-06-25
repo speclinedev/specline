@@ -7,4 +7,4 @@ canon — a repo copies and adapts them.
 |---|---|
 | `specline-CLAUDE.md` | Template `CLAUDE.md` that teaches an agent to use Specline in a target repo. |
 
-**What's not here:** the rules these conventions implement (root `specline-2.5.md`).
+**What's not here:** the rules these conventions implement (root `specline-2.6.md`).

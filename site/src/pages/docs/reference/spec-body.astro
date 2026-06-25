@@ -19,8 +19,9 @@ const sections = [
   <p class="doc-lead">
     The build contract's sections, in order. Each carries one kind of thing, and the order runs
     from the human's <em>why</em> (Intent) down to the loop's mechanical exit (Acceptance checks).
-    Write intent and rules <strong>richly</strong>; write mechanics <strong>sparsely</strong> (B6) —
-    the builder reads code, and over-specified mechanics measurably degrade frontier output.
+    Write intent and rules <strong>richly</strong>; once code exists, it owns the mechanics (B6) —
+    so prescribed mechanics tend to anchor a frontier builder and go stale. It's advice, not a
+    rule: a weaker target or a pre-build spec may carry worked mechanics where they're load-bearing.
   </p>
   <p>Knowing what each section holds — and what belongs in another — is what keeps the contract reviewable in one sitting:</p>
   {sections.map((s, i) => (

@@ -194,6 +194,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: speclinedev/cli@v2.3
+      - uses: speclinedev/specline/cli@v${CANON}
 `;
 }

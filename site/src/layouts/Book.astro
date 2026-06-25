@@ -1,9 +1,10 @@
 ---
 import "../styles/global.css";
+import { CANON_LABEL } from "../canon.ts";
 
 interface Chapter { id: string; num: string; title: string; }
 interface Props { title: string; chapters: Chapter[]; canon?: string; }
-const { title, chapters, canon = "canon 2.5.0-draft" } = Astro.props;
+const { title, chapters, canon = CANON_LABEL } = Astro.props;
 ---
 
 <!doctype html>

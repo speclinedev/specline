@@ -18,7 +18,7 @@ const TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 1500;
 
 export interface Staleness {
-  /** the bundled canon version, e.g. "2.5.0-draft". */
+  /** the bundled canon version, e.g. "2.6.0". */
   current: string;
   /** the latest released canon version, e.g. "2.6.0". */
   latest: string;
