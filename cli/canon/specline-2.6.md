@@ -1,7 +1,7 @@
 # Specline — Canon v2.6
 
 **Status:** CURRENT — supersedes Canon v2.5.
-**Canon version:** 2.6.1. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.6.2. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 > **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
@@ -34,7 +34,7 @@ most expensive to misdirect.
    hides it.
 2. **`status.md` has a defined schema** (Spec folder anatomy). It is the agent's
    cross-iteration memory in a fresh-context loop.
-3. **Spec body gains an Assumptions / external dependencies section.**
+3. **Spec body gains an Assumptions section** (assumptions + external dependencies).
    Contradictions live at the seams with systems the agent does not control.
 4. **The reviewer has its own context recipe and is a fresh-context subagent**
    (Selective loading; Roles). Fresh-context verifiers outperform implementer
@@ -469,7 +469,7 @@ they are well-formed. Do not merge them — one measures time, the other progres
    where over-building is fenced off.
 4. **Behavior** — observable, numbered, each verifiable from outside.
 5. **Business rules** — `Must` / `Should` / `May`.
-6. **Assumptions / external dependencies** *(new in v2.3)* — what this spec
+6. **Assumptions** *(new in v2.3)* — assumptions and external dependencies: what this spec
    takes as given about systems it does not control (APIs, upstream services,
    data shapes), and what to do at a contradiction. Contradictions live at
    seams; naming them tells the agent where to **escalate fast** instead of
