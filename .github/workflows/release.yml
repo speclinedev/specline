@@ -26,7 +26,9 @@ jobs:
           - os: macos-latest
             target: bun-darwin-arm64
             suffix: darwin-arm64
-          - os: macos-13
+          # Intel build cross-compiles on the arm64 runner (Intel runners are scarce
+          # and can sit queued for an hour); the x64 binary is smoke-tested via Rosetta.
+          - os: macos-latest
             target: bun-darwin-x64
             suffix: darwin-x64
     runs-on: ${{ matrix.os }}
@@ -41,6 +43,9 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
       - uses: oven-sh/setup-bun@v2
+      - name: Install Rosetta (run the cross-compiled Intel binary in the smoke test)
+        if: matrix.suffix == 'darwin-x64'
+        run: sudo softwareupdate --install-rosetta --agree-to-license
       - name: Bundle integrity (canon file + embedded copy match the source)
         run: node scripts/sync-canon.mjs --check
       - name: Compile
