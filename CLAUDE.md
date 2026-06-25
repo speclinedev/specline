@@ -10,6 +10,35 @@ canon is served from a compiled binary — the only thing that can break); the
 cross-compiled macOS binaries come from the same embed and are size-checked. See
 `.github/workflows/release.yml`.
 
+## Canon version bump — touch every one of these
+
+A canon change does **not** reach all surfaces by itself. There are three classes of
+component, and skipping the last two is what keeps biting us:
+
+**1. Derived — auto-updates; just re-bundle.** Edit the `**Canon version:**` line in
+`specline-*.md` (rename the file on a MAJOR.MINOR change), then `cd cli && npm run
+sync-canon`. That regenerates the bundle **and** the embedded `canon-bundle.ts`. `CANON`
+(→ CLI, MCP code, scaffolder `@v${CANON}`) and the site's `CANON_VERSION` follow
+automatically. CI's `sync-canon --check` blocks drift.
+
+**2. Hand-maintained prose mirrors — RECONCILE by hand (they do NOT auto-update).**
+On any change to a rule, a section name, a principle, or a version literal:
+- the canon doc's own lists (the Checks appendix, section/principle names);
+- `README.md` "current canon" line;
+- the site `/docs/reference/*` pages — rule catalog, spec-body, frontmatter, lifecycle, glossary, boundaries;
+- **BOTH** handbook surfaces — `handbook.md` **and** `site/src/pages/handbook/*.astro`.
+
+**3. The live MCP process — RESTART it. (This is the one that bites.)** The running
+`specline` MCP is a long-lived process: it loads the canon **and the engine code
+(rules)** at startup and caches both, so it keeps serving the OLD contract until
+restarted — no code fix exists, a running node process doesn't reload its source. After
+ANY canon or engine change, reconnect it: `/mcp` → reconnect `specline` (or restart
+Claude Code). Verify with `specline_rules` — its `canon` field must match the source.
+(If it's been stale a while, kill leftover processes first: `pkill -f cli/src/mcp/index.ts`.)
+
+**Then ship it.** Cut a `vX.Y.Z` release (binaries auto-build on Linux) and move the
+moving `@vX.Y` tag to the release commit.
+
 ## Canon versioning: one source, derive everywhere
 
 The canon version lives in **exactly one place** — the `**Canon version:** X.Y.Z`
