@@ -61,6 +61,7 @@ for (const [name, rule] of repoScoped) {
 // Spec-scoped INTEGRITY errors (Layer 1) still error and quarantine to --changed.
 const specScoped: [string, string][] = [
   ["id-mismatch", "FRONTMATTER-ID-MISMATCH"],
+  ["missing-spec", "STRUCT-MISSING-SPEC"],
 ];
 for (const [name, rule] of specScoped) {
   test(`${name} -> ${rule} (spec-scoped integrity, errors only with --changed)`, () => {
@@ -77,6 +78,12 @@ test("missing-relations: STRUCT-MISSING-RELATIONS is advisory (warning, exit 0)"
   assert.ok(f, `expected STRUCT-MISSING-RELATIONS, got ${JSON.stringify(ruleIds(r))}`);
   assert.equal(f!.severity, "warning");
   assert.equal(exitCodeFor(r), 0);
+});
+
+// spec.md is constitutive (integrity): blocks the spec it touches, quarantines elsewhere.
+test("missing-spec: STRUCT-MISSING-SPEC blocks only when that spec is in --changed", () => {
+  assert.equal(exitCodeFor(gate("missing-spec")), 0, "untouched empty spec folder quarantines to a warning");
+  assert.equal(exitCodeFor(gate("missing-spec", changedAll)), 1, "touching it makes the missing spec.md block");
 });
 
 test("relation-cross-repo: repo: edge is a warning, exit 0", () => {
@@ -121,7 +128,7 @@ test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation)
 
 test("every --format json report validates against the published schema", () => {
   const names = ["clean", "clean-0012", "dup-id", "id-mismatch", "dangling-link",
-    "relation-dangling", "version-skew", "archive-edited", "canon-pin-skew"];
+    "relation-dangling", "version-skew", "archive-edited", "canon-pin-skew", "missing-spec"];
   for (const name of names) {
     const errs = validate(reportSchema, gate(name, changedAll));
     assert.deepEqual(errs, [], `${name}: ${errs.join("; ")}`);
@@ -187,7 +194,7 @@ test("determinism: two evaluations of the same model are byte-identical", () => 
 
 test("catalog completeness: every emitted rule_id exists in the registry", () => {
   const names = ["clean", "id-mismatch", "missing-relations", "building-no-ratified",
-    "dup-id", "counter-gap", "dangling-link", "knowledge-status", "version-skew", "canon-pin-skew"];
+    "dup-id", "counter-gap", "dangling-link", "knowledge-status", "version-skew", "canon-pin-skew", "missing-spec"];
   for (const name of names) {
     for (const f of gate(name, changedAll).findings) {
       assert.ok(REGISTRY_BY_ID.has(f.rule_id), `finding rule_id ${f.rule_id} absent from registry`);

@@ -18,6 +18,10 @@ import { CANON } from "../version.ts";
 // no longer drives behaviour now that author-mode downgrade is retired.
 export const REGISTRY: RuleMeta[] = [
   // ── Layer 1: integrity (error, blocks) ──────────────────────────────────────
+  // spec.md is constitutive: a specs/ folder with no spec.md is not a spec at all
+  // (and its dir-derived id would let other specs' relations resolve to an empty
+  // shell). The auxiliary files — relations.md, status.md — are advisory.
+  { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "FRONTMATTER-UNPARSEABLE", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "FRONTMATTER-ID-MISMATCH", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "ENUM-INVALID", severity: "error", scope: "spec", tier: 1, downgradable: false },
@@ -28,8 +32,7 @@ export const REGISTRY: RuleMeta[] = [
   { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", tier: 1, downgradable: false },
   // ── Layer 2: advisory (warning, never blocks) ───────────────────────────────
-  // structure & completeness
-  { rule_id: "STRUCT-MISSING-SPEC", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  // structure & completeness (auxiliary files — advisory)
   { rule_id: "STRUCT-MISSING-RELATIONS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "STATUS-SCHEMA", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "UNKNOWN-FRONTMATTER-KEY", severity: "warning", scope: "spec", tier: 1, downgradable: false },
