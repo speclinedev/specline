@@ -18,10 +18,11 @@ import Chapter from "../../layouts/Chapter.astro";
         so can the agent. The sameness isn't tidiness; it's what lets the builder find the
         goal, the scope fence, and the acceptance bar in known places every time.</li>
       <li><strong>A checker — Specline.</strong> A consistent shape is only real if something
-        enforces it. <code>Specline</code> reads the spec's structure — never your code, never a
-        model — and answers one question in the planning phase: <em>does this spec have
-        everything an agent needs to build it?</em> It's the gate that stops a half-formed
-        spec from reaching a builder.</li>
+        keeps it honest. <code>Specline</code> reads the spec's structure — never your code, never a
+        model — and answers one question: <em>does this spec have everything an agent needs to
+        build it?</em> It <em>blocks</em> only when the spec is structurally broken (no
+        <code>spec.md</code>, a dangling link, a duplicate ID); a merely thin or half-formed spec
+        it flags as advice and leaves the call to you.</li>
       <li><strong>An assistant.</strong> You shouldn't have to memorize the shape. An agent
         that knows the methodology helps you write the spec and checks its own work with
         Specline as it goes — so producing a conformant spec is a conversation, not a form.</li>

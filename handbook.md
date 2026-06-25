@@ -125,8 +125,9 @@ on *integrity*; whether a spec is *good* is yours to judge.** Everything follows
 which side of that line a thing falls on.
 
 - **`doctor` (the machine)** *blocks* only on **integrity** — facts that are broken
-  regardless of taste: frontmatter that won't parse, a link or relation that doesn't
-  resolve, a duplicate ID, an out-of-set value. It runs no AI, never reads your code,
+  regardless of taste: a spec folder with no `spec.md` (no spec.md, no spec), frontmatter
+  that won't parse, a link or relation that doesn't resolve, a duplicate ID, an out-of-set
+  value. It runs no AI, never reads your code,
   and gives the same answer every time.
 - Everything else — is it sized right, complete, the right altitude, the mechanics
   kept lean, actually *good* — doctor *surfaces as advice* (a warning), never a block.
