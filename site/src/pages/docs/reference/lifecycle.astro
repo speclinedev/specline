@@ -3,7 +3,7 @@ import Docs from "../../../layouts/Docs.astro";
 
 const states = [
   { name: "draft", set: "Agent / PO, while shaping", means: "Being shaped. Acceptance checks may not yet be falsifiable; open questions may be unresolved.", to: "→ ratified (a human approves), or → killed (abandoned)." },
-  { name: "ratified", set: "The named decider, by an approving commit", means: "A human read the contract and approved it. Sets ratified_by / ratified_at. Build-ready when open-questions.md is clean.", to: "→ building (the implementer starts), or → draft (reshape)." },
+  { name: "ratified", set: "The named decider, by merging to main", means: "A human read the contract and approved it — the approving merge is the record, and git owns who/when. Build-ready when open-questions.md is clean.", to: "→ building (the implementer starts), or → draft (reshape)." },
   { name: "building", set: "Implementer, on starting the build", means: "Under construction by the autonomous loop. Carries a stale_after date — the abandonment trigger.", to: "→ shipped (graduates), → blocked (hits a contradiction), or → killed." },
   { name: "blocked", set: "Implementer, on hitting a contradiction", means: "Paused on something the loop can't resolve. Carries a stale_after date. Records the dead end in status.md.", to: "→ building (resume after a reshape), or → killed." },
   { name: "shipped", set: "Graduation, wired to the implementation PR", means: "Done. The contract moves to archive/ verbatim with an acceptance-results link; knowledge/ describes the shipped reality. Exists only in archive/.", to: "Terminal." },
@@ -50,7 +50,7 @@ const states = [
   </div>
   <div class="bcard">
     <h3>Ratify <span class="gate-tag gate-human">decider · the first gate</span></h3>
-    <p>A named human reads the whole contract in one sitting (B1) and approves it. The approving commit sets <code>ratified_by</code> / <code>ratified_at</code> and a <code>blast_radius</code> value. Merge to main <em>is</em> the ratification event. <code>draft</code> → <code>ratified</code>.</p>
+    <p>A named human reads the whole contract in one sitting (B1) and approves it by <strong>merging it to main</strong> — that merge <em>is</em> the ratification event, and git records who and when. <code>draft</code> → <code>ratified</code>.</p>
   </div>
   <div class="bcard">
     <h3>Build <span class="gate-tag gate-human">agent · autonomous</span></h3>
@@ -61,7 +61,7 @@ const states = [
     <p>An agent-executed editing pass, triggered structurally by the implementation PR: archives the final <code>spec.md</code> as <code>shipped</code>, writes the present-tense <code>knowledge/</code> doc, and deletes the spec folder. The human acceptance gate reviews the graduated doc — "is this what I decided?"</p>
   </div>
 
-  <div class="callout"><span class="ci">▸</span><p><strong>Reshape returns to shaping.</strong> A mid-build contradiction is a normal transition, not a breach: flip to <code>blocked</code>, land a spec-amendment commit that re-approves (updating <code>ratified_at</code> and resetting <code>stale_after</code> in the same commit), then resume <code>building</code>. The merged spec on main is canonical, always.</p></div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Reshape returns to shaping.</strong> A mid-build contradiction is a normal transition, not a breach: flip to <code>blocked</code>, land a spec-amendment that re-approves by merging to main (resetting <code>stale_after</code> in the same commit), then resume <code>building</code>. The merged spec on main is canonical, always.</p></div>
 
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Lifecycle"</a>.</p></div>
 </Docs>

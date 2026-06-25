@@ -1,7 +1,7 @@
 # history/ — prior canon lineage
 
 The canon's ancestors, kept for the audit trail. Read-only history; the live
-contract is the root `specline-2.5.md`.
+contract is the root `specline-2.6.md`.
 
 | File | What |
 |---|---|
