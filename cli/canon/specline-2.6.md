@@ -1,15 +1,17 @@
 # Specline — Canon v2.6
 
 **Status:** CURRENT — supersedes Canon v2.5.
-**Canon version:** 2.6.0. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.6.1. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 > **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
-> (facts that are false regardless of any opinion about good specs: parse errors,
-> dangling references, ID collisions, malformed/invalid frontmatter, archive
-> edits). Every judgment about whether a spec is *good* — completeness, sizing,
-> mechanics (B6), build-readiness — is **advisory**: it warns, never blocks, and
-> the decider owns "enough." The practice is too young for taste to be law.
+> (facts that are false regardless of any opinion about good specs: a `specs/`
+> folder with no `spec.md` — the constitutive file, so the spec doesn't exist —
+> plus parse errors, dangling references, ID collisions, malformed/invalid
+> frontmatter, archive edits). Every judgment about whether a spec is *good* —
+> completeness, an auxiliary file like `relations.md`, sizing, mechanics (B6),
+> build-readiness — is **advisory**: it warns, never blocks, and the decider owns
+> "enough." The practice is too young for taste to be law.
 > Corollary — **Specline never models what another source of truth already owns:
 > code owns mechanics, git owns history and approval.** So ratification is the
 > approving merge to main (git's record), not a frontmatter field.
@@ -892,8 +894,12 @@ Checks — **(I)** = integrity, blocks; **(A)** = advisory, warns only:
   are in their allowed sets (`ENUM-INVALID`).
 - **(I)** ID integrity: unique across `specs/` + `knowledge/` + `archive/`; no ID ≤
   `.id-counter` unaccounted for.
-- **(A)** Every `specs/NNNN-*` has `spec.md` + `relations.md` (`STRUCT-MISSING-*`)
-  — completeness advice, not a gate.
+- **(I)** Every `specs/NNNN-*` has a `spec.md` (`STRUCT-MISSING-SPEC`) — it is the
+  constitutive file; without it the folder is not a spec (and its dir-derived id
+  would let other specs resolve relations to an empty shell). Quarantined: it blocks
+  the spec it's on only when that spec is in `--changed`.
+- **(A)** A `specs/NNNN-*` also has `relations.md` (`STRUCT-MISSING-RELATIONS`) — an
+  auxiliary file; its absence is completeness advice, not a gate.
 - Ratification is **not** modelled here: the approving merge to main is the record,
   and git owns who/when (no `ratified_by`/`ratified_at` check).
 - **(A)** A spec marked building/ratified lacking a `blast_radius` value

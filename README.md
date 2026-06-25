@@ -11,7 +11,7 @@ This repo is the **contract**. It changes first; implementations follow.
 
 | Path | What |
 |---|---|
-| `specline-2.6.md` | The current canon (`2.6.0`). The governing rulebook. Stays at repo root — the site and CLI resolve it by globbing `specline-*.md` here. |
+| `specline-2.6.md` | The current canon (`2.6.1`). The governing rulebook. Stays at repo root — the site and CLI resolve it by globbing `specline-*.md` here. |
 | `handbook.md` | The readable companion to the canon — the version you read to *understand* it. |
 | `examples/` | The worked `0012-trade-in-quote` example — one feature, end to end. |
 | `docs/` | Everything else: research, amendment records, prior versions, templates. See `docs/README.md`. |
@@ -21,7 +21,7 @@ This repo is the **contract**. It changes first; implementations follow.
 ## Versioning
 
 The canon is pinned by version. Implementations declare which canon they
-implement (`doctor@2.6` ↔ canon `2.6.0`). The contract moves first; tooling
+implement (`doctor@2.6` ↔ canon `2.6.1`). The contract moves first; tooling
 tracks it. Amendments are shaped as proposals in `docs/proposals/`, then folded
 into the canon and retired to provenance.
 

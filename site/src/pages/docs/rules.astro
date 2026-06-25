@@ -7,6 +7,7 @@ import Docs from "../../layouts/Docs.astro";
 // the authoritative machine-readable copy.
 const rules = [
   // Integrity — blocks
+  ["STRUCT-MISSING-SPEC", "error", "spec", "1", "a specs/ folder has no spec.md — the constitutive file; the folder is not a spec without it."],
   ["FRONTMATTER-UNPARSEABLE", "error", "spec", "1", "spec.md frontmatter is missing or doesn't parse."],
   ["FRONTMATTER-ID-MISMATCH", "error", "spec", "1", "frontmatter id or slug doesn't match the directory."],
   ["ENUM-INVALID", "error", "spec", "1", "blast_radius / target_model holds a value outside the allowed set."],
@@ -17,8 +18,7 @@ const rules = [
   ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
   ["ARCHIVE-EDITED", "error", "repo", "1", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
   // Advisory — warns, never blocks
-  ["STRUCT-MISSING-SPEC", "warning", "spec", "1", "a specs/ folder has no spec.md."],
-  ["STRUCT-MISSING-RELATIONS", "warning", "spec", "1", "a specs/ folder has no relations.md."],
+  ["STRUCT-MISSING-RELATIONS", "warning", "spec", "1", "a specs/ folder has no relations.md — an auxiliary file."],
   ["STATUS-SCHEMA", "warning", "spec", "1", "status.md is missing or duplicates a required section."],
   ["UNKNOWN-FRONTMATTER-KEY", "warning", "spec", "1", "an unrecognized frontmatter key — preserved, not failed (newer canon)."],
   ["UNKNOWN-SECTION", "warning", "spec", "1", "an unrecognized body section — preserved, not failed."],
@@ -69,5 +69,5 @@ const rules = [
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Only the nine integrity rules block; everything else is advice the decider weighs. A few canon checks that need git history (<code>specline diff</code>) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
+  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Only the ten integrity rules block; everything else is advice the decider weighs. A few canon checks that need git history (<code>specline diff</code>) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
 </Docs>
