@@ -25,15 +25,15 @@ import Chapter from "../../layouts/Chapter.astro";
     <p>
       Two more files travel in the folder. <code>relations.md</code> tells the implementer
       what this feature depends on and what's coming — so it builds with the rest of the system
-      in view. <code>design.md</code> (optional) is the build-scratch: the detailed,
-      line-level <em>how</em> — kept for the builder, but never graduated, because mechanics
-      rot. And the frontmatter carries routing and governance — <code>blast_radius</code>,
+      in view. <code>implementation.md</code> (optional) is the build-scratch: the detailed,
+      line-level <em>how</em> (and any suggested UI approach) — kept for the builder, but never
+      graduated, because mechanics rot. And the frontmatter carries routing and governance — <code>blast_radius</code>,
       <code>size</code>, <code>loop_budget</code> — which set how hard the build runs and when
       it calls you back.
     </p>
     <p>
       The discipline is one line: <strong>the spec carries the feature's delta, nothing
-      universal.</strong> Detailed mechanics go to <code>design.md</code>; baseline hygiene
+      universal.</strong> Detailed mechanics go to <code>implementation.md</code>; baseline hygiene
       ("tests pass, lint clean") belongs to the codebase's standards, not the spec; and
       acceptance proves <em>the goal</em>, never restates the floor. That's what keeps a spec
       specific without becoming a manual.

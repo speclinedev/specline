@@ -1,7 +1,7 @@
 # Specline — Canon v2.6
 
 **Status:** CURRENT — supersedes Canon v2.5.
-**Canon version:** 2.6.2. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.6.3. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 > **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
@@ -404,8 +404,15 @@ docs/specs/NNNN-slug/
 ├── status.md             # REQUIRED for autonomous builds; defined schema below.
 ├── discovery.md          # OPTIONAL. Customer evidence, research, rationale.
 ├── api.md                # OPTIONAL. Feature-specific API contract.
-└── design.md             # OPTIONAL. Adopts the DESIGN.md format (Google Labs), not a bespoke one.
+└── implementation.md     # OPTIONAL. The build-scratch: the "how" B6 keeps out of spec.md —
+                          #   implementation proposals, mechanics, and suggested UI approach.
+                          #   Advisory; does not graduate. (Adopts an engineering design-doc format.)
 ```
+
+A repo's **design system / UI standards** are not a spec file — they are a
+repo-level convention (alongside `architecture.md`, or under `conventions/`),
+descriptive and ungated, the same shape as `architecture.md`. A spec proposes
+*how* in `implementation.md`; it never carries the repo's design system.
 
 ### Frontmatter (required, in `spec.md`)
 
