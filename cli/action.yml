@@ -19,10 +19,16 @@ runs:
       shell: bash
       run: |
         base="${GITHUB_BASE_REF:-main}"
+        # Fetch the base tip so we can diff against it (shallow checkouts lack it).
         git fetch --no-tags --depth=1 origin "$base" 2>/dev/null || true
-        changed="$(git diff --name-only "origin/$base"...HEAD -- 'docs/**' 2>/dev/null | tr '\n' ' ')"
+        # Resolve a usable base ref: prefer the remote-tracking branch, else the just-fetched tip.
+        baseref="origin/$base"
+        git rev-parse --verify -q "$baseref" >/dev/null 2>&1 || baseref="FETCH_HEAD"
+        # Two-dot (not three-dot) so this works in a depth-1 clone with no merge base, and
+        # `|| true` so a diff failure can never abort the gate under set -e / pipefail.
+        changed="$(git diff --name-only "$baseref" HEAD -- 'docs/**' 2>/dev/null | tr '\n' ' ' || true)"
         # modifications/deletions/renames only (not pure adds) — for edit detection on archive/
-        modified="$(git diff --name-status "origin/$base"...HEAD -- 'docs/**' 2>/dev/null | awk '$1 ~ /^[MDR]/ {print $NF}' | tr '\n' ' ')"
+        modified="$(git diff --name-status "$baseref" HEAD -- 'docs/**' 2>/dev/null | awk '$1 ~ /^[MDR]/ {print $NF}' | tr '\n' ' ' || true)"
         echo "Changed under docs/: ${changed:-<none>}"
         echo "Modified (not added): ${modified:-<none>}"
         node "$GITHUB_ACTION_PATH/src/action/main.ts" "${{ inputs.path }}" \
