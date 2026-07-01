@@ -2,7 +2,7 @@
 // source the generated READMEs render from (a projection of the canon's Repository
 // layout). Generated files carry a header; authored starters do not.
 
-import { CANON } from "../version.ts";
+import { CANON, CANON_MM } from "../version.ts";
 
 export const GENERATED_HEADER = `<!-- generated · canon ${CANON} · do not edit · run: specline sync -->`;
 export const GENERATED_YAML_HEADER = `# generated · canon ${CANON} · do not edit · run: specline sync`;
@@ -194,6 +194,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: speclinedev/specline/cli@v${CANON}
+      - uses: speclinedev/specline/cli@v${CANON_MM}
 `;
 }
