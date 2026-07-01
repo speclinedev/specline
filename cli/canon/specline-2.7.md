@@ -1,7 +1,7 @@
 # Specline — Canon v2.6
 
 **Status:** CURRENT — supersedes Canon v2.5.
-**Canon version:** 2.7.0. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.7.1. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 > **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
@@ -529,7 +529,7 @@ iterations, the thing a stateless re-entry cannot reconstruct from the diff.
 Fixed sections, in order:
 
 ```markdown
-## State          — lifecycle status + the one thing blocking forward motion
+## State          — first line: a handoff token (building|ready-for-review|blocked|escalated); then the one thing blocking forward motion
 ## Done           — completed, verifiable units
 ## In progress    — the unit being worked now, if any
 ## Last green checkpoint — most recent state known to pass its checks; the resume point
@@ -545,13 +545,19 @@ it is **required and shape-checked** like the other load-bearing sections, so th
 record a promotion reads from is never left to goodwill — and it **graduates into the
 permanent knowledge doc** so it survives the spec folder's deletion.
 
-**Machine-parseable entries** *(new in v2.3)*. The two load-bearing sections carry a
-fixed *entry* convention so a fresh-context loop (or the orchestrator) reads the
-resume point and skips dead ends without interpreting prose:
-- **Last green checkpoint** — one entry: `<ref> — <what passes here>`, where `<ref>`
-  is a commit, tag, or check id (`none — <reason>` while still pre-green).
-- **Dead ends** — one entry per line: `<approach> — <why it failed>`.
-- **Corrections** — one entry per line:
+**Machine-parseable entries.** Four sections carry a fixed *entry* convention so a
+fresh-context loop (or an external runner) reads handoff state, the resume point, and
+dead ends without interpreting prose:
+- **State** *(token new in v2.7)* — the first line is a machine token from a fixed
+  vocabulary — `building | ready-for-review | blocked: <why> | escalated: loop_budget
+  | escalated: stale` — followed by the one thing blocking forward motion, in prose.
+  This is the loop's **handoff signal**: it lets a fresh context — a different runner,
+  or a human — tell "done, ready for review" apart from a crash without the runner's
+  own process or side database.
+- **Last green checkpoint** *(v2.3)* — one entry: `<ref> — <what passes here>`, where
+  `<ref>` is a commit, tag, or check id (`none — <reason>` while still pre-green).
+- **Dead ends** *(v2.3)* — one entry per line: `<approach> — <why it failed>`.
+- **Corrections** *(v2.3)* — one entry per line:
   `<what was corrected> — <altitude: provable|judgeable|tasteable> — <who caught it: implementer|reviewer|decider>`.
 
 It stays **markdown** — one human-readable file, no second data format. The
@@ -1055,6 +1061,25 @@ only the rules of the declared tier.
   *runner*. A capable model self-orchestrates a single spec (e.g. an agent + a thin
   loop harness); a fuller external orchestrator adds what one model can't do for
   itself: fresh-context re-entry, parallel scheduling across the decider budget,
-  model-tier routing, and fresh-context verifier subagents. The open question is
-  only the **runner contract** — the minimal behaviors a runner must satisfy to be
-  Specline-compliant — not an orchestrator implementation owned here.
+  model-tier routing, and fresh-context verifier subagents.
+
+  **The runner contract is file-observable state, not a wire format.** A runner may
+  signal internally however it likes — exit codes, a queue, a database — but to be
+  Specline-compliant it must externalize three things into the spec folder, so the
+  work survives the runner and a fresh context, a *different* runner, or a human can
+  resume from the folder alone:
+  1. **Handoff state** — `status.md ## State`'s machine token
+     (`building | ready-for-review | blocked | escalated`), so "done, ready for
+     review" is distinguishable from a crash without consulting the runner's process.
+  2. **Bounce verdict** — when the reviewer bounces, its blocking findings land in
+     `status.md` (a `## Review` block, or folded into `## Corrections`) *before*
+     handback, so the next implementer iteration reads them from the folder, not a
+     side channel or an injected prompt.
+  3. **Escalation reason** — on `loop_budget` / `stale_after` / `review_rounds_before_human`
+     exhaustion, the reason is written to `## State` and `## Dead ends` before the
+     work parks as blocked.
+
+  Everything else — the transport, the on-the-wire finding schema, scheduling,
+  model routing — is the runner's own business and belongs in *its* runner-contract
+  doc, not here. That split is what keeps a runner interoperably Specline-compliant
+  rather than the only runner that can read its own state.
