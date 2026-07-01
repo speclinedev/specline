@@ -22,21 +22,20 @@ import Docs from "../../layouts/Docs.astro";
   <h3>Let the agent scaffold it</h3>
   <p>With the brief in place, open an agent in the repo and say:</p>
   <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">you →</span></div><pre>Set this repo up for Specline.</pre></div>
-  <p>It scaffolds the structure (the pin, the id counter, an <code>architecture.md</code>) and is ready for your first <em>"shape a feature"</em>.</p>
+  <p>It scaffolds the structure (the pin, an <code>architecture.md</code>) and is ready for your first <em>"shape a feature"</em>.</p>
 
   <h3>Build it by hand</h3>
   <p>There isn't much to it. The minimal valid setup is four things:</p>
   <pre class="tree"><span class="dir">specline.yml</span>                       <span class="cmt"># the canon + tier pin — Specline reads tier here</span>
 <span class="dir">docs/</span>
   architecture.md                  <span class="cmt"># a few lines: what this system is, read first</span>
-  <span class="dir">specs/</span>
-    .id-counter                    <span class="cmt"># a bare integer, e.g. 0000</span></pre>
+  <span class="dir">specs/</span>                          <span class="cmt"># one folder per in-flight spec; the folder name is its slug</span></pre>
   <p>One file carries the settings. <code>specline.yml</code> at the repo root is where Specline reads your tier and thresholds — nothing else:</p>
-  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">2.6</span>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">2.7</span>
 <span class="k">tier</span>: <span class="acc">1</span>            <span class="cmt"># 1 — the loop</span>
 <span class="k">deciders</span>: <span class="v">[your-name]</span></pre></div>
   <p class="doc-note"><code>docs/conventions/doc-architecture.md</code> is now optional prose/rationale — the machine-readable pins and thresholds live in <code>specline.yml</code>.</p>
-  <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/specs/0001-slug/</code>.</p>
+  <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/specs/ranch-mgmt/</code> — the folder name is the slug, which is the spec's identity.</p>
 
   <h2>Convert an existing repo</h2>
   <p>
@@ -47,13 +46,12 @@ import Docs from "../../layouts/Docs.astro";
 
   <h3>Let the agent convert with you</h3>
   <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">you →</span></div><pre>Convert our docs to Specline with me.</pre></div>
-  <p>The agent reads your existing docs, assigns ids, populates <code>knowledge/NNNN-slug/</code>, sets <code>.id-counter</code>, and adds the conventions pin — checking itself with Specline as it goes.</p>
+  <p>The agent reads your existing docs, assigns slugs, populates <code>knowledge/&lt;slug&gt;/</code>, and adds the conventions pin — checking itself with Specline as it goes.</p>
 
   <h3>Convert it by hand</h3>
   <ol>
     <li>Add <code>specline.yml</code> at the repo root with the canon + tier pin (as above).</li>
-    <li>For each shipped feature's existing doc, create <code>docs/knowledge/NNNN-slug/</code> (sequential ids from <code>0001</code>). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts Specline rejects in <code>knowledge/</code>).</li>
-    <li>Set <code>docs/specs/.id-counter</code> to the highest id you assigned.</li>
+    <li>For each shipped feature's existing doc, create <code>docs/knowledge/&lt;slug&gt;/</code> (the folder name is a descriptive slug, unique across <code>specs/</code>, <code>knowledge/</code>, and <code>archive/</code>). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts Specline rejects in <code>knowledge/</code>).</li>
     <li>Leave <code>archive/</code> empty — it fills as new features go forward through the loop. Backfill a contract only for a feature whose original spec still carries value.</li>
   </ol>
   <div class="callout"><span class="ci">▲</span><p>Specline permits <code>knowledge/</code> entries with no archived spec, so a converted repo is conformant on day one. You don't backfill history. The audit trail in <code>archive/</code> grows forward, never retroactively.</p></div>

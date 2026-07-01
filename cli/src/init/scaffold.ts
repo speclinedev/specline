@@ -1,6 +1,6 @@
 // The writer: scaffolds a Specline repo (init) and regenerates generated artifacts
 // (sync). It writes generated files (folder READMEs, the workflow) and one-time
-// scaffold starters (architecture.md, the pin, .id-counter). It NEVER overwrites an
+// scaffold starters (architecture.md, the pin). It NEVER overwrites an
 // authored file — a generated file is recognized by its header; anything else is
 // off-limits.
 
@@ -29,7 +29,6 @@ function planInit(opts: InitOptions): Planned[] {
   plan.push({ rel: "specline.yml", content: speclineYml(opts.tier, opts.decider), kind: "scaffold" });
   plan.push({ rel: "docs/architecture.md", content: architectureMd(), kind: "scaffold" });
   plan.push({ rel: "docs/conventions/doc-architecture.md", content: docArchitecture(opts.tier, opts.decider), kind: "scaffold" });
-  plan.push({ rel: "docs/specs/.id-counter", content: "0000", kind: "scaffold" });
   if (opts.githubAction) plan.push({ rel: ".github/workflows/specline.yml", content: githubWorkflow(), kind: "generated" });
   return plan;
 }

@@ -25,23 +25,23 @@ interface FolderDoc {
 export const FOLDER_DOCS: Record<string, FolderDoc> = {
   specs: {
     purpose: "in-flight work",
-    whatsHere: "A folder per in-flight feature (`NNNN-slug`) plus `.id-counter`. Prescriptive, temporary.",
+    whatsHere: "A folder per in-flight feature, named by its slug (`docs/specs/<slug>/`). The folder name is the spec's identity. Prescriptive, temporary.",
     howToWrite: "A `spec.md` (Intent, Non-goals, Behavior, Business rules, Acceptance checks, Out of scope) and a `relations.md`. Shape it with the PO; log unknowns in `open-questions.md`.",
     howToRead: "The contract a feature is being built toward — what we intend, not yet what exists.",
     notHere: "No shipped descriptions — those graduate to `knowledge/` and `archive/`.",
   },
   knowledge: {
     purpose: "shipped reality",
-    whatsHere: "A folder per shipped feature (`NNNN-slug`): how it works now and why. Permanent.",
+    whatsHere: "A folder per shipped feature (`<slug>/`, the slug retained from its spec): how it works now and why. Permanent.",
     howToWrite: "Present tense, descriptive. Keep intent, rules, and rationale; cut anything the code already says. Start with `overview.md`; add files only if a topic earns it.",
-    howToRead: '"What\'s true now," not a contract. The original promise lives in `archive/NNNN`.',
+    howToRead: '"What\'s true now," not a contract. The original promise lives in `archive/<slug>`.',
     notHere: "No specs, status, or open questions — those live in `specs/`.",
   },
   archive: {
     purpose: "terminal contracts",
     whatsHere: "The final `spec.md` of every shipped, killed, or bug feature, with acceptance results linked. Permanent, read-only.",
     howToWrite: "Nothing by hand — graduation moves a ratified spec here verbatim. Never edit an archived file.",
-    howToRead: "What was promised and who ratified it — the audit trail. For current behavior, read `knowledge/NNNN`.",
+    howToRead: "What was promised and who ratified it — the audit trail. For current behavior, read `knowledge/<slug>`.",
     notHere: "No living docs — those are `knowledge/`.",
   },
   conventions: {
@@ -53,8 +53,8 @@ export const FOLDER_DOCS: Record<string, FolderDoc> = {
   },
   decisions: {
     purpose: "repo-local ADRs",
-    whatsHere: "Architecture decision records (`NNNN-slug.md`), append-only once accepted.",
-    howToWrite: "One decision per file; cite the spec IDs it affects in the header. Precedence: ADR > spec > knowledge.",
+    whatsHere: "Architecture decision records (`<slug>.md`), append-only once accepted.",
+    howToWrite: "One decision per file; cite the spec slugs it affects in the header. Precedence: ADR > spec > knowledge.",
     howToRead: "Why a cross-cutting choice was made, when a spec or knowledge doc isn't the right home.",
     notHere: "No feature contracts — those are `specs/`.",
   },

@@ -15,7 +15,7 @@ const reportSchema: JsonSchema = JSON.parse(
 );
 
 const fx = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
-const changedAll = ["docs/specs/0001-widget/spec.md", "docs/specs/0001-widget/relations.md"];
+const changedAll = ["docs/specs/widget/spec.md", "docs/specs/widget/relations.md"];
 const gate = (name: string, changed: string[] = []) =>
   run(fx(name), { mode: "gate", changed, now: "2026-06-14" });
 
@@ -44,8 +44,7 @@ test("clean-0012 (the real worked example, docs-rooted): zero errors", () => {
 });
 
 const repoScoped: [string, string][] = [
-  ["dup-id", "ID-DUPLICATE"],
-  ["counter-gap", "ID-COUNTER-GAP"],
+  ["dup-slug", "SLUG-DUPLICATE"],
   ["dangling-link", "LINK-DANGLING"],
   ["knowledge-status", "KNOWLEDGE-HAS-STATUS"],
   ["relation-dangling", "RELATION-DANGLING"],
@@ -60,7 +59,7 @@ for (const [name, rule] of repoScoped) {
 
 // Spec-scoped INTEGRITY errors (Layer 1) still error and quarantine to --changed.
 const specScoped: [string, string][] = [
-  ["id-mismatch", "FRONTMATTER-ID-MISMATCH"],
+  ["slug-mismatch", "FRONTMATTER-SLUG-MISMATCH"],
   ["missing-spec", "STRUCT-MISSING-SPEC"],
 ];
 for (const [name, rule] of specScoped) {
@@ -113,12 +112,12 @@ test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation)
   const has = (r: ReturnType<typeof run1>) => r.findings.some((f) => f.rule_id === "ARCHIVE-EDITED" && f.severity === "error");
 
   // modifying an archived spec → error (the audit trail is immutable)
-  const mod = run1({ changed: ["docs/archive/0013-old/spec.md"], modified: ["docs/archive/0013-old/spec.md"] });
+  const mod = run1({ changed: ["docs/archive/old/spec.md"], modified: ["docs/archive/old/spec.md"] });
   assert.ok(has(mod));
   assert.equal(exitCodeFor(mod), 1);
 
   // adding an archived spec (graduation) → changed but NOT modified → passes
-  const add = run1({ changed: ["docs/archive/0013-old/spec.md"], modified: [] });
+  const add = run1({ changed: ["docs/archive/old/spec.md"], modified: [] });
   assert.ok(!has(add), "graduation (add) must not trip ARCHIVE-EDITED");
   assert.equal(add.summary.errors, 0);
 
@@ -127,7 +126,7 @@ test("archive-edited: a MODIFIED archived spec errors; an ADDED one (graduation)
 });
 
 test("every --format json report validates against the published schema", () => {
-  const names = ["clean", "clean-0012", "dup-id", "id-mismatch", "dangling-link",
+  const names = ["clean", "clean-0012", "dup-slug", "slug-mismatch", "dangling-link",
     "relation-dangling", "version-skew", "archive-edited", "canon-pin-skew", "missing-spec"];
   for (const name of names) {
     const errs = validate(reportSchema, gate(name, changedAll));
@@ -136,13 +135,13 @@ test("every --format json report validates against the published schema", () => 
 });
 
 test("quarantine: spec-scoped violation warns without --changed (exit 0), errors with it", () => {
-  const without = gate("id-mismatch");
+  const without = gate("slug-mismatch");
   assert.equal(without.summary.errors, 0);
-  assert.ok(without.findings.some((f) => f.rule_id === "FRONTMATTER-ID-MISMATCH" && f.severity === "warning"));
+  assert.ok(without.findings.some((f) => f.rule_id === "FRONTMATTER-SLUG-MISMATCH" && f.severity === "warning"));
   assert.equal(exitCodeFor(without), 0);
 
-  const withChanged = gate("id-mismatch", changedAll);
-  assert.ok(withChanged.findings.some((f) => f.rule_id === "FRONTMATTER-ID-MISMATCH" && f.severity === "error"));
+  const withChanged = gate("slug-mismatch", changedAll);
+  assert.ok(withChanged.findings.some((f) => f.rule_id === "FRONTMATTER-SLUG-MISMATCH" && f.severity === "error"));
   assert.equal(exitCodeFor(withChanged), 1);
 });
 
@@ -186,15 +185,15 @@ test("canon pin matching the served canon does not warn", () => {
 });
 
 test("determinism: two evaluations of the same model are byte-identical", () => {
-  const repo = loadRepo(fx("dup-id"));
+  const repo = loadRepo(fx("dup-slug"));
   const a = JSON.stringify(evaluate(repo, { mode: "gate", changed: [], now: "2026-06-14" }));
   const b = JSON.stringify(evaluate(repo, { mode: "gate", changed: [], now: "2026-06-14" }));
   assert.equal(a, b);
 });
 
 test("catalog completeness: every emitted rule_id exists in the registry", () => {
-  const names = ["clean", "id-mismatch", "missing-relations", "building-no-ratified",
-    "dup-id", "counter-gap", "dangling-link", "knowledge-status", "version-skew", "canon-pin-skew", "missing-spec"];
+  const names = ["clean", "slug-mismatch", "missing-relations", "building-no-ratified",
+    "dup-slug", "dangling-link", "knowledge-status", "version-skew", "canon-pin-skew", "missing-spec"];
   for (const name of names) {
     for (const f of gate(name, changedAll).findings) {
       assert.ok(REGISTRY_BY_ID.has(f.rule_id), `finding rule_id ${f.rule_id} absent from registry`);

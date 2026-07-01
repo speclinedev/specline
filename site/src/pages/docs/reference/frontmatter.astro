@@ -2,8 +2,7 @@
 import Docs from "../../../layouts/Docs.astro";
 
 const fields = [
-  { field: "id", values: "four-digit, zero-padded", when: "Always. Matches the folder; never reused, never renumbered." },
-  { field: "slug", values: "kebab-case", when: "Always. Matches the folder's slug." },
+  { field: "slug", values: "kebab-case", when: "Always. The spec's identity — matches the folder name; unique across specs/, knowledge/, and archive/. Frozen once ratified: renaming a referenced spec dangles its inbound edges." },
   { field: "type", values: "feature | bug | chore | parent", when: "Always. A bug is a spec with type: bug; a decomposition parent is type: parent." },
   { field: "status", values: "draft | ratified | building | blocked | shipped | killed", when: "Always. shipped and killed are set during archiving and exist only in archive/." },
   { field: "decider", values: "a named human", when: "Always. The PO accountable for this spec." },

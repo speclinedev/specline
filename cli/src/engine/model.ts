@@ -47,8 +47,8 @@ export interface SpecFolder {
   /** repo-root-relative POSIX path of the directory. */
   rel: string;
   dirName: string;
-  id: string | null;
-  slug: string | null;
+  /** the spec's identity: the folder name (canon 2.7, slug-as-ID). Always the dir. */
+  slug: string;
   files: string[];
   hasSpec: boolean;
   hasRelations: boolean;
@@ -97,7 +97,6 @@ export interface Repo {
   config: RepoConfig;
   /** the repo's declared canon pin, or null when none is declared. */
   canonPin: CanonPin | null;
-  counter: number | null;
   specs: SpecFolder[];
   knowledge: SpecFolder[];
   archive: SpecFolder[];
@@ -139,7 +138,6 @@ function walkMd(dir: string, root: string, acc: MdFile[]): void {
 
 function loadFolder(kind: SpecKind, abs: string, root: string): SpecFolder {
   const dirName = abs.split(sep).pop() ?? "";
-  const m = dirName.match(/^(\d{4})-(.+)$/);
   const files = listFiles(abs);
   const read = (name: string): string | null =>
     files.includes(name) ? readFileSync(join(abs, name), "utf8") : null;
@@ -149,8 +147,7 @@ function loadFolder(kind: SpecKind, abs: string, root: string): SpecFolder {
     abs,
     rel: toPosix(relative(root, abs)),
     dirName,
-    id: m ? m[1]! : null,
-    slug: m ? m[2]! : null,
+    slug: dirName,
     files,
     hasSpec: files.includes("spec.md"),
     hasRelations: files.includes("relations.md"),
@@ -251,13 +248,6 @@ function readCanonPin(root: string): CanonPin | null {
   return null;
 }
 
-function readCounter(specsDir: string): number | null {
-  const f = join(specsDir, ".id-counter");
-  if (!existsSync(f)) return null;
-  const raw = readFileSync(f, "utf8").trim();
-  return /^\d+$/.test(raw) ? Number(raw) : null;
-}
-
 export interface LoadOptions {
   tierOverride?: number;
 }
@@ -298,7 +288,6 @@ export function loadRepo(root: string, opts: LoadOptions = {}): Repo {
     tierSource,
     config,
     canonPin: readCanonPin(root),
-    counter: readCounter(specsDir),
     specs,
     knowledge,
     archive,

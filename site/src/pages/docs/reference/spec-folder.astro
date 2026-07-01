@@ -15,7 +15,7 @@ const files = [
   <div class="doc-kicker">Reference · Spec folder</div>
   <h1>The spec folder</h1>
   <p class="doc-lead">
-    One folder per in-flight feature, living in <code>docs/specs/NNNN-slug/</code>. The folder
+    One folder per in-flight feature, living in <code>docs/specs/&lt;slug&gt;/</code> — the folder name is the slug, which is the spec's identity. The folder
     <em>is</em> its <code>spec.md</code> — the build contract — and everything else orbits it:
     the graph that connects it, the questions still open, the build's own memory, and optional
     research and plan. Three files are always present, one more whenever a build runs autonomously,
@@ -29,6 +29,6 @@ const files = [
       <p><strong>When present.</strong> {f.when}</p>
     </div>
   ))}
-  <div class="callout"><span class="ci">▸</span><p><strong>No recursion.</strong> Sub-folders inside a spec folder are prohibited. A module needing sub-specs gives each its own ID with <code>part_of: NNNN</code> — flat folders with explicit edges beat nested trees.</p></div>
+  <div class="callout"><span class="ci">▸</span><p><strong>No recursion.</strong> Sub-folders inside a spec folder are prohibited. A module needing sub-specs gives each its own slug with <code>part_of: &lt;slug&gt;</code> — flat folders with explicit edges beat nested trees.</p></div>
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/anatomy">handbook — anatomy of a spec</a>. The law: <a href="/spec.md">the canon, "Spec folder anatomy"</a>.</p></div>
 </Docs>
