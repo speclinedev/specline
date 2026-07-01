@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.6.md`). The canon is the
+> The readable companion to the canon (`specline-2.7.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
@@ -24,7 +24,7 @@ suggestion. Specline makes the shape real: a fixed structure, and a **checker**
 Every feature is a folder with the same files. That sameness *is* the benefit.
 
 ```
-docs/specs/0007-trade-in-quote/
+docs/specs/trade-in-quote/
   spec.md           # the contract — what we're building and why
   relations.md      # how this feature connects to others
   status.md         # the build's memory (only once you start building)
@@ -50,9 +50,10 @@ docs/specs/0007-trade-in-quote/
 
 That's it. Read one spec, you can read them all.
 
-*(Why the number `0007`? So features can reference each other by a name that never
-changes even if you rename or move them. It's bookkeeping — at your scale you can
-mostly ignore it; the agent assigns it.)*
+*(The folder name — `trade-in-quote` — is the *slug*, and the slug **is** the
+feature's identity. Features reference each other by slug, so once a spec is ratified
+its slug is frozen by consequence: rename one others depend on and you dangle their
+edges. Pick a good name; the agent proposes it.)*
 
 ## One home for the whole product
 
@@ -76,7 +77,7 @@ docs/
 ```
 
 doctor **enforces** the lifecycle-core — `specs/`, `knowledge/`, `archive/`, the
-`specline.yml` pin and thresholds, ids, links. It leaves `decisions/`, `strategy/`,
+`specline.yml` pin and thresholds, slugs, links. It leaves `decisions/`, `strategy/`,
 and `technical/` to you: the canon defines them, but they're convention, not
 policed. Know which is which. That's the difference between a rule and a habit.
 
@@ -85,11 +86,11 @@ policed. Know which is which. That's the difference between a rule and a habit.
 A feature's documentation doesn't sit still. It shifts *posture* as it moves through
 the loop — from a contract you're building toward, to a description of what you built.
 
-- **In flight** it lives in `docs/specs/NNNN-slug/` — prescriptive, temporary.
+- **In flight** it lives in `docs/specs/<slug>/` — prescriptive, temporary.
 - **When it ships, it graduates into two permanent homes at once:**
-  - `archive/NNNN/spec.md` — the contract, verbatim, `status: shipped`, acceptance
+  - `archive/<slug>/spec.md` — the contract, verbatim, `status: shipped`, acceptance
     results linked, read-only forever. *What was promised.*
-  - `knowledge/NNNN/` — the living description: present-tense, what's true now. *What
+  - `knowledge/<slug>/` — the living description: present-tense, what's true now. *What
     it became.*
 - The in-flight spec is then **deleted** — the contract survives only in `archive/`.
 
@@ -99,8 +100,8 @@ it is, it can't lose that argument. Keep intent, rules, rationale. Cut anything 
 code already says.
 
 **Migrating an existing repo:** already-shipped features never had a spec, so there's
-no contract to archive. Populate `knowledge/NNNN-slug/` directly from your existing
-descriptive docs (usually already knowledge-shaped), assign an id, and let `archive/`
+no contract to archive. Populate `knowledge/<slug>/` directly from your existing
+descriptive docs (usually already knowledge-shaped), give each a slug, and let `archive/`
 fill as features go forward. doctor permits knowledge without an archived spec, so a
 migrated repo is conformant from day one.
 
@@ -126,7 +127,7 @@ which side of that line a thing falls on.
 
 - **`doctor` (the machine)** *blocks* only on **integrity** — facts that are broken
   regardless of taste: a spec folder with no `spec.md` (no spec.md, no spec), frontmatter
-  that won't parse, a link or relation that doesn't resolve, a duplicate ID, an out-of-set
+  that won't parse, a link or relation that doesn't resolve, a duplicate slug, an out-of-set
   value. It runs no AI, never reads your code,
   and gives the same answer every time.
 - Everything else — is it sized right, complete, the right altitude, the mechanics

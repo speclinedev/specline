@@ -8,7 +8,7 @@ wins.
 | File | Status |
 |---|---|
 | `v2.4-amendment.md` | Superseded — folded into the canon. |
-| `v2.5-amendment.md` | Superseded — folded into the canon (`specline-2.6.md`). |
+| `v2.5-amendment.md` | Superseded — folded into the canon (`specline-2.7.md`). |
 
 **What's not here:** the evidence that motivated an amendment (`docs/research/`),
-or the canon itself (root `specline-2.6.md`).
+or the canon itself (root `specline-2.7.md`).

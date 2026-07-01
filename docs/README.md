@@ -1,6 +1,6 @@
 # docs/ — everything that supports the canon but isn't the canon
 
-The canon itself (`specline-2.6.md`) and its readable companion (`handbook.md`)
+The canon itself (`specline-2.7.md`) and its readable companion (`handbook.md`)
 live at the repo root. This tree holds the supporting material, so root stays
 clean.
 

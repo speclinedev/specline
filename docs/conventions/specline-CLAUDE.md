@@ -34,15 +34,16 @@ the spec. Migrating an existing plan? See the steps below.
    mechanics) over buildable child scopes.
 2. **Propose the spec folder**, don't impose it. For each feature:
    ```
-   docs/specs/NNNN-slug/
+   docs/specs/<slug>/        # the folder name IS the spec's identity
      spec.md          # the contract (see anatomy below)
      relations.md     # forward edges: depends_on / part_of / supersedes / conflicts_with
      status.md        # build-loop memory (once building)
      open-questions.md# unresolved decisions (optional)
    ```
    First-time setup also needs `specline.yml` at repo root (the source of truth
-   for the canon pin, tier, thresholds, and model map) and `docs/specs/.id-counter`
-   (a bare integer). `doc-architecture.md` is now optional prose only.
+   for the canon pin, tier, thresholds, and model map). `doc-architecture.md` is
+   now optional prose only. (There is no id counter — a spec's slug is its
+   identity, chosen when you create the folder.)
 3. **Ask, don't assume.** Anything you can't derive — decider, blast_radius,
    acceptance criteria — becomes an entry in `open-questions.md` with *who
    decides*, *the options*, *a default*, and *a deadline*. A logged default lets
@@ -53,7 +54,7 @@ the spec. Migrating an existing plan? See the steps below.
 ## spec.md anatomy
 
 Frontmatter (between `---` fences):
-`id`, `slug` (must match the directory `NNNN-slug`), `type`
+`slug` (the folder name — a spec's identity; must match the directory), `type`
 (`feature|bug|chore|parent`), `status`
 (`draft|ratified|building|blocked|shipped|killed`), `decider`, `blast_radius`
 (`low|medium|high`), `size` (`small|large` — declared *build* size, default

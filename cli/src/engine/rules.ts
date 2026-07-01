@@ -19,16 +19,15 @@ import { CANON } from "../version.ts";
 export const REGISTRY: RuleMeta[] = [
   // ── Layer 1: integrity (error, blocks) ──────────────────────────────────────
   // spec.md is constitutive: a specs/ folder with no spec.md is not a spec at all
-  // (and its dir-derived id would let other specs' relations resolve to an empty
+  // (and its dir-derived slug would let other specs' relations resolve to an empty
   // shell). The auxiliary files — relations.md, status.md — are advisory.
   { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "FRONTMATTER-UNPARSEABLE", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "FRONTMATTER-ID-MISMATCH", severity: "error", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "FRONTMATTER-SLUG-MISMATCH", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "ENUM-INVALID", severity: "error", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "RELATION-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "LINK-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "ID-DUPLICATE", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "ID-COUNTER-GAP", severity: "error", scope: "repo", tier: 1, downgradable: false },
+  { rule_id: "SLUG-DUPLICATE", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", tier: 1, downgradable: false },
   { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", tier: 1, downgradable: false },
   // ── Layer 2: advisory (warning, never blocks) ───────────────────────────────
@@ -63,7 +62,7 @@ export const REGISTRY: RuleMeta[] = [
 export const REGISTRY_BY_ID: Map<string, RuleMeta> = new Map(REGISTRY.map((r) => [r.rule_id, r]));
 
 const KNOWN_FRONTMATTER_KEYS = new Set([
-  "id", "slug", "type", "status", "decider", "blast_radius", "size", "target_model",
+  "slug", "type", "status", "decider", "blast_radius", "size", "target_model",
   "ratified_by", "ratified_at", "created", "canon", "shipped", "stale_after",
   "acceptance_results", "deputy", "killed_reason", "loop_budget",
 ]);
@@ -112,7 +111,7 @@ const structMissing: Rule = ({ repo }) => {
     if (!f.hasSpec) {
       out.push({ rule_id: "STRUCT-MISSING-SPEC", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
         message: `spec folder ${f.dirName} has no spec.md`,
-        fix_hint: "add spec.md with frontmatter (id, slug, type, status) and an Intent section" });
+        fix_hint: "add spec.md with frontmatter (slug, type, status) and an Intent section" });
     }
     if (!f.hasRelations) {
       out.push({ rule_id: "STRUCT-MISSING-RELATIONS", file: `${f.rel}/relations.md`, line: null, specDir: f.dirName,
@@ -134,16 +133,10 @@ const frontmatterWellFormed: Rule = ({ repo }) => {
         fix_hint: "wrap frontmatter in `---` fences; one `key: value` per line" });
       continue;
     }
-    const idVal = fmString(f, "id");
     const slugVal = fmString(f, "slug");
-    if (idVal !== null && f.id !== null && idVal !== f.id) {
-      out.push({ rule_id: "FRONTMATTER-ID-MISMATCH", file: `${f.rel}/spec.md`, line: fm.lineOf["id"] ?? 1, specDir: f.dirName,
-        message: `frontmatter id "${idVal}" does not match directory id "${f.id}"`,
-        fix_hint: `set id to ${f.id} or rename the directory to match` });
-    }
-    if (slugVal !== null && f.slug !== null && slugVal !== f.slug) {
-      out.push({ rule_id: "FRONTMATTER-ID-MISMATCH", file: `${f.rel}/spec.md`, line: fm.lineOf["slug"] ?? 1, specDir: f.dirName,
-        message: `frontmatter slug "${slugVal}" does not match directory slug "${f.slug}"`,
+    if (slugVal !== null && slugVal !== f.slug) {
+      out.push({ rule_id: "FRONTMATTER-SLUG-MISMATCH", file: `${f.rel}/spec.md`, line: fm.lineOf["slug"] ?? 1, specDir: f.dirName,
+        message: `frontmatter slug "${slugVal}" does not match directory "${f.slug}"`,
         fix_hint: `set slug to ${f.slug} or rename the directory to match` });
     }
   }
@@ -327,21 +320,18 @@ const parentHasMechanics: Rule = ({ repo }) => {
 
 const parentNoScopes: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  // child scopes declare `part_of: <parent-id>` — collect every id referenced that way.
+  // child scopes declare `part_of: <parent-slug>` — collect every slug referenced that way.
   const parented = new Set<string>();
   for (const f of repo.specs) {
     if (f.relationsContent === null) continue;
     const parsed = parseFlatYaml(f.relationsContent);
-    for (const edge of asEdges(parsed.data["part_of"])) {
-      const m = edge.match(/^(\d{4})/);
-      if (m) parented.add(m[1]!);
-    }
+    for (const edge of asEdges(parsed.data["part_of"])) parented.add(edge);
   }
   for (const f of repo.specs) {
-    if (f.specContent === null || fmString(f, "type") !== "parent" || f.id === null) continue;
-    if (!parented.has(f.id)) {
+    if (f.specContent === null || fmString(f, "type") !== "parent") continue;
+    if (!parented.has(f.slug)) {
       out.push({ rule_id: "PARENT-NO-SCOPES", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
-        message: `parent-map ${f.id} has no child scopes (nothing declares part_of: ${f.id}) — it is a misfiled scope`,
+        message: `parent-map ${f.slug} has no child scopes (nothing declares part_of: ${f.slug}) — it is a misfiled scope`,
         fix_hint: "give the parent child scopes (each an ordinary spec with part_of: this id), or make this an ordinary scope (type: feature)" });
     }
   }
@@ -423,7 +413,7 @@ const archiveNeedsAcceptance: Rule = ({ repo }) => {
     if (fmString(f, "status") !== "shipped" || fmString(f, "type") === "bug") continue;
     if (fmString(f, "acceptance_results") === null) {
       out.push({ rule_id: "ARCHIVE-NO-ACCEPTANCE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName,
-        message: `shipped spec ${f.id ?? f.dirName} was archived without a linked acceptance_results (B5)`,
+        message: `shipped spec ${f.dirName} was archived without a linked acceptance_results (B5)`,
         fix_hint: "graduation executes the agent-loopable checks and links the run; add acceptance_results: <link> before archiving" });
     }
   }
@@ -529,25 +519,22 @@ const deciderOverBudget: Rule = ({ repo }) => {
 /** spec.md + relations.md of the spec and every spec transitively reachable via
  *  depends_on / part_of — the "forced loads" the coupling-ceiling proxy measures. */
 function forcedLoadChars(repo: Repo, start: SpecFolder): number {
-  const byId = new Map<string, SpecFolder>();
-  for (const f of repo.allFolders) if (f.id !== null) byId.set(f.id, f);
+  const bySlug = new Map<string, SpecFolder>();
+  for (const f of repo.allFolders) bySlug.set(f.slug, f);
   const seen = new Set<string>();
   const queue: SpecFolder[] = [start];
   let total = 0;
   while (queue.length > 0) {
     const f = queue.shift()!;
-    if (f.id !== null) {
-      if (seen.has(f.id)) continue;
-      seen.add(f.id);
-    }
+    if (seen.has(f.slug)) continue;
+    seen.add(f.slug);
     total += (f.specContent?.length ?? 0) + (f.relationsContent?.length ?? 0);
     if (f.relationsContent === null) continue;
     const parsed = parseFlatYaml(f.relationsContent);
     for (const key of ["depends_on", "part_of"]) {
       for (const edge of asEdges(parsed.data[key])) {
-        const m = edge.match(/^(\d{4})/);
-        const target = m ? byId.get(m[1]!) : undefined;
-        if (target !== undefined && (target.id === null || !seen.has(target.id))) queue.push(target);
+        const target = bySlug.get(edge);
+        if (target !== undefined && !seen.has(target.slug)) queue.push(target);
       }
     }
   }
@@ -574,9 +561,9 @@ const couplingCeiling: Rule = ({ repo }) => {
 
 const relationEdges: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  const knownIds = new Set(repo.allFolders.map((f) => f.id).filter((x): x is string => x !== null));
-  const killedIds = new Set(
-    repo.allFolders.filter((f) => fmString(f, "status") === "killed").map((f) => f.id).filter((x): x is string => x !== null),
+  const knownSlugs = new Set(repo.allFolders.map((f) => f.slug));
+  const killedSlugs = new Set(
+    repo.allFolders.filter((f) => fmString(f, "status") === "killed").map((f) => f.slug),
   );
   for (const f of repo.specs) {
     if (f.relationsContent === null) continue;
@@ -587,20 +574,18 @@ const relationEdges: Rule = ({ repo }) => {
         if (edge.startsWith("repo:")) {
           out.push({ rule_id: "RELATION-CROSS-REPO", file: `${f.rel}/relations.md`, line, specDir: null,
             message: `cross-repo edge ${edge} (${key}) is validated weakly`,
-            fix_hint: "cross-repo edges are warn-only; ensure the sibling repo/id exists out of band" });
+            fix_hint: "cross-repo edges are warn-only; ensure the sibling repo/slug exists out of band" });
           continue;
         }
-        const idMatch = edge.match(/^(\d{4})/);
-        if (!idMatch) continue;
-        const id = idMatch[1]!;
-        if (!knownIds.has(id)) {
+        // the edge value is a slug (canon 2.7); it resolves to a folder name directly.
+        if (!knownSlugs.has(edge)) {
           out.push({ rule_id: "RELATION-DANGLING", file: `${f.rel}/relations.md`, line, specDir: null,
-            message: `${key} edge ${edge} points to id ${id}, which exists nowhere in specs/, knowledge/, or archive/`,
-            fix_hint: "fix the id, or remove the edge if the target was never created" });
-        } else if (killedIds.has(id)) {
+            message: `${key} edge ${edge} points to a slug that exists nowhere in specs/, knowledge/, or archive/`,
+            fix_hint: "fix the slug, or remove the edge if the target was never created" });
+        } else if (killedSlugs.has(edge)) {
           out.push({ rule_id: "RELATION-KILLED", file: `${f.rel}/relations.md`, line, specDir: null,
-            message: `${key} edge ${edge} points to killed id ${id}`,
-            fix_hint: "edges to killed ids are warn-only; drop the edge if it is no longer meaningful" });
+            message: `${key} edge ${edge} points to killed spec ${edge}`,
+            fix_hint: "edges to killed specs are warn-only; drop the edge if it is no longer meaningful" });
         }
       }
     }
@@ -644,8 +629,8 @@ const archiveEdited: Rule = ({ modified }) => {
   const out: RawFinding[] = [];
   // Only a *modification* of an archived spec is a violation — adding one is
   // graduation, which is allowed. So this reads `modified`, not `changed`. And only
-  // archived specs (archive/NNNN-slug/...) count; the generated archive/README.md does not.
-  const archivedSpec = /^docs\/archive\/\d{4}-[^/]+\//;
+  // archived specs (archive/<slug>/...) count; the generated archive/README.md does not.
+  const archivedSpec = /^docs\/archive\/[^/]+\//;
   for (const path of [...modified].sort()) {
     if (archivedSpec.test(path)) {
       out.push({ rule_id: "ARCHIVE-EDITED", file: path, line: null, specDir: null,
@@ -656,34 +641,24 @@ const archiveEdited: Rule = ({ modified }) => {
   return out;
 };
 
-const idIntegrity: Rule = ({ repo }) => {
+const slugIntegrity: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   // Duplicates count only spec.md-bearing locations (specs/ + archive/). A
-  // graduated feature legitimately has the same id in both archive/ and
-  // knowledge/ — that is the shipped state, not a collision.
-  const byId = new Map<string, SpecFolder[]>();
+  // graduated feature legitimately has the same slug in both archive/ and
+  // knowledge/ — that is the shipped state, not a collision. (Two in-flight specs
+  // can't collide: same folder name is a filesystem impossibility. What this
+  // catches is a new spec reusing a slug already spent in archive/.)
+  const bySlug = new Map<string, SpecFolder[]>();
   for (const f of [...repo.specs, ...repo.archive]) {
-    if (f.id === null) continue;
-    (byId.get(f.id) ?? byId.set(f.id, []).get(f.id)!).push(f);
+    (bySlug.get(f.slug) ?? bySlug.set(f.slug, []).get(f.slug)!).push(f);
   }
-  for (const [id, folders] of [...byId.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [slug, folders] of [...bySlug.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (folders.length > 1) {
       const sorted = [...folders].sort((a, b) => a.rel.localeCompare(b.rel));
       for (const f of sorted.slice(1)) {
-        out.push({ rule_id: "ID-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["id"] ?? null, specDir: f.dirName,
-          message: `id ${id} also declared in ${sorted[0]!.rel}`,
-          fix_hint: "renumber the later-merged spec to a fresh id; nothing should reference it yet" });
-      }
-    }
-  }
-  if (repo.counter !== null) {
-    const present = new Set(repo.allFolders.map((f) => f.id).filter((x): x is string => x !== null));
-    for (let n = 1; n <= repo.counter; n++) {
-      const id = String(n).padStart(4, "0");
-      if (!present.has(id)) {
-        out.push({ rule_id: "ID-COUNTER-GAP", file: null, line: null, specDir: null,
-          message: `id ${id} <= .id-counter (${String(repo.counter).padStart(4, "0")}) is accounted for nowhere in specs/, knowledge/, or archive/`,
-          fix_hint: "an abandoned spec is archived with status: killed, never deleted; restore it or correct the counter" });
+        out.push({ rule_id: "SLUG-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["slug"] ?? null, specDir: f.dirName,
+          message: `slug "${slug}" also names ${sorted[0]!.rel}`,
+          fix_hint: "re-slug the later-merged spec to a fresh, unique name; nothing should reference it yet" });
       }
     }
   }
@@ -740,6 +715,6 @@ export const RULES: Rule[] = [
   danglingLinks,
   knowledgeHasStatus,
   archiveEdited,
-  idIntegrity,
+  slugIntegrity,
   canonPinMismatch,
 ];

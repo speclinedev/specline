@@ -10,5 +10,5 @@ runs, not theory.
 | `specline-thesis.md` | The positioning and rationale — why Specline exists. |
 | `fable-5-vs-specline.md` | Prior-art comparison against a frontier long-horizon model. |
 
-**What's not here:** the rules themselves (root `specline-2.6.md`), or shaped
+**What's not here:** the rules themselves (root `specline-2.7.md`), or shaped
 amendments ready to ratify (`docs/proposals/`).
