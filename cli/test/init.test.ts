@@ -8,7 +8,7 @@ import { init, sync, upgrade } from "../src/init/scaffold.ts";
 import { isGenerated } from "../src/init/content.ts";
 import { run, exitCodeFor } from "../src/engine/run.ts";
 import { loadCanon } from "../src/canon.ts";
-import { CANON } from "../src/version.ts";
+import { CANON, CANON_MM } from "../src/version.ts";
 
 const fresh = () => mkdtempSync(join(tmpdir(), "specline-init-"));
 const base = { tier: 1, decider: "jonathan", check: false } as const;
@@ -35,6 +35,16 @@ test("generated files carry the header; scaffold starters do not", () => {
   const canonVer = loadCanon().version.replace(/\./g, "\\.");
   assert.match(readFileSync(join(t, "specline.yml"), "utf8"), new RegExp(`^canon: ${canonVer}$`, "m"));
   assert.match(readFileSync(join(t, "specline.yml"), "utf8"), /^tier: 1$/m);
+});
+
+test("scaffolded workflow pins the moving MAJOR.MINOR Action tag, not the exact patch", () => {
+  const t = fresh();
+  init(t, { ...base, githubAction: true });
+  const wf = readFileSync(join(t, ".github/workflows/specline.yml"), "utf8");
+  const mm = CANON_MM.replace(/\./g, "\\.");
+  // consuming repos track the moving @vMAJOR.MINOR tag so a canon patch never breaks their CI
+  assert.match(wf, new RegExp(`uses: speclinedev/specline/cli@v${mm}$`, "m"));
+  if (CANON !== CANON_MM) assert.ok(!wf.includes(`cli@v${CANON}`), "must not pin the exact patch version");
 });
 
 test("sync is deterministic and idempotent across repos", () => {

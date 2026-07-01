@@ -56,7 +56,8 @@ That's it. Everything downstream **derives** the value and updates itself:
 
 | Deriver | What it feeds |
 |---|---|
-| `cli/src/version.ts` (`CANON`, parsed from the bundle) | CLI + MCP output; `specline rules`; the scaffolder's `canon:` pin and `speclinedev/specline/cli@v${CANON}` workflow ref |
+| `cli/src/version.ts` (`CANON`, parsed from the bundle) | CLI + MCP output; `specline rules`; the scaffolder's `canon:` pin |
+| `cli/src/version.ts` (`CANON_MM` = MAJOR.MINOR of `CANON`) | the scaffolded workflow's `speclinedev/specline/cli@v${CANON_MM}` ref — the **moving** `@v2.7` tag, so a canon patch never breaks a consuming repo's CI on a missing exact tag |
 | `cli/src/canon.ts` / `site/src/canon.ts` (parsed from the canon file) | every site page, `llms.txt`, `/spec.md` |
 
 CI runs `sync-canon --check`, so a bundle that drifts from the source cannot merge.
