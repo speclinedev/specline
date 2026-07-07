@@ -281,3 +281,47 @@ operator-scope fence (#18) deliberately keeps out of any repo's canon.
 contracts, not crafts — the runner split, again). A `prototype.md` spec file (anatomy stays
 minimal; `discovery.md` already holds evidence). Map/territory as a rewritten B6 rationale
 (good prose for the handbook someday; changes no rule).
+
+## 2026-07 · External evidence · Vendor loop primitives vs. the runner contract
+
+**Source:** the Claude Code team's *"Getting started with loops"* (claude.com/blog, June 30
+2026; tweeted by @ClaudeDevs July 6). Defines loops as "agents repeating cycles of work until
+a stop condition is met" and names four vendor primitives: turn-based (a prompt), goal-based
+(`/goal <outcome>, stop after N tries`), time-based (`/loop <interval>`, `/schedule`), and
+proactive routines (event/schedule-triggered, no human in real time). External evidence — a
+prior, not a verdict. Intro-level vendor taxonomy; weigh as directional, not as a study.
+
+**What it confirms (stop re-litigating these).**
+- **The goal-based primitive is the canon's build loop, shipped by the vendor.** `/goal get
+  the Lighthouse score to 90, stop after 5 tries` is exactly *Goal* (one falsifiable outcome)
+  + `loop_budget` (bounded tries, exhaustion ≠ success). The runner the canon declined to
+  build is now a stock vendor feature with the same shape.
+- **The taxonomy's trigger/stop split independently re-derives the canon's two escalation
+  triggers**: time-based loops (interval) vs. goal-based loops (progress toward a verifiable
+  exit) is `stale_after` (time) vs. `loop_budget` (progress) — the same "don't merge them"
+  cut the canon makes in Escalation.
+- **"Use secondary agents for code review"** — the fresh-context verifier, again (the
+  best-supported decision keeps being confirmed; see 2026-06).
+- **"Define clear success criteria… pilot before large runs"** — B5 falsifiability; **"keep
+  codebases clean; Claude follows existing patterns"** — the `conventions/` layer the
+  judgeable gate cites; **"start with the simplest solution"** — tiered adoption's posture.
+
+**The one candidate: a reference binding, not a canon change.** Per the 2026-06 refutation,
+loop mechanics are *runner* concerns — nothing here touches the canon. But the canon's
+"orchestrator is external and pluggable" claim has so far been a promise with no named
+runner. Stock Claude Code now carries every primitive a minimal Specline runner needs:
+`/goal` bound to the spec's Goal + `loop_budget`, a routine for the recurring streams
+(staleness sweeps, doctor-on-main, graduation retro-runs — DECIDER-OVER-BUDGET and
+STALE-QUARANTINE are precisely "recurring, well-defined work"), and the v2.7.1 runner
+contract's three file-observable outputs (`status.md` handoff token, bounce verdict,
+escalation reason) as what makes such a run Specline-compliant rather than ad hoc.
+**Candidate:** a short how-to — "running a Specline build loop on stock Claude Code" —
+in the handbook or `docs/technical/`, written from an actual run, not theory. It would be
+the first concrete cash-out of the pluggable-runner bet, against the most widely deployed
+runner. Needs a run first; that run is also the natural pilot for the graduation-quiz
+candidate above.
+
+**Rejected, with reasons.** Importing the four-loop taxonomy into the canon (runner
+features; settled by the 2026-06 refutation — the canon names the contract the loop runs
+against, not the loop). Naming Claude Code in the canon (the contract stays runner-agnostic;
+a binding doc is convention, not law).
