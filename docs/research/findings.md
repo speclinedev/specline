@@ -225,3 +225,59 @@ doc at graduation, with a who-caught-it field (`implementer|reviewer|decider`), 
 resolved with no new machinery). **Deferred:** C4 (the coverage warning → future review
 system), and the whole harvest/corpus/cross-project-router/two-axis architecture (earned by
 data, not built now).
+
+## 2026-07 · External evidence · The "unknowns" field guide vs. the shaping surface
+
+**Source:** practitioner essay — Thariq (Anthropic), *"A Field Guide to Fable: Finding Your
+Unknowns"* (x.com/trq212, July 2026). Frames agent work as map (prompt/spec) vs. territory
+(codebase/world); the gap is *unknowns*, in four quadrants (known/unknown × known/unknown),
+and names techniques per phase: blindspot pass, brainstorm/prototype, interview, references
+(pre-implementation); a deviations log (during); pitch docs and a comprehension quiz (post).
+External evidence — a prior, not a verdict. Reviewed in two passes: a first audit (Opus),
+then a refutation of that audit (Fable), both in one shared-context session — **not** a
+fresh-context refutation; weigh accordingly.
+
+**What it confirms (stop re-litigating these).**
+- **`status.md` is the article's deviations log, plus the promotion path it lacks.** "Log
+  deviations, pick the conservative option, keep going" is *Dead ends* + *Corrections* +
+  proceed-on-stated-default (Agent-execution notes) — and graduation carries the record
+  forward, which a per-session notes file cannot.
+- **The Assumptions section is "unknowns live at the seams,"** already canon (v2.3 §B-body 6).
+- **The four-quadrant frame maps onto existing homes:** known knowns → the spec body; known
+  unknowns → `open-questions.md` (decider/options/default/deadline); unknown knowns → the
+  planner persona's "surface what the model can't derive" move. Only unknown *unknowns* have
+  no owner (see candidate 1).
+
+**Where the first-pass audit over-reached (recorded so it isn't re-imported later).** The
+audit graded the *canon* and concluded shaping is "an atomic, unspecified step." Wrong
+surface: the discovery craft deliberately lives in `cli/prompts/planner.md` (the MCP `shape`
+persona, canon-external, under test) — the same contract-vs-craft split as the runner. Same
+error class the 2026-06 refutation named ("conflated the canon with the runner"), transposed
+to the persona. Specifically: an *interview posture* already is the persona ("propose, then
+write"; "one thing at a time"); *deferral with defaults* is move 7; *reference-as-exemplar*
+is covered by Critical-files-as-pointers plus the persona's "points at where it lives." And
+the article is largely an **operator** field guide — the class of content the v2.5
+operator-scope fence (#18) deliberately keeps out of any repo's canon.
+
+**Surviving candidates (all persona/conventions-side; none canon).**
+1. **A blindspot-pass move in the planner persona.** The persona probes what the *builder*
+   can't derive, but nothing probes what the *PO doesn't know to say* — unknown unknowns.
+   Candidate: one move in `planner.md` (e.g. "when the PO is new to the area, name the
+   questions they didn't ask before writing sections"), feeding surfaced items into
+   `open-questions.md` with defaults. Cheap; the persona is a draft that exists to absorb this.
+2. **A reactable-prototype move.** For taste-shaped wants ("I'll know it when I see it"),
+   the persona has no "react to a throwaway artifact before ratifying" offer, and finding
+   unknown knowns post-ratification is the expensive path. Candidate: a persona move offering
+   a disposable mock during shaping; `discovery.md` may reference it. No new spec file.
+3. **Comprehension re-sync at the human gate — the strongest, pilot before adopting.**
+   Specline's economics maximize unattended building, which maximizes the gap between what
+   shipped and what the decider actually understands; the gate assumes the graduated doc
+   closes that gap by being read. Candidate: the graduation prompt optionally emits a few
+   decider-facing comprehension questions alongside the knowledge doc ("what breaks if X?").
+   Must stay advisory forever — B3's own text ("no system detects attention") fences it from
+   doctor. Pilot on the next graduated spec; adopt only if the decider finds it caught drift.
+
+**Rejected, with reasons.** Canonizing the technique menu (operator craft; the canon names
+contracts, not crafts — the runner split, again). A `prototype.md` spec file (anatomy stays
+minimal; `discovery.md` already holds evidence). Map/territory as a rewritten B6 rationale
+(good prose for the handbook someday; changes no rule).
