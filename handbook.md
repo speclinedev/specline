@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.7.md`). The canon is the
+> The readable companion to the canon (`specline-2.8.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
@@ -43,7 +43,9 @@ docs/specs/trade-in-quote/
 - **Behavior** — numbered, observable statements of what it does.
 - **Business rules** — the must/must-not constraints.
 - **Acceptance checks** — how you know it's done. A check gets settled one of three
-  ways: by running it (`agent-loopable` — a runnable command), by judgment
+  ways: by running it (`agent-loopable` — a runnable command; since v2.8 an item may
+  carry its command inline as `<claim> — run: ​`<command>`​`, so the loop, the
+  reviewer, and any cockpit can settle it mechanically), by judgment
   (`judgeable` — a fresh-context agent ruling against a *named* spec section), or by
   taste (`human-gate` — a person decides once).
 - **Out of scope** — deferred for later.

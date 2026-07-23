@@ -19,7 +19,8 @@ review_rounds_before_human: 2  # outer-loop verifier↔implementer bounce budget
 models:               # capability tier → real model
   light:    claude-haiku
   standard: claude-sonnet
-  frontier: claude-opus`;
+  frontier: claude-opus
+merge_target: main    # (v2.8, optional) where impl PRs merge and graduation lands; absent → repo default branch`;
 
 const keys = [
   { key: "canon", values: "version string", when: "The canon version this repo pins. This contract changes first; repo conventions follow." },
@@ -35,6 +36,7 @@ const keys = [
   { key: "suggest_slicing_past", values: "int (default 6)", when: "Acceptance/Behavior count above which Specline nudges to slice, while size: small." },
   { key: "review_rounds_before_human", values: "int (default 2)", when: "The outer-loop verifier↔implementer bounce budget before the human gate." },
   { key: "models", values: "tier → model map", when: "Binds each capability tier (light/standard/frontier) to a real model, so specs stay agent-agnostic." },
+  { key: "merge_target", values: "branch name", when: "(v2.8, optional) The branch impl PRs merge into and graduation lands on. Repo-level on purpose — a spec doesn't choose its integration branch. Absent → the repo's default branch." },
 ];
 ---
 <Docs title="Reference — specline.yml">

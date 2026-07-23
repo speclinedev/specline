@@ -26,6 +26,7 @@ const rules = [
   ["GOAL-MISSING", "warning", "spec", "1", "a spec has no `## Goal` — the build loop has no single falsifiable target."],
   ["LOOP-BUDGET-INVALID", "warning", "spec", "1", "loop_budget is present but not a positive integer (the autonomy grant)."],
   ["JUDGEABLE-NO-SECTION", "warning", "spec", "1", "a judgeable acceptance check names no spec section to judge against (B5)."],
+  ["CHECK-RUN-MALFORMED", "warning", "spec", "1", "an agent-loopable item carries `— run:` but not a single backtick-fenced command (v2.8). Absence of the suffix never fires."],
   ["SCOPE-EXCEEDS-SIZE", "warning", "spec", "1", "size: small but measured size is over suggest_slicing_past — slice it, or declare size: large."],
   ["PARENT-HAS-MECHANICS", "warning", "spec", "1", "a type: parent carries Behavior or acceptance — a parent is a map, not a plan."],
   ["PARENT-NO-SCOPES", "warning", "spec", "1", "a type: parent lists no child scopes — a misfiled scope."],

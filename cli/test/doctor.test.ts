@@ -97,6 +97,15 @@ test("relation-killed: edge to a killed id is a warning, exit 0", () => {
   assert.equal(r.summary.errors, 0);
 });
 
+// v2.8: the runnable-command entry shape — opt-in, advisory, absence never fires.
+test("check-run-malformed: a bad \u2014 run: item warns once; well-formed and absent do not", () => {
+  const r = gate("check-run-malformed");
+  const hits = r.findings.filter((f) => f.rule_id === "CHECK-RUN-MALFORMED");
+  assert.equal(hits.length, 1, `expected exactly one CHECK-RUN-MALFORMED, got ${JSON.stringify(ruleIds(r))}`);
+  assert.equal(hits[0].severity, "warning");
+  assert.equal(exitCodeFor(r), 0);
+});
+
 test("corrections-malformed: a bad ## Corrections entry warns; a well-formed one does not", () => {
   const r = gate("corrections-malformed");
   const hits = r.findings.filter((f) => f.rule_id === "CORRECTIONS-MALFORMED");

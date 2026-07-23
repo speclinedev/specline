@@ -42,6 +42,7 @@ export const REGISTRY: RuleMeta[] = [
   { rule_id: "LOOP-BUDGET-INVALID", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   // intent/altitude (B6 is advisory — an indicator, not a defect)
   { rule_id: "JUDGEABLE-NO-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
+  { rule_id: "CHECK-RUN-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-HAS-MECHANICS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
   { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", tier: 1, downgradable: false },
@@ -282,6 +283,32 @@ const judgeableNoSection: Rule = ({ repo }) => {
       out.push({ rule_id: "JUDGEABLE-NO-SECTION", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName,
         message: "a judgeable acceptance item cites no spec section to verify against — it is not falsifiable (B5)",
         fix_hint: 'name the section each judgeable item is judged against (e.g. "matches §4.3"); that reference is judgeable\'s falsifiability gate' });
+    }
+  }
+  return out;
+};
+
+// v2.8: the runnable-command entry shape is opt-in — only acceptance items
+// carrying the literal marker are shape-checked; absence never fires anything.
+// The `--` fallback separator is accepted alongside the em dash, as with the
+// status.md machine entries.
+const checkRunMalformed: Rule = ({ repo }) => {
+  const out: RawFinding[] = [];
+  const marker = /(?:\u2014|--)\s*run:/;
+  const wellFormed = /(?:\u2014|--)\s*run:\s*`[^`\n]+`\s*$/;
+  for (const f of repo.specs) {
+    if (f.specContent === null) continue;
+    const acc = sectionBody(f.specContent, "acceptance");
+    if (acc === "") continue;
+    for (const line of acc.split("\n")) {
+      const item = line.trim();
+      if (!/^[-*]\s/.test(item) || !marker.test(item)) continue;
+      if (!wellFormed.test(item)) {
+        const head = headings(f.specContent).find((h) => h.level === 2 && h.title.toLowerCase().startsWith("acceptance"));
+        out.push({ rule_id: "CHECK-RUN-MALFORMED", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName,
+          message: `an acceptance item carries "\u2014 run:" but not a single backtick-fenced command: "${item.slice(0, 80)}"`,
+          fix_hint: "shape: <claim> \u2014 run: `<command>` \u2014 one backtick-fenced shell invocation; exit 0 settles the claim" });
+      }
     }
   }
   return out;
@@ -699,6 +726,7 @@ export const RULES: Rule[] = [
   unknownSections,
   goalMissing,
   judgeableNoSection,
+  checkRunMalformed,
   scopeExceedsSize,
   parentHasMechanics,
   parentNoScopes,
