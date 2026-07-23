@@ -1,7 +1,7 @@
 # Specline — Canon v2.6
 
 **Status:** CURRENT — supersedes Canon v2.5.
-**Canon version:** 2.7.1. Repos pin a canon version in `specline.yml` at
+**Canon version:** 2.8.0. Repos pin a canon version in `specline.yml` at
 repo root; this contract changes first, repo conventions follow.
 
 > **v2.6 — gate integrity, advise on taste.** Specline blocks only on *integrity*
@@ -210,7 +210,12 @@ flavors of test:
 - **provable** (`agent-loopable`) — the **implementer's** exit condition. The goal is
   met, established by a runnable command where one fits, **or by the implementer's
   grounded assessment** against the code and its own tool results (evidence, not
-  opinion). A runnable command is the strongest form, not the required form. Provable
+  opinion). A runnable command is the strongest form, not the required form. *(v2.8)*
+  An item MAY carry its command in a fixed entry shape — `<claim> — run:
+  `​`<command>`​`` — one shell invocation whose exit 0 settles the claim true, so a
+  runner, a fresh-context verifier, or a cockpit can settle it without interpreting
+  prose. The suffix is never required; an item without it is the implementer's
+  grounded assessment, unchanged. Provable
   checks are **authored before the build and frozen relative to the implementer** for
   the build run: the builder does not weaken the ruler it is measured by. Changing a
   check mid-build is legitimate only as a fresh decider-approved change (a new merge),
@@ -356,7 +361,14 @@ models:               # capability tier → real model
   light:    claude-haiku
   standard: claude-sonnet
   frontier: claude-opus
+merge_target: main    # (v2.8, optional) the branch impl PRs merge into and
+                      # graduation lands on; absent → the repo's default branch
 ```
+
+*(v2.8)* `merge_target` is repo-level on purpose: a spec does not choose its
+integration branch — the repo's process does. Per-spec targets would drift; the
+runner and every graduation link read one truth here, falling back to the repo's
+default branch when the key is absent.
 
 **The boundary:** `specline.yml` tunes **thresholds and pins** — the *grain*, not
 the *methodology*. It does **not** configure rules, schema, or partitions. Tune
@@ -500,10 +512,21 @@ they are well-formed. Do not merge them — one measures time, the other progres
    partition names the **handoff** each check belongs to — who certifies it — not
    how it happens to be verified:
    - `agent-loopable` (**provable**) — the **implementer's** exit condition. The goal
-     is met, shown by a runnable command where one fits (`e.g. `npm test -- trade-in`
-     — exits 0`), **or by the implementer's grounded assessment** against the code and
-     its tool results. A command is the strongest evidence, not a requirement; what is
-     required is that the implementer can establish the goal is met before handing off.
+     is met, shown by a runnable command where one fits, **or by the implementer's
+     grounded assessment** against the code and its tool results. A command is the
+     strongest evidence, not a requirement; what is required is that the implementer
+     can establish the goal is met before handing off. *(v2.8)* Where a command
+     exists, it MAY ride the item in the fixed entry shape, machine-findable:
+
+     ```markdown
+     ### agent-loopable
+     - Limit tests pass — run: `swift test --filter ProviderLimitTests`
+     - Composer renders the disabled state under a simulated 429
+     ```
+
+     Grammar: `<claim> — run: `​`<command>`​`` — a single backtick-fenced shell
+     invocation; exit 0 settles the claim. A malformed `— run:` warns
+     (`CHECK-RUN-MALFORMED`, advisory); absence never fires anything.
      These checks are **frozen relative to the implementer** once ratified (B5): the
      builder does not author or weaken the checks it is measured by.
    - `judgeable` — the **reviewer's** gate. A fresh-context agent judges the
@@ -937,6 +960,10 @@ Checks — **(I)** = integrity, blocks; **(A)** = advisory, warns only:
   build-readiness advice, not a block.
 - **A `judgeable` acceptance item cites a spec section to verify against
   (`JUDGEABLE-NO-SECTION`); else it is not falsifiable (B5).**
+- **(A)** *(v2.8)* an `agent-loopable` item containing `— run:` whose remainder is
+  not a single backtick-fenced command → warn (`CHECK-RUN-MALFORMED`): the shape is
+  opt-in, so its malformation can only ever be advice; absence of the suffix never
+  fires anything.
 - **`size: small` with measured size (acceptance/Behavior count) over
   `suggest_slicing_past` → warn (`SCOPE-EXCEEDS-SIZE`): slice it, or declare
   `size: large` if it's atomic. Specline raises the question; the human answers.**
@@ -1078,6 +1105,12 @@ only the rules of the declared tier.
   3. **Escalation reason** — on `loop_budget` / `stale_after` / `review_rounds_before_human`
      exhaustion, the reason is written to `## State` and `## Dead ends` before the
      work parks as blocked.
+
+  *(v2.8, non-normative)* A runner executing the runnable subset of
+  `agent-loopable` checks (the `— run:` entry shape) SHOULD record results against
+  the item text in its own state and reflect advances in `status.md`'s Last green
+  checkpoint. Guidance on using the signal well — not a fourth MUST-item; the three
+  above are about handoff survivability.
 
   Everything else — the transport, the on-the-wire finding schema, scheduling,
   model routing — is the runner's own business and belongs in *its* runner-contract
