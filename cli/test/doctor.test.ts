@@ -32,6 +32,12 @@ test("clean fixture: zero errors, exit 0", () => {
   assert.equal(exitCodeFor(r), 0);
 });
 
+test("relation-annotated: `slug: rationale` edges resolve by slug, repo: edges warn only", () => {
+  const r = gate("relation-annotated");
+  assert.equal(r.summary.errors, 0, JSON.stringify(r.findings, null, 2));
+  assert.ok(ruleIds(r).includes("RELATION-CROSS-REPO"), JSON.stringify(r.findings, null, 2));
+});
+
 test("repo's own docs validate with zero errors", () => {
   const r = run(fileURLToPath(new URL("..", import.meta.url)), { mode: "gate", changed: [], now: "2026-06-14" });
   assert.equal(r.summary.errors, 0, JSON.stringify(r.findings, null, 2));

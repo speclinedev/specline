@@ -101,7 +101,9 @@ function fmString(f: SpecFolder, key: string): string | null {
 function asEdges(value: string | string[] | undefined): string[] {
   if (value === undefined) return [];
   const arr = Array.isArray(value) ? value : [value];
-  return arr.map((s) => s.trim()).filter((s) => s !== "" && s !== "none");
+  // edges may be annotated (`slug: rationale`, per canon); the slug is the part
+  // before the first `: `. `repo:slug` has no space after the colon and survives.
+  return arr.map((s) => s.trim().split(/:\s/, 1)[0]!.trim()).filter((s) => s !== "" && s !== "none");
 }
 
 // ── structural, spec-scoped ──────────────────────────────────────────────────
