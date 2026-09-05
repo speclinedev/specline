@@ -440,7 +440,7 @@ the numbers; the rules are the canon's.
 
 ---
 
-## IDs and references
+## Slugs and references
 
 **A spec's identity is its slug — the folder name.** Lowercase-kebab,
 descriptive, repo-unique across `specs/ ∪ knowledge/ ∪ archive/`, never reused.
