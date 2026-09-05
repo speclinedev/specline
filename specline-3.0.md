@@ -15,7 +15,7 @@ repo root; this contract changes first, repo conventions follow.
 > **v2.6 — gate integrity, advise on taste** (still the law). Specline blocks only on *integrity*
 > (facts that are false regardless of any opinion about good specs: a `specs/`
 > folder with no `spec.md` — the constitutive file, so the spec doesn't exist —
-> plus parse errors, dangling references, ID collisions, malformed/invalid
+> plus parse errors, dangling references, slug collisions, malformed/invalid
 > frontmatter, archive edits). Every judgment about whether a spec is *good* —
 > completeness, an auxiliary file like `relations.md`, sizing, mechanics (B6),
 > build-readiness — is **advisory**: it warns, never blocks, and the decider owns
@@ -28,6 +28,10 @@ repo root; this contract changes first, repo conventions follow.
 not.
 
 ---
+
+> **Reading this document.** The *Changes from* sections below are history — the
+> shaping record of each version, kept so a rule's origin is traceable. Where a
+> changelog entry and the body of this document disagree, **the body governs**.
 
 ## Changes from v2.2
 
@@ -96,7 +100,7 @@ unearned learning-corpus were cut. (Shaping record: `docs/proposals/v2.5-amendme
 16. **The provable exit can't be self-gamed.** Acceptance checks are authored at
     ratification and **frozen relative to the implementer** for the build run — the
     builder never weakens the ruler it's measured by; a mid-build check change is
-    legitimate **only** via re-ratification (a `ratified_at` bump). And `loop_budget`
+    legitimate **only** via re-ratification (since v3.0: a decider-approved change, not a field). And `loop_budget`
     exhaustion is an explicit **failure**, never a passing exit — the cheapest way out
     of the inner loop must be a real pass, not a drained budget.
 17. **Corrections graduate into house rules.** A correction that **recurs across
@@ -134,7 +138,7 @@ revised after two independent fresh-context reviews. (Shaping record:
     edits the spec in the branch once the decider agrees, and the diff is the
     record. The handback (blocked → amendment commit → resume) is for
     unattended builds only.
-22. **The builder gets a brief.** A `build` prompt beside the `shape` prompt,
+22. **The builder gets a brief.** A `build` prompt beside the `shape` prompt (both served by the Specline MCP, not part of this document),
     in the same partnership register.
 23. **The canon reads attended-first.** The attended spec is described as the
     whole thing; the runner material — `status.md` schema, Promotion, the build
@@ -192,7 +196,7 @@ which it fails. A claim without a failure mode is marketing.
   sitting (B1) and no ceremony calendar. Fails when: the decider budget (B7) is
   breached — cycle time is gated by PO queue depth, which is why B7 exists.
 - **Parallel delivery with minimal coordination.** Mechanism: the relations
-  graph plus deterministic ID allocation replace standups. Fails when:
+  graph plus coordination-free slug allocation replace standups. Fails when:
   cross-repo edges are involved (validated weakly — see Specline) or the graph is
   stale (Specline on main prevents this).
 - **Rework caught at the cheapest moment.** Mechanism: agent-loopable
@@ -207,7 +211,7 @@ which it fails. A claim without a failure mode is marketing.
   Mechanism: graduation produces descriptive knowledge docs; archive preserves
   contracts. Fails when: graduation is skipped — which is why it is wired to the
   implementation PR.
-- **Audit trail.** Mechanism: every shipped ID resolves to an archived spec
+- **Audit trail.** Mechanism: every shipped slug resolves to an archived spec
   (with its acceptance results) and a knowledge doc, traceable spec → ratifier →
   implementation PR → graduation. Fails when: archive integrity breaks — a
   Specline error.
@@ -230,7 +234,7 @@ the **appetite** unit — appetite governs the spec's reviewability, **not the
 build's size**. A large atomic build with a tight, one-sitting spec is eligible;
 build size is governed by `size`, `blast_radius`, and `loop_budget`, not by this
 rule. If you cannot review the spec in one pass, split it or decompose it
-(parent-map); IDs are cheap. *(Gate: ratification. Judgment-only.)*
+(parent-map); slugs are cheap. *(Gate: ratification. Judgment-only.)*
 
 **2. The Coupling Ceiling** *(unattended and parallel builds)*. A spec plus everything its relations force an agent
 to load must fit under the repo's pinned ceiling with room left to think. This is
@@ -243,7 +247,8 @@ loads) and warns on breach; read a breach as "this feature is too entangled," a
 design smell, not a loading problem — slice it or decouple it. *(Specline: warn.)*
 
 **3. The Human Gate.** Humans ratify and humans accept. Ratification is the named
-human's **go, recorded in git** — the commit that flips `status` to `building`,
+human's **go, recorded in git** — the commit that flips `status` out of `draft`
+(to `ratified`, the approved-not-yet-building waypoint, or straight to `building`),
 made or approved by the decider on whichever branch the work is on. Git records
 who and when, so the stamp already has a name on it; Specline does not duplicate
 that in frontmatter. The approving merge of the branch that carries the build is
@@ -484,7 +489,7 @@ paths are legal only for non-lifecycle docs (`docs/technical/...`,
 ```
 docs/specs/slug/
 ├── spec.md               # REQUIRED. The build contract.
-├── relations.md          # REQUIRED. Forward edges only. "none" is valid; absence is not.
+├── relations.md          # REQUIRED. Plain YAML, forward edges only. Empty lists are valid; absence is not.
 ├── open-questions.md      # REQUIRED while unresolved decisions exist.
 ├── status.md             # REQUIRED for unattended builds (schema: Unattended builds); optional otherwise.
 ├── discovery.md          # OPTIONAL. Customer evidence, research, rationale.
@@ -499,7 +504,13 @@ repo-level convention (alongside `architecture.md`, or under `conventions/`),
 descriptive and ungated, the same shape as `architecture.md`. A spec proposes
 *how* in `implementation.md`; it never carries the repo's design system.
 
-### Frontmatter (required, in `spec.md`)
+### Frontmatter (in `spec.md`)
+
+Required on every spec: `slug`, `type`, `status`, `decider`, `created`. Set at
+ratification, proposed by the planner and confirmed by the decider: `blast_radius`,
+`size` (default `small`). Optional, and written whenever the posture is known:
+`build`. The **unattended envelope** — `target_model`, `stale_after`, `loop_budget`
+— is checked only when `build: unattended`. A draft carries only what is known.
 
 ```yaml
 ---
@@ -507,13 +518,13 @@ slug: ranch-mgmt        # the folder name; a spec's identity. must match the dir
 type: feature            # feature | bug | chore | parent
 status: building         # draft | ratified | building | blocked | shipped | killed
 decider: jonathan
-build: unattended        # OPTIONAL (v3.0): attended | unattended. Absent means attended.
-blast_radius: medium     # low | medium | high — declared risk; advised before build (routing)
-size: small              # small | large — declared BUILD size (small = one slice; large = an atomic batch). default small
-target_model: standard   # OPTIONAL: light | standard | frontier (capability tier, mapped in conventions)
+build: unattended        # OPTIONAL (v3.0): attended | unattended. Absent means attended; write it when known.
+blast_radius: medium     # low | medium | high — declared risk; set at ratification (planner proposes, decider confirms)
+size: small              # small | large — declared BUILD size; set at ratification. default small
+target_model: standard   # OPTIONAL (unattended envelope): light | standard | frontier (mapped in conventions)
 created: 2026-06-10       # NOTE: ratification is the decider's go, recorded in git — no ratified_by/at field
-stale_after: 2026-06-18  # set on entering building or blocked — staleness/abandonment trigger
-loop_budget: 5           # OPTIONAL: autonomy grant — see Escalation
+stale_after: 2026-06-18  # unattended envelope: set on entering building or blocked — staleness trigger (B4)
+loop_budget: 5           # OPTIONAL (unattended envelope): autonomy grant — see Unattended builds
 ---
 ```
 
@@ -534,7 +545,8 @@ and `killed` are set during archiving and exist only in `archive/`.
 file, so build-readiness is `status: ratified` plus a clean `open-questions.md`.
 
 **`blast_radius`** is the spec's declared risk surface — how much breaks if
-this is wrong. It is a ratification-time judgment, not a default, and it drives
+this is wrong. It is a ratification-time judgment, not a default — the planner may
+propose a value on a draft; it becomes the decider's at ratification — and it drives
 Routing (below): reviewer depth, implementer effort, and model tier. **`size`**
 is the declared *build* size, set at ratification the way `blast_radius` declares
 risk: `small` (default — one slice) or `large` (an atomic batch). It is the **build**
@@ -574,7 +586,7 @@ they are well-formed. Do not merge them — one measures time, the other progres
    takes as given about systems it does not control (APIs, upstream services,
    data shapes), and what to do at a contradiction. Contradictions live at
    seams; naming them tells the agent where to **escalate fast** instead of
-   cleverly hacking around a system it cannot change. Example (0012): *"the
+   cleverly hacking around a system it cannot change. Example: *"the
    pricing API cannot quote discontinued SKUs — render the no-quote state; do
    not synthesize a price."*
 7. **Critical files** — pointers into existing code, not restatements of it.
@@ -610,7 +622,10 @@ they are well-formed. Do not merge them — one measures time, the other progres
    The altitudes are layered judgment, on purpose: the implementer asserts done, the
    reviewer independently checks the interpretation, the human accepts. Provable is
    the implementer's word (grounded); judgeable is the check on it; tasteable is final.
-9. **Out of scope / deferred** — with IDs if already allocated.
+9. **Out of scope / deferred** — with slugs if already created.
+
+Body sections are `##` headings carrying these names (the validator recognizes them
+by name); the acceptance partitions are `###` headings under Acceptance checks.
 
 Write intent and rules richly; write mechanics sparsely (B6). The builder reads
 code; the spec's job is everything code can't say, and over-specified mechanics
@@ -629,7 +644,7 @@ before merging, never a block.
 
 ```yaml
 depends_on:
-  - 0004-people-management: person records provide candidate identity
+  - people-management: person records provide candidate identity
 part_of: []            # parent module, if this is a sub-feature
 supersedes: []
 conflicts_with: []
@@ -692,7 +707,7 @@ QA.
 Context construction order for build work: conventions → `architecture.md` and
 named cross-cutting docs → the spec folder per the table → related
 specs/knowledge (`overview.md` first, deeper only if the edge's why warrants it)
-→ ADRs citing this spec's ID.
+→ ADRs citing this spec's slug.
 
 ---
 
@@ -734,7 +749,8 @@ no separate PR, no re-ratification ceremony: reshaping is a normal move.
 1. Builder hits a contradiction → flips `status: blocked` (`stale_after` per B4) and
    records it under `status.md` *Dead ends* if an approach was abandoned.
 2. The amendment lands as a **spec-amendment commit** touching only the spec
-   folder, approved by the decider, who resets `stale_after` in the same commit.
+   folder. The builder may draft it; the decider (or deputy, per Roles) approves it
+   and resets `stale_after` in the same commit. Nothing resumes on an unapproved draft.
 3. `status: building` resumes against the amended contract.
 
 Either way, reshaping is a normal transition, not a failure; Specline's own
@@ -752,7 +768,7 @@ at `docs/conventions/graduation.md` and:
 3. Writes knowledge docs: imperative → present descriptive, corrected to what
    actually shipped; applies B6 — keep intent, rules, rationale; cut anything
    code already says.
-4. Carries the `## Corrections` records into the knowledge doc as the permanent
+4. Carries the `## Corrections` records, when a `status.md` exists, into the knowledge doc as the permanent
    promotion record — the cross-spec recurrence signal Promotion reads from, which
    would otherwise die with the spec folder (step 7).
 5. Folds in ADRs accepted during the build that changed behavior.
@@ -766,18 +782,18 @@ the `human-gate` acceptance items one click away — "is this what I decided?" i
 one-sitting question.
 
 **Bugs** (`type: bug`): the implementation PR updates the corrected knowledge doc
-(adding the bug ID to a `corrected_by` line) and archives the bug spec as
-`shipped`. No knowledge folder is created; the ID resolves in `archive/` forever.
+(adding the bug slug to a `corrected_by` line) and archives the bug spec as
+`shipped`. No knowledge folder is created; the slug resolves in `archive/` forever.
 
 **Kills (and abandonment)**: spec moves to `archive/` with `status: killed` and a
 one-line tombstone stating why (a deliberate kill, or "abandoned" for a draft
 dropped before ship). There is no bare-delete of an allocated spec — this is what
-makes every ID resolve forever. IDs stay burned; edges to a killed ID are Specline
+makes every slug resolve forever. Slugs stay burned; edges to a killed slug are Specline
 *warnings*.
 
 ### Precedence
 
-ADR > spec > knowledge doc. ADRs cite affected IDs in their header. Archive is
+ADR > spec > knowledge doc. ADRs cite affected slugs in their header. Archive is
 historical record and outranks nothing.
 
 ---
@@ -788,7 +804,7 @@ The schema stands on its own: an agent can operate Specline from this canon
 alone, and a PO can author conforming specs by hand. `Specline` adds **assurance,
 not validity** — and its highest-value job is not the merge gate but watching a
 spec stay in shape while a PO and an agent write it. It is deterministic — no
-model, no judgment — and is specced in `0001-doctor`.
+model, no judgment — and is specced in the `doctor` spec.
 
 Specline serves two callers over one engine and one rule set, differing only in
 severity posture:
@@ -872,13 +888,13 @@ Checks — **(I)** = integrity, blocks; **(A)** = advisory, warns only:
 - **`status.md`, when present, conforms to the schema (required sections present
   and parseable). Shape only; never prose.** This now includes a `## Corrections`
   section whose entries carry the fixed `<what> — <altitude> — <who caught it>` shape
-  (`CORRECTIONS-MALFORMED`); a graduating spec missing it is flagged so the promotion
+  (`CORRECTIONS-MALFORMED`); a graduating unattended spec missing it is flagged so the promotion
   record survives into `knowledge/`.
 - **`target_model`/`blast_radius` values, if present, are from the allowed sets
   (`ENUM-INVALID`).** Resolving `target_model` against the repo's configured
   `models` map is *(planned — only the fixed set is checked today).*
 - Every repo-local edge resolves at some lifecycle stage (error); cross-repo
-  edges warn-only; edges to `killed` IDs warn.
+  edges warn-only; edges to `killed` slugs warn.
 - `relations-index.yml` consistent with authored forward edges; `Specline --fix`
   regenerates it. *(planned — not yet enforced or generated.)*
 - `open-questions.md` entries parse (each a `##` heading carrying `decider:` /
@@ -933,7 +949,9 @@ An unattended spec carries the **envelope**: `blast_radius` (routing), `size`,
 optional `target_model`, `stale_after` once building, `loop_budget`, and a
 `status.md` in the schema below. `UNATTENDED-INCOMPLETE` reports what is missing.
 The builder brief for this posture is the v2.8 one: frozen checks, status memory,
-escalate at a boundary, never improvise past a contradiction.
+escalate at a boundary, never improvise past a contradiction. Two rules under
+*Agent-execution notes* are hygiene for any builder, attended too: ground every
+progress claim in a tool result, and pause only on a true gate.
 
 ### `status.md` schema *(new in v2.3)*
 
@@ -1119,6 +1137,7 @@ refusal-aware frontier model:
   unverified. This is B5 applied to the loop, and it is what keeps a long
   unattended run from fabricating "done."
 - **Pause only on a true gate.** The implementer ends its turn to ask the human
+  (unattended: the deputy, or the entry's stated default — see Roles and continuity)
   only for a destructive/irreversible action, a real scope change, or input only
   the decider can provide (an `open-questions` entry with no usable default).
   Everything else proceeds on the stated default. This is the loop-level
@@ -1234,5 +1253,5 @@ only the rules of the declared tier.
 - **`blast_radius` → effort/model mapping defaults, and the capability-tier
   vocabulary (`light|standard|frontier` vs. explicit model names).**
 - **Whether `target_model` is authored or always derived.**
-- `Specline` distribution and implementation language (tracked in `0001-doctor`).
+- `Specline` distribution and implementation language (tracked in the `doctor` spec).
 - Cross-repo edge validation.
