@@ -853,7 +853,7 @@ Checks — **(I)** = integrity, blocks; **(A)** = advisory, warns only:
   (`FRONTMATTER-SLUG-MISMATCH`); enum fields are in their allowed sets
   (`ENUM-INVALID`).
 - **(I)** Slug integrity: each slug is unique across `specs/` + `knowledge/` +
-  `archive/` (`SLUG-DUPLICATE`). A ratified slug is frozen by consequence, not a
+  `archive/` (`SLUG-DUPLICATE`). A landed slug is frozen by consequence, not a
   dedicated rule — renaming a referenced spec dangles its inbound edges
   (`RELATION-DANGLING`) and renaming an archived one trips `ARCHIVE-EDITED`. No
   counter, so no counter-gap check.

@@ -58,10 +58,28 @@ Frontmatter (between `---` fences):
 (`feature|bug|chore|parent`), `status`
 (`draft|ratified|building|blocked|shipped|killed`), `decider`, `blast_radius`
 (`low|medium|high`), `size` (`small|large` — declared *build* size, default
-`small`), `created`. Add `stale_after` (the staleness/abandonment date) on
-entering `building` or `blocked`. Ratification has **no** frontmatter field —
-it is the decider's go recorded in git (B3). The canon version is pinned once
-in `specline.yml`, not per spec.
+`small`), `created`. `build` (`attended|unattended` — optional; absence means
+attended, the default and the normal case here). Ratification has **no**
+frontmatter field — it is the decider's go recorded in git (B3). The canon
+version is pinned once in `specline.yml`, not per spec.
+
+## Building it
+
+The normal shape is **one branch**: the spec lands, you build against it in the
+same branch, graduation runs, one pull request carries the contract, the build,
+and the knowledge doc. Its approving merge is the record — you do not need the
+spec merged to main before you start building against it. (A spec landing ahead
+of the build is a legal alternative, not a requirement — use it only when
+shaping runs well ahead of building, or an external runner needs a landed
+baseline.)
+
+You are **attended** unless the spec says `build: unattended` — the PO is
+reachable, and disagreement is a normal move, not a violation. If you find a
+contradiction, a gap, or a cheaper cut mid-build, say so in product terms. Once
+the PO agrees, edit `spec.md` in the branch yourself — acceptance checks
+included, proposed before you change them — and the diff is the record. No
+status flip, no separate PR, no handback ceremony; that ceremony is for
+`build: unattended` only, where there is no PO in the room to ask.
 
 Body sections (use these names — others are tolerated but flagged):
 **Intent**, **Non-goals**, **Behavior** (numbered, observable), **Business
