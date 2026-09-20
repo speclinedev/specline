@@ -6,11 +6,20 @@ import Chapter from "../../layouts/Chapter.astro";
     <div class="head-eyebrow">07 · Building</div>
     <h2>Building: the implementer and the goal</h2>
     <p class="lead">
-      Once you ratify the spec — approve it by merging to main — an implementer agent builds the feature without you in each
-      turn. It can do that because it arrives fully equipped: it has the codebase's standards
-      (<code>conventions/</code>, <code>technical/</code>), the relations graph (what already
-      exists and what's coming), and the spec itself. It doesn't need you in the room, because
-      everything it needs to decide is on the page or in the repo.
+      Once you ratify the spec — your go, recorded in git, on whichever branch the work is on —
+      an implementer agent builds the feature without you in each turn. It can do that because it
+      arrives fully equipped: it has the codebase's standards (<code>conventions/</code>,
+      <code>technical/</code>), the relations graph (what already exists and what's coming), and
+      the spec itself. Almost everything it needs to decide is on the page or in the repo.
+    </p>
+    <p>
+      <em>Almost.</em> By default a build is <strong>attended</strong>: you're reachable, so when
+      the build teaches something the contract got wrong, the builder says so in product terms,
+      you agree or you don't, and the spec is edited in the branch. That edit is the record — no
+      status flip, no separate PR, no re-ratification ceremony. Declare
+      <code>build: unattended</code> and you've made the opposite promise: a builder that
+      <em>can't</em> ask has everything it needs. The brakes below belong to that promise;
+      attended, you are the shortest brake there is.
     </p>
     <p>
       It works toward one thing: the <strong>Goal</strong>. Intent tells it why the feature

@@ -5,7 +5,7 @@ const files = [
   { name: "spec.md", role: "required", purpose: "The build contract — the one artifact that carries the whole decision so a fresh-context agent can build from it.", when: "Always. A spec folder is its spec.md; everything else orbits this file." },
   { name: "relations.md", role: "required", purpose: "Forward edges only, authored — depends_on / part_of / supersedes / conflicts_with, each with a one-line why.", when: 'Always. "none" is a valid value; the file\'s absence is not. Reverse edges live in the generated relations-index.yml.' },
   { name: "open-questions.md", role: "required", purpose: "Unresolved decisions, each carrying who decides, the options, the default, and the deadline.", when: "Required while unresolved decisions exist. An entry with a default and a future deadline is legal during building — indecision becomes a logged choice with an override window." },
-  { name: "status.md", role: "required", purpose: "The build's memory across fresh-context iterations — the resume point and the dead ends a stateless re-entry cannot reconstruct from the diff.", when: "Required for autonomous builds. Fixed schema (State / Done / In progress / Last green checkpoint / Dead ends); Specline checks shape, never prose." },
+  { name: "status.md", role: "required", purpose: "The build's memory across fresh-context iterations — the resume point and the dead ends a stateless re-entry cannot reconstruct from the diff.", when: "Required for unattended builds; optional otherwise. Fixed schema (State / Done / In progress / Last green checkpoint / Dead ends / Corrections); Specline checks shape, never prose." },
   { name: "discovery.md", role: "optional", purpose: "Customer evidence, code research, rationale — the why behind the shape.", when: "Optional. Loaded for product thinking and reshape, not for the build." },
   { name: "implementation.md", role: "optional", purpose: "The build-scratch: the 'how' B6 keeps out of spec.md — implementation proposals, mechanics, and suggested UI approach. (Adopts an engineering design-doc format.) A repo's design system / UI standards are NOT this file — they live at the repo level alongside architecture.md.", when: "Optional. Relocate the 'how' here, NOT into spec.md. It does not graduate." },
   { name: "api.md", role: "optional", purpose: "A feature-specific API contract.", when: "Optional. Only when the spec defines an interface worth pinning separately." },
@@ -18,7 +18,7 @@ const files = [
     One folder per in-flight feature, living in <code>docs/specs/&lt;slug&gt;/</code> — the folder name is the slug, which is the spec's identity. The folder
     <em>is</em> its <code>spec.md</code> — the build contract — and everything else orbits it:
     the graph that connects it, the questions still open, the build's own memory, and optional
-    research and plan. Three files are always present, one more whenever a build runs autonomously,
+    research and plan. Three files are always present, one more whenever a build runs unattended,
     the rest only when there's something to put in them.
   </p>
   <p>Knowing which file a thing belongs in — and which it does <em>not</em> — is what lets a fresh-context agent load only what the task needs:</p>

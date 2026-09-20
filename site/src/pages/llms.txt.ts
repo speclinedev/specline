@@ -6,8 +6,8 @@ export const prerender = true;
 const BODY = `# Specline
 
 > Spec-driven development where a machine-checkable spec is the contract, humans hold
-> the gates (ratify by merging to main, accept), and an agent runs the loop between
-> them. Specline blocks only on integrity; spec quality is advisory. Canon ${CANON_VERSION}.
+> the gates (ratify — the decider's go recorded in git — and accept), and an agent
+> builds between them. Specline blocks only on integrity; spec quality is advisory. Canon ${CANON_VERSION}.
 
 ## Canon
 - [Specline canon, raw markdown](https://specline.dev/spec.md): the full normative

@@ -2,16 +2,17 @@
 import Docs from "../../../layouts/Docs.astro";
 
 const fields = [
-  { field: "slug", values: "kebab-case", when: "Always. The spec's identity — matches the folder name; unique across specs/, knowledge/, and archive/. Frozen once ratified: renaming a referenced spec dangles its inbound edges." },
+  { field: "slug", values: "kebab-case", when: "Always. The spec's identity — matches the folder name; unique across specs/, knowledge/, and archive/. Frozen once the spec lands on the merge target: renaming a referenced spec dangles its inbound edges. Re-slugging before it lands is legal — nothing points at it yet." },
   { field: "type", values: "feature | bug | chore | parent", when: "Always. A bug is a spec with type: bug; a decomposition parent is type: parent." },
   { field: "status", values: "draft | ratified | building | blocked | shipped | killed", when: "Always. shipped and killed are set during archiving and exist only in archive/." },
   { field: "decider", values: "a named human", when: "Always. The PO accountable for this spec." },
-  { field: "blast_radius", values: "low | medium | high", when: "Advised before build (Specline warns if missing). Declared risk surface; drives reviewer depth, implementer effort, and model tier." },
-  { field: "size", values: "small | large", when: "Declared build size (default small). small = one slice; large = an atomic batch. The build axis — distinct from appetite (the review axis)." },
-  { field: "target_model", values: "light | standard | frontier", when: "Optional. Pins a capability tier; if absent, derived from blast_radius and the coupling proxy." },
+  { field: "build", values: "attended | unattended", when: "Optional (v3.0) — write it whenever the posture is known. Absent means attended: the builder can reach the decider. unattended is a promise that a fresh-context builder who cannot ask has everything it needs; it is what puts the envelope fields below in scope, and it tells a builder or a runner which chapter of the canon applies. It changes no rule's severity." },
+  { field: "blast_radius", values: "low | medium | high", when: "Advised before build (Specline warns if missing). Declared risk surface; drives reviewer depth, implementer effort, and model tier. Part of the unattended envelope." },
+  { field: "size", values: "small | large", when: "Declared build size (default small). small = one slice; large = an atomic batch. The build axis — distinct from appetite (the review axis). Part of the unattended envelope." },
+  { field: "target_model", values: "light | standard | frontier", when: "Optional, unattended envelope. Pins a capability tier; if absent, derived from blast_radius and the coupling proxy." },
   { field: "created", values: "date", when: "Always. Spec authoring date; the lead-time clock starts here." },
-  { field: "stale_after", values: "date", when: "Set on entering building or blocked — the staleness / abandonment trigger (B4)." },
-  { field: "loop_budget", values: "positive integer", when: "Optional. The PO's autonomy grant — the cap on autonomous build cycles with no green-checkpoint advance." },
+  { field: "stale_after", values: "date", when: "Unattended envelope. Set on entering building or blocked — the staleness / abandonment trigger (B4)." },
+  { field: "loop_budget", values: "positive integer", when: "Optional, unattended envelope. The PO's autonomy grant — the cap on autonomous build cycles with no green-checkpoint advance." },
   { field: "acceptance_results", values: "a link", when: "On archived specs only — the structural proxy that graduation ran the acceptance checks (B5)." },
 ];
 ---
@@ -34,6 +35,7 @@ const fields = [
       </tbody>
     </table>
   </div>
+  <div class="callout"><span class="ci">▸</span><p><strong>The unattended envelope.</strong> <code>blast_radius</code>, <code>size</code>, <code>target_model</code>, <code>stale_after</code> and <code>loop_budget</code> are legal on any spec, but they are what <code>build: unattended</code> promises — a builder that can't ask needs the routing, the leash and the clock on the page. An attended spec carries them when they're useful, not because a rule demands it.</p></div>
   <div class="callout"><span class="ci">▸</span><p><strong>These are per-spec, set at ratify.</strong> <code>loop_budget</code> lives <em>here</em>, in the spec's frontmatter — it is the PO's autonomy grant for <em>this</em> build, not a repo-wide setting in <code>specline.yml</code>. The build escalates back to a human gate at the first of two triggers: <code>loop_budget</code> exhausted (no progress) or <code>stale_after</code> reached (too much time).</p></div>
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Frontmatter"</a>.</p></div>
 </Docs>

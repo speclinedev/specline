@@ -8,16 +8,20 @@ import Chapter from "../../layouts/Chapter.astro";
     <p class="lead">
       Shaping is how the product owner and an assistant turn a want into a contract a stranger
       can build. The output isn't a sketch or a ticket — it's a spec precise enough that an
-      agent who wasn't in the room can build the right thing without asking you a single
-      question. Everything in this chapter is in service of that one bar.
+      agent who wasn't in the room <em>could</em> build the right thing without asking you a
+      single question. Everything in this chapter is in service of that one bar.
     </p>
-    <p class="pull">The builder won't be in the room. The page has to hold the whole decision.</p>
+    <p class="pull">Write as if the builder won't be in the room. The page has to hold the whole decision.</p>
     <p>
-      Hold that fact through every move below. The agent that builds this feature is a fresh,
-      different agent — it starts cold, reads what's on the page, and builds it. It can't tap
-      you on the shoulder. So the spec carries the whole decision, or the decision gets made by
-      a stochastic builder filling your gaps with guesses. The moves of shaping all exist to
-      get the decision out of your head and onto the page tightly enough that it can't.
+      Hold that as the bar through every move below. Most builds are <strong>attended</strong> —
+      you're reachable, the builder pushes back out loud, and the spec is edited by agreement when
+      the build teaches something. That's a normal move, not a failure. But shaping <em>to</em>
+      the attended case is exactly how specs go thin: the gaps get filled in conversation, and
+      the contract quietly stops being the record. So shape as if the agent starts cold and can't
+      tap you on the shoulder — then the conversation is a safety net rather than a dependency.
+      Declare <code>build: unattended</code> and the bar stops being a discipline and becomes a
+      promise: everything the builder needs is on the page, or a stochastic builder fills your
+      gaps with guesses.
     </p>
     <div class="bcard">
       <h3>Go after the why before the solution</h3>
