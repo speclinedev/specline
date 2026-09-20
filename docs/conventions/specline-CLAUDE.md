@@ -58,9 +58,10 @@ Frontmatter (between `---` fences):
 (`feature|bug|chore|parent`), `status`
 (`draft|ratified|building|blocked|shipped|killed`), `decider`, `blast_radius`
 (`low|medium|high`), `size` (`small|large` — declared *build* size, default
-`small`), `created`. Add `ratified_by`/`ratified_at` once ratified or building,
-and `stale_after` (the staleness/abandonment date) on entering `building` or
-`blocked`. The canon version is pinned once in `specline.yml`, not per spec.
+`small`), `created`. Add `stale_after` (the staleness/abandonment date) on
+entering `building` or `blocked`. Ratification has **no** frontmatter field —
+it is the decider's go recorded in git (B3). The canon version is pinned once
+in `specline.yml`, not per spec.
 
 Body sections (use these names — others are tolerated but flagged):
 **Intent**, **Non-goals**, **Behavior** (numbered, observable), **Business
