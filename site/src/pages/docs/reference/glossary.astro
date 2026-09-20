@@ -3,6 +3,7 @@ import Docs from "../../../layouts/Docs.astro";
 
 const terms = [
   { term: "appetite", def: "How much review the spec is worth — the one-sitting scope it deliberately fits; the unit of human attention (B1), governing the spec's reviewability, not the build's size (that's size)." },
+  { term: "attended", def: "The default build posture: the decider is reachable, so the builder disagrees out loud and the spec is edited by agreement as the build teaches. A spec is attended unless its frontmatter says build: unattended — replacing the assumption that every builder is a stranger who can never ask." },
   { term: "blast_radius", def: "The spec's declared risk surface — how much breaks if this is wrong; a ratification-time judgment (low | medium | high) that routes reviewer depth, implementer effort, and model tier, replacing a one-size build process." },
   { term: "coupling ceiling", def: "The cap on a spec plus everything its relations force an agent to load (B2); a structural ceiling measured once at shaping time, replacing the v2.3 \"context budget\" — and protecting signal quality, not just capacity." },
   { term: "decider", def: "The product owner who decides what to build and that it's done — the non-delegable human at the two gates, replacing a committee or a backlog-grooming ritual." },
@@ -14,13 +15,14 @@ const terms = [
   { term: "loop_budget", def: "The PO's autonomy grant — the cap on build cycles with no green-checkpoint advance; the progress trigger of escalation, the twin of stale_after's time trigger, replacing an agent thrashing indefinitely." },
   { term: "parent-map", def: "A spec of type: parent that holds intent, shared non-goals, invariants, and an index of child scopes — a map, not a plan; it replaces a big \"bet\" and forbids all mechanics." },
   { term: "provable", def: "The acceptance altitude settled by a runnable command (agent-loopable); the build loop's mechanical exit, executed in the implementation PR, replacing prose a human re-interprets each pass." },
-  { term: "ratify", def: "The act of a named human approving a spec's contract by merging it to the main branch — the merge is the record (git owns who and when), replacing both a verbal sign-off no one can audit and a hand-typed ratified_by field that duplicates git." },
+  { term: "ratify", def: "The act of a named human approving a spec's contract — their go, recorded in git as the commit that flips status out of draft, on whichever branch the work is on. The commit is the record (git owns who and when), replacing both a verbal sign-off no one can audit and a hand-typed ratified_by field that duplicates git. No spec has to merge first." },
   { term: "size", def: "The declared build size (small | large) set at ratification; the build axis — replacing the old One-Sitting overload, which now governs review (appetite) alone." },
-  { term: "slug", def: "The kebab-case folder name that IS a spec's identity (docs/specs/<slug>/); unique across specs/, knowledge/, and archive/, and frozen once ratified — renaming a referenced spec dangles its inbound edges. It replaces the ambiguous word \"id\" — the name is the identity." },
+  { term: "slug", def: "The kebab-case folder name that IS a spec's identity (docs/specs/<slug>/); unique across specs/, knowledge/, and archive/, and frozen once it lands on the merge target — renaming a referenced spec dangles its inbound edges. It replaces the ambiguous word \"id\" — the name is the identity." },
   { term: "spec folder", def: "The per-feature directory in docs/specs/<slug>/ holding the build contract and its lifecycle files; the flat, in-flight unit of work, replacing the ambiguous word \"feature.\"" },
   { term: "stale_after", def: "The date a build is presumed abandoned; not deleted, handed back to you — the time trigger of escalation that quarantines the spec, replacing the v2.3 TTL, which meant discard-on-expiry." },
   { term: "tasteable", def: "The acceptance altitude settled once by the decider (human-gate) — taste, product-fit, anything no check can falsify; the unbounded-judgment end, replacing a pretend-automatable taste check." },
   { term: "tier", def: "The adoption level a repo declares (0 one spec, 1 the loop, 2 the full system); Specline checks only the declared tier's rules, replacing all-or-nothing adoption." },
+  { term: "unattended", def: "The declared posture (build: unattended) promising that a fresh-context builder who cannot ask has everything it needs on the page. It is what puts the envelope — blast_radius, size, target_model, stale_after, loop_budget, status.md — and the canon's Unattended builds chapter in scope; it changes no rule's severity." },
 ];
 ---
 <Docs title="Reference — glossary">

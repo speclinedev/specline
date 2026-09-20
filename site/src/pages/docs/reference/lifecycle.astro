@@ -3,11 +3,11 @@ import Docs from "../../../layouts/Docs.astro";
 
 const states = [
   { name: "draft", set: "Agent / PO, while shaping", means: "Being shaped. Acceptance checks may not yet be falsifiable; open questions may be unresolved.", to: "→ ratified (a human approves), or → killed (abandoned)." },
-  { name: "ratified", set: "The named decider, by merging to main", means: "A human read the contract and approved it — the approving merge is the record, and git owns who/when. Build-ready when open-questions.md is clean.", to: "→ building (the implementer starts), or → draft (reshape)." },
-  { name: "building", set: "Implementer, on starting the build", means: "Under construction by the autonomous loop. Carries a stale_after date — the abandonment trigger.", to: "→ shipped (graduates), → blocked (hits a contradiction), or → killed." },
-  { name: "blocked", set: "Implementer, on hitting a contradiction", means: "Paused on something the loop can't resolve. Carries a stale_after date. Records the dead end in status.md.", to: "→ building (resume after a reshape), or → killed." },
+  { name: "ratified", set: "The named decider, by their go in git", means: "A human read the contract and approved it — the commit that flips status out of draft is the record, on whichever branch the work is on, and git owns who/when. Build-ready when open-questions.md is clean. (A spec may also go straight from draft to building; ratified is the approved-not-yet-building waypoint.)", to: "→ building (the builder starts), or → draft (reshape)." },
+  { name: "building", set: "The builder, on starting the build", means: "Under construction. Unattended, it carries a stale_after date — the abandonment trigger (B4).", to: "→ shipped (graduates), → blocked (hits a contradiction), or → killed." },
+  { name: "blocked", set: "The builder, on hitting a contradiction — unattended only", means: "The unattended handback: paused on something the loop can't resolve, carrying a stale_after date and recording the dead end in status.md. Attended there is nothing to hand back to — the builder says so, the decider agrees, the spec is amended in the branch, and no status flips.", to: "→ building (resume against the amended contract), or → killed." },
   { name: "shipped", set: "Graduation, wired to the implementation PR", means: "Done. The contract moves to archive/ verbatim with an acceptance-results link; knowledge/ describes the shipped reality. Exists only in archive/.", to: "Terminal." },
-  { name: "killed", set: "A deliberate kill, or an abandoned draft", means: "Dropped. Archived with a one-line tombstone stating why (\"abandoned\" for a draft dropped before ship). The ID stays burned. Exists only in archive/.", to: "Terminal." },
+  { name: "killed", set: "A deliberate kill, or an abandoned draft", means: "Dropped. Archived with a one-line tombstone stating why (\"abandoned\" for a draft dropped before ship). The slug stays burned. Exists only in archive/.", to: "Terminal." },
 ];
 ---
 <Docs title="Reference — lifecycle & states">
@@ -50,18 +50,32 @@ const states = [
   </div>
   <div class="bcard">
     <h3>Ratify <span class="gate-tag gate-human">decider · the first gate</span></h3>
-    <p>A named human reads the whole contract in one sitting (B1) and approves it by <strong>merging it to main</strong> — that merge <em>is</em> the ratification event, and git records who and when. <code>draft</code> → <code>ratified</code>.</p>
+    <p>A named human reads the whole contract in one sitting (B1) and gives it their <strong>go, recorded in git</strong> — the commit that flips <code>status</code> out of <code>draft</code>, made or approved by the decider on whichever branch the work is on. Git records who and when. The spec does <em>not</em> have to merge first. <code>draft</code> → <code>ratified</code> (or straight to <code>building</code>).</p>
   </div>
   <div class="bcard">
-    <h3>Build <span class="gate-tag gate-human">agent · autonomous</span></h3>
-    <p>The implementer flips the spec to <code>building</code> and runs the loop toward the Goal, against the agent-loopable checks. It escalates back to a human at the first of two triggers — <code>loop_budget</code> exhausted or <code>stale_after</code> reached. A contradiction flips it to <code>blocked</code>.</p>
+    <h3>Build <span class="gate-tag gate-human">builder · attended by default</span></h3>
+    <p>The builder flips the spec to <code>building</code> and works toward the Goal, against the agent-loopable checks. <strong>Attended</strong> (the default) the decider is reachable: the builder disagrees out loud and the spec is amended by agreement. <strong>Unattended</strong> (<code>build: unattended</code>) it runs the autonomous loop and escalates back to a human at the first of two triggers — <code>loop_budget</code> exhausted or <code>stale_after</code> reached — and a contradiction flips it to <code>blocked</code>.</p>
   </div>
   <div class="bcard">
     <h3>Graduate <span class="gate-tag gate-human">agent · wired to the impl PR</span></h3>
     <p>An agent-executed editing pass, triggered structurally by the implementation PR: archives the final <code>spec.md</code> as <code>shipped</code>, writes the present-tense <code>knowledge/</code> doc, and deletes the spec folder. The human acceptance gate reviews the graduated doc — "is this what I decided?"</p>
   </div>
 
-  <div class="callout"><span class="ci">▸</span><p><strong>Reshape returns to shaping.</strong> A mid-build contradiction is a normal transition, not a breach: flip to <code>blocked</code>, land a spec-amendment that re-approves by merging to main (resetting <code>stale_after</code> in the same commit), then resume <code>building</code>. The merged spec on main is canonical, always.</p></div>
+  <h2>One branch, or two</h2>
+  <p>
+    The <strong>normal shape is one branch</strong>: the spec folder is added, the decider's go flips
+    <code>status: building</code>, the build lands against it, graduation runs, and one pull request
+    carries all three. Its approving merge is the record of contract, build, and graduation.
+  </p>
+  <p>
+    A <strong>spec PR ahead of the build</strong> is the two-branch shape: the spec lands first,
+    and the implementation PR follows, referencing the slug. Reach for it when shaping runs well
+    ahead of building, when several branches are shaping in parallel and a slug needs claiming early,
+    or when an unattended runner requires a landed baseline. It is a legal shape, not the rule —
+    and the slug freezes when the spec lands on the merge target, not at ratification.
+  </p>
+
+  <div class="callout"><span class="ci">▸</span><p><strong>Reshape is a normal move.</strong> The spec on the branch being built is the contract, and it changes as the build teaches. <strong>Attended:</strong> the builder says so in product terms, the decider agrees, the builder edits <code>spec.md</code> in the branch — acceptance checks included, proposed before they're changed — and the diff is the record. No status flip, no separate PR. <strong>Unattended:</strong> there's no conversation to have, so it's a handback — flip to <code>blocked</code>, land a decider-approved spec-amendment commit touching only the spec folder (resetting <code>stale_after</code> in the same commit), then resume <code>building</code>.</p></div>
 
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Lifecycle"</a>.</p></div>
 </Docs>

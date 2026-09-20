@@ -4,18 +4,18 @@ import Docs from "../../../layouts/Docs.astro";
 const boundaries = [
   {
     id: "B1", name: "The One-Sitting Rule", gate: "human", gateLabel: "ratification · judgment-only",
-    plain: "A spec must be small enough that the PO can read and judge the contract in a single review sitting. Human attention is the appetite unit — appetite governs the spec's reviewability, not the build's size. A large atomic build with a tight spec is eligible. If you can't review it in one pass, split it or decompose it (parent-map); IDs are cheap.",
+    plain: "A spec must be small enough that the PO can read and judge the contract in a single review sitting. Human attention is the appetite unit — appetite governs the spec's reviewability, not the build's size. A large atomic build with a tight spec is eligible. If you can't review it in one pass, split it or decompose it (parent-map); slugs are cheap.",
   },
   {
-    id: "B2", name: "The Coupling Ceiling", gate: "doctor", gateLabel: "Specline · warn",
+    id: "B2", name: "The Coupling Ceiling — unattended & parallel builds", gate: "doctor", gateLabel: "Specline · warn",
     plain: "A spec plus everything its relations force an agent to load must fit under the repo's pinned ceiling with room left to think — measured once, at shaping time, as a structural property, not a runtime budget. With million-token windows the binding constraint isn't fitting but signal quality: irrelevant forced loads degrade a frontier model's output. Read a breach as \"too entangled\" — slice it or decouple it.",
   },
   {
-    id: "B3", name: "The Human Gate", gate: "human", gateLabel: "git · the merge",
-    plain: "Humans ratify and humans accept. Ratification is the named human's approving merge to the main branch — git records who and when, so the stamp already has a name on it; Specline does not duplicate that in a frontmatter field. Everything else is delegable to agents. A spec no human approved into the main tree did not need to exist. Whether the human actually read it stays judgment — no system detects attention, only the merge.",
+    id: "B3", name: "The Human Gate", gate: "human", gateLabel: "git · the decider's go",
+    plain: "Humans ratify and humans accept. Ratification is the named human's go, recorded in git — the commit that flips status out of draft, made or approved by the decider on whichever branch the work is on. No spec has to merge first. Git records who and when, so the stamp already has a name on it; Specline does not duplicate that in a frontmatter field. The approving merge of the branch that carries the build is the durable record. Everything else is delegable to agents. A spec no human approved did not need to exist. Whether the human actually read it stays judgment — no system detects attention, only the commit.",
   },
   {
-    id: "B4", name: "Staleness", gate: "doctor", gateLabel: "Specline · advisory",
+    id: "B4", name: "Staleness — unattended builds", gate: "doctor", gateLabel: "Specline · advisory",
     plain: "building and blocked each carry a stale_after date — the point past which an untouched build is presumed abandoned, not the point it is discarded. Going stale flags the spec: Specline warns so a human notices an abandoned build — it never blocks. Exit is an explicit reshape (a fresh approving merge) or kill.",
   },
   {
@@ -27,7 +27,7 @@ const boundaries = [
     plain: "Documentation records what code cannot say: goals, non-goals, rejected options, evidence, rules, boundaries. Once code exists it is the source of truth for mechanics, and prescribed mechanics then compete with it and go stale — the same reason ratification belongs to git, not a field: don't model what another source of truth owns. For a frontier target, mechanics in the spec tend to anchor and bloat — but this is a tradeoff, not a law, and it isn't measured. A weaker target, or a pre-build spec with no code yet, may legitimately carry worked mechanics. So Specline flags it as advice; the decider decides. Strong models read code; what they can't read is your mind.",
   },
   {
-    id: "B7", name: "The Decider Budget", gate: "doctor", gateLabel: "Specline · advisory",
+    id: "B7", name: "The Decider Budget — parallel builds", gate: "doctor", gateLabel: "Specline · advisory",
     plain: "A named decider may have at most 3 specs in building and 6 in active states (ratified | building | blocked) at once, per-repo override allowed. Agent capacity is not the constraint; the decider's queue is. WIP limits on humans, not on machines — Specline warns over the ceiling, never blocks.",
   },
 ];
@@ -39,7 +39,8 @@ const boundaries = [
     Scrum rations human time; Shape Up rations risk. Specline rations <strong>judgment, context,
     and verification</strong>. These seven rules <em>are</em> the system — everything else is
     implementation. Each is either <strong>Specline-enforced</strong> or names the human gate it's
-    checked at.
+    checked at. Three are <em>scoped</em>: B2, B4 and B7 govern unattended and parallel builds —
+    a single attended build is not measured by them.
   </p>
 
   {boundaries.map((b) => (

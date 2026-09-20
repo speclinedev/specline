@@ -11,7 +11,7 @@ This repo is the **contract**. It changes first; implementations follow.
 
 | Path | What |
 |---|---|
-| `specline-2.8.md` | The current canon (`2.8.0`). The governing rulebook. Stays at repo root — the site and CLI resolve it by globbing `specline-*.md` here. |
+| `specline-3.0.md` | The current canon (`3.0.0`). The governing rulebook. Stays at repo root — the site and CLI resolve it by globbing `specline-*.md` here. |
 | `handbook.md` | The readable companion to the canon — the version you read to *understand* it. |
 | `examples/` | The worked `0012-trade-in-quote` example — one feature, end to end. |
 | `docs/` | Everything else: research, amendment records, prior versions, templates. See `docs/README.md`. |

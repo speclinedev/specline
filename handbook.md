@@ -1,6 +1,6 @@
 # Specline, explained
 
-> The readable companion to the canon (`specline-2.8.md`). The canon is the
+> The readable companion to the canon (`specline-3.0.md`). The canon is the
 > precise, enforceable text. This is the version you read to *understand* it.
 > If the two ever disagree, the canon wins — tell us, that's a bug here.
 
@@ -27,7 +27,7 @@ Every feature is a folder with the same files. That sameness *is* the benefit.
 docs/specs/trade-in-quote/
   spec.md           # the contract — what we're building and why
   relations.md      # how this feature connects to others
-  status.md         # the build's memory (only once you start building)
+  status.md         # the build's memory (required for unattended builds)
   open-questions.md # decisions not yet made (optional)
 ```
 
@@ -53,9 +53,10 @@ docs/specs/trade-in-quote/
 That's it. Read one spec, you can read them all.
 
 *(The folder name — `trade-in-quote` — is the *slug*, and the slug **is** the
-feature's identity. Features reference each other by slug, so once a spec is ratified
-its slug is frozen by consequence: rename one others depend on and you dangle their
-edges. Pick a good name; the agent proposes it.)*
+feature's identity. Features reference each other by slug, so once a spec **lands on
+your merge target** its slug is frozen by consequence: rename one others depend on and
+you dangle their edges. Re-slugging before it lands is free — nothing points at it yet.
+Pick a good name; the agent proposes it.)*
 
 ## One home for the whole product
 
@@ -112,12 +113,16 @@ migrated repo is conformant from day one.
 1. **Shape** — you and an agent talk through the feature and write the spec
    folder. Unknowns become logged open questions with a default, so nothing
    blocks. This is a conversation, not a form.
-2. **Sign** — you read the whole spec *in one sitting* and approve it by **merging
-   it to your main branch**. That merge *is* the ratification: git records who and
-   when, so there's no field to maintain by hand. This is a **human gate**: your
-   judgment, not the machine's.
-3. **Build** — the agent implements against the signed spec, keeping `status.md`
-   as its memory so it can resume without re-deriving everything.
+2. **Sign** — you read the whole spec *in one sitting* and give it your **go,
+   recorded in git**: the commit that flips `status` out of `draft`, made or approved
+   by you, on whichever branch the work is on. Git records who and when, so there's no
+   field to maintain by hand. The spec does *not* have to merge first. This is a
+   **human gate**: your judgment, not the machine's.
+3. **Build** — an agent implements against the signed spec. The normal shape is **one
+   branch**: spec, build, and graduation ride together and one pull request carries all
+   three — its approving merge is the record. Landing the spec on its own first and
+   building on a second branch is legal too; reach for it when shaping runs well ahead
+   of building, or when an unattended runner needs a landed baseline.
 4. **Graduate** — when it ships, the spec moves to an archive and a short
    `knowledge/` doc records *why* the code is the way it is.
 
@@ -182,11 +187,16 @@ carried by the agent and the checker.
 
 ## How agents build (the autonomous half)
 
-"The middle runs itself" — here's the middle. The builder won't be in the room. You
-shape a feature with one agent; once the spec is signed, a different agent builds it
-— fresh context, never in the room, can't ask what you meant. So it builds what's on
-the page. The spec gives that **autonomous loop** four things, and your two gates
-bracket it:
+First, the posture. A spec is **attended** unless it says otherwise: you're reachable,
+the builder disagrees out loud, and when the build teaches something the spec gets
+edited by agreement — a normal move, not a failure. Write `build: unattended` in the
+frontmatter and you've made a promise instead: a fresh-context builder that *can't* ask
+has everything it needs on the page. The canon keeps the machinery for that promise —
+`status.md`, the loop, the runner contract — in one chapter that applies only when you
+declare it.
+
+"The middle runs itself" — here's that middle. The spec gives the **autonomous loop**
+four things, and your two gates bracket it:
 
 - **Goal** — the *target* it converges toward.
 - **Agent-loopable acceptance checks** — runnable commands; the loop's *mechanical*
