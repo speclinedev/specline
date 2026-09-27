@@ -4,7 +4,7 @@
 // authored file — a generated file is recognized by its header; anything else is
 // off-limits.
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, renameSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { LineCounter, isMap, isScalar, parseDocument } from "yaml";
 import {
@@ -12,10 +12,11 @@ import {
   docArchitecture, architectureMd, githubWorkflow, speclineYml, specTemplate,
 } from "./content.ts";
 import { InputError, resolveRepoRoot } from "../engine/model.ts";
+import { parseFrontmatter } from "../engine/parse.ts";
 import { CANON_MM } from "../version.ts";
 
 export type FileKind = "generated" | "scaffold";
-export type Action = "create" | "update" | "skip-authored" | "skip-exists" | "ok";
+export type Action = "create" | "update" | "skip-authored" | "skip-exists" | "ok" | "move";
 
 interface Planned { rel: string; content: string; kind: FileKind; }
 export interface Outcome { rel: string; action: Action; }
@@ -168,9 +169,49 @@ function rewritePin(cur: string): string {
   return cur.slice(0, pin.range[0]) + quoted + cur.slice(pin.range[1]);
 }
 
+// canon 3.1: a spec whose frontmatter still carries `status: draft` — or the pre-3.1
+// gate state `status: ratified`, which meant "approved but not yet building" — was
+// never actually approved for build. Leaving it in specs/ would let it silently read
+// as approved now that state is location, not a frontmatter value. `status: building`
+// (or no status at all) means real work is under way, so those stay. The frontmatter
+// line itself is never stripped — it's recognised silently forever, and stripping it
+// would be churn for no functional gain.
+const DRAFT_LIKE_STATUS = new Set(["draft", "ratified"]);
+
+/** Move every `docs/specs/<slug>/` whose spec.md still reads `status: draft|ratified`
+ *  back to `docs/drafts/<slug>/` — a plain filesystem rename, so relations.md,
+ *  open-questions.md, and any other file in the folder move with it. */
+function moveDraftsBack(root: string, check: boolean): { outcomes: Outcome[]; clean: boolean; wrote: boolean } {
+  const outcomes: Outcome[] = [];
+  let clean = true;
+  let wrote = false;
+  const specsDir = join(root, "docs", "specs");
+  if (!existsSync(specsDir)) return { outcomes, clean, wrote };
+  const slugs = readdirSync(specsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+  for (const slug of slugs) {
+    const specPath = join(specsDir, slug, "spec.md");
+    if (!existsSync(specPath)) continue; // STRUCT-MISSING-SPEC's problem, not upgrade's
+    const fm = parseFrontmatter(readFileSync(specPath, "utf8"));
+    if (!fm.ok) continue; // unparseable frontmatter is Specline's problem, not upgrade's
+    const status = fm.data["status"];
+    if (typeof status !== "string" || !DRAFT_LIKE_STATUS.has(status)) continue;
+    const from = `docs/specs/${slug}`;
+    const to = `docs/drafts/${slug}`;
+    clean = false;
+    outcomes.push({ rel: `${from} -> ${to}`, action: "move" });
+    if (!check) {
+      mkdirSync(join(root, "docs", "drafts"), { recursive: true });
+      renameSync(join(root, from), join(root, to));
+      wrote = true;
+    }
+  }
+  return { outcomes, clean, wrote };
+}
+
 /** Bring a repo to the canon this tool serves: migrate the config, rewrite the pin in
- *  specline.yml and doc-architecture.md, then regenerate the generated files (same as
- *  sync). One step, so a pin bump and the generated headers can never drift apart. */
+ *  specline.yml and doc-architecture.md, move any not-yet-approved spec back to
+ *  drafts/, then regenerate the generated files (same as sync). One step, so a pin
+ *  bump and the generated headers can never drift apart. */
 export function upgrade(root: string, opts: SyncOptions): RunResult {
   root = resolveRepoRoot(root);
   const outcomes: Outcome[] = [];
@@ -210,7 +251,13 @@ export function upgrade(root: string, opts: SyncOptions): RunResult {
     outcomes.push({ rel: pin.rel, action: "update" });
   }
 
-  // regenerate generated artifacts so headers track the new canon too
+  const moves = moveDraftsBack(root, opts.check);
+  outcomes.push(...moves.outcomes);
+  clean &&= moves.clean;
+  wrote ||= moves.wrote;
+
+  // regenerate generated artifacts so headers track the new canon too — after the
+  // moves, so a freshly-created docs/drafts/ gets its README in the same pass.
   const gen = run(root, planSync(root), opts.check);
   outcomes.push(...gen.outcomes);
   clean &&= gen.clean;

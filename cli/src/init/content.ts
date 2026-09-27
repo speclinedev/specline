@@ -24,11 +24,18 @@ interface FolderDoc {
 // Keyed by directory name. `init` scaffolds all of them; `sync` regenerates the
 // README of every one that exists.
 export const FOLDER_DOCS: Record<string, FolderDoc> = {
+  drafts: {
+    purpose: "being shaped",
+    whatsHere: "A folder per feature being shaped, named by its slug (`docs/drafts/<slug>/`) — the same anatomy as a spec. Not a commitment; may be incomplete, may be deleted.",
+    howToWrite: "Whatever is known — a `discovery.md`, a partial `spec.md`, or both. Only parse-level integrity is checked here: frontmatter parses, the slug matches the folder, edges resolve, the slug isn't already taken.",
+    howToRead: "An idea taking shape, not yet approved. Moving it to `specs/` is the decider's go.",
+    notHere: "Nothing anything else may depend on — a draft may be deleted outright, or archived as `killed` if it's worth a tombstone.",
+  },
   specs: {
-    purpose: "in-flight work",
-    whatsHere: "A folder per in-flight feature, named by its slug (`docs/specs/<slug>/`). The folder name is the spec's identity. Prescriptive, temporary.",
-    howToWrite: "A `spec.md` — five frontmatter keys (`slug`, `type`, `status`, `decider`, `created`) and the body sections: Intent, Goal, Non-goals, Behavior, Business rules, Assumptions, Critical files, Acceptance checks, Out of scope — plus a `relations.md`. Copy `conventions/spec-template.md`. Shape it with the PO; log unknowns in `open-questions.md`.",
-    howToRead: "The contract a feature is being built toward — what we intend, not yet what exists.",
+    purpose: "approved for build",
+    whatsHere: "A folder per approved feature, named by its slug (`docs/specs/<slug>/`). The folder name is the spec's identity. Prescriptive, temporary.",
+    howToWrite: "A `spec.md` — four frontmatter keys (`slug`, `type`, `decider`, `created`) and the body sections: Intent, Goal, Non-goals, Behavior, Business rules, Assumptions, Critical files, Acceptance checks, Out of scope — plus a `relations.md`. Copy `conventions/spec-template.md`. Shape it in `drafts/` first if it isn't ready; log unknowns in `open-questions.md`.",
+    howToRead: "The contract a feature is being built toward — what we intend, not yet what exists. Being here at all is the decider's go.",
     notHere: "No shipped descriptions — those graduate to `knowledge/` and `archive/`.",
   },
   knowledge: {
@@ -97,7 +104,7 @@ export function renderReadme(dir: string): string {
 // 3.1), and the record's rules only fire on folders that exist — so a repo that
 // never writes an ADR simply has an empty `decisions/`, which costs nothing.
 export const SCAFFOLD_FOLDERS: string[] = [
-  "specs", "knowledge", "archive", "conventions", "decisions", "strategy", "technical",
+  "drafts", "specs", "knowledge", "archive", "conventions", "decisions", "strategy", "technical",
 ];
 
 // The docs/ root README — the map. Distinct from architecture.md (which is authored
@@ -168,18 +175,19 @@ export function speclineYml(decider: string): string {
 }
 
 /** The spec a new repo copies. Part 1 of the canon, in the smallest form that is
- *  still a whole contract: five frontmatter keys, the body sections, and one
- *  acceptance list. The `### human` sub-heading is the one optional marker Part 1
+ *  still a whole contract: four frontmatter keys, the body sections, and one
+ *  acceptance list. No `status` key — canon 3.1: state is location, not a
+ *  frontmatter value. The `### human` sub-heading is the one optional marker Part 1
  *  keeps — items only a person can settle — so it ships commented out rather than
  *  as a partition the author has to fill. */
 export function specTemplate(decider: string): string {
   return [
-    "<!-- scaffolded by `specline init` — copy to docs/specs/<slug>/spec.md. -->",
+    "<!-- scaffolded by `specline init` — copy to docs/drafts/<slug>/spec.md while it's",
+    "     being shaped, or straight to docs/specs/<slug>/spec.md once it's approved. -->",
     "",
     "---",
     "slug: your-slug         # the folder name; a spec's identity. must match the directory",
     "type: feature           # feature | bug | chore | parent",
-    "status: draft           # draft | building | shipped | killed",
     `decider: ${decider}`,
     "created: YYYY-MM-DD     # the decider's go is recorded in git — no ratified_by/at field",
     "---",

@@ -1,7 +1,7 @@
 // Acceptance tests for 0002-specline-init (the scaffolder). Mirrors its spec.
 import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { init, sync, upgrade } from "../src/init/scaffold.ts";
@@ -34,7 +34,7 @@ test("init produces a repo doctor validates with zero errors", (context) => {
 test("generated files carry the header; scaffold starters do not", (context) => {
   const t = fresh(context);
   init(t, { ...base, githubAction: true });
-  for (const f of ["docs/specs/README.md", "docs/knowledge/README.md", "docs/archive/README.md", "docs/conventions/README.md", ".github/workflows/specline.yml"]) {
+  for (const f of ["docs/drafts/README.md", "docs/specs/README.md", "docs/knowledge/README.md", "docs/archive/README.md", "docs/conventions/README.md", ".github/workflows/specline.yml"]) {
     assert.ok(isGenerated(readFileSync(join(t, f), "utf8")), `${f} should be generated`);
   }
   for (const f of ["specline.yml", "docs/conventions/doc-architecture.md", "docs/architecture.md"]) {
@@ -68,22 +68,21 @@ test("the scaffold carries no tier anywhere — the concept is gone", (context) 
   assert.deepEqual(offenders, []);
 });
 
-test("init scaffolds the five-key spec template, one acceptance list, and every folder", (context) => {
+test("init scaffolds the four-key spec template, one acceptance list, and every folder", (context) => {
   const t = fresh(context);
   init(t, { ...base, githubAction: false });
   const tpl = readFileSync(join(t, "docs/conventions/spec-template.md"), "utf8");
   const fm = tpl.split("---")[1]!;
   assert.deepEqual(fm.split("\n").filter((l) => l.trim() !== "").map((l) => l.split(":")[0]!.trim()),
-    ["slug", "type", "status", "decider", "created"], "exactly the five Part-1 keys");
-  for (const key of ["blast_radius", "size", "target_model", "stale_after", "loop_budget", "build"]) {
-    assert.ok(!new RegExp(`^${key}:`, "m").test(fm), `${key} is Part-3 envelope and must not be scaffolded`);
+    ["slug", "type", "decider", "created"], "exactly the four Part-1 keys — no status (canon 3.1: state is location)");
+  for (const key of ["status", "blast_radius", "size", "target_model", "stale_after", "loop_budget", "build"]) {
+    assert.ok(!new RegExp(`^${key}:`, "m").test(fm), `${key} must not be scaffolded`);
   }
   assert.match(tpl, /^## Acceptance checks$/m);
-  assert.match(tpl, /^status: draft {11}# draft \| building \| shipped \| killed$/m);
   // the `### human` marker ships commented out: optional, and discoverable
   assert.ok(/<!--[\s\S]*### human\n[\s\S]*-->/.test(tpl), "### human is offered, not imposed");
   assert.ok(!/### (agent-loopable|judgeable|human-gate)/.test(tpl), "no Part-3 altitudes in the template");
-  for (const dir of ["specs", "knowledge", "archive", "conventions", "decisions", "strategy", "technical"]) {
+  for (const dir of ["drafts", "specs", "knowledge", "archive", "conventions", "decisions", "strategy", "technical"]) {
     assert.ok(existsSync(join(t, "docs", dir, "README.md")), `docs/${dir}/README.md`);
   }
   // ...and the scaffolded repo still validates clean
@@ -209,6 +208,51 @@ test("upgrade migrates a v3.0 config: tier: 2 becomes the switch, tier: 0|1 is d
     assert.equal(upgrade(root, { check: true }).clean, true, `tier ${tier}: clean after`);
     assert.equal(hasPinMismatch(root), false);
   }
+});
+
+test("upgrade moves a `status: draft` spec and a `ratified` one back to drafts/; `building` and no-status stay", (context) => {
+  const root = fresh(context);
+  init(root, { ...base, githubAction: false });
+  const spec = (slug: string, fields: string) =>
+    writeFileSync(join(root, "docs", "specs", slug, "spec.md"),
+      `---\nslug: ${slug}\ntype: feature\n${fields}decider: jonathan\ncreated: 2026-06-01\n---\n\n## Goal\nx\n`, { flag: "wx" });
+  for (const [slug, fields] of [
+    ["shaping", "status: draft\n"],
+    ["gate-state", "status: ratified\n"],
+    ["under-way", "status: building\n"],
+    ["untagged", ""],
+  ] as const) {
+    mkdirSync(join(root, "docs", "specs", slug), { recursive: true });
+    spec(slug, fields);
+    writeFileSync(join(root, "docs", "specs", slug, "relations.md"), "depends_on: []\n");
+  }
+
+  const dry = upgrade(root, { check: true });
+  assert.equal(dry.clean, false, "two pending moves");
+  const moved = dry.outcomes.filter((o) => o.action === "move").map((o) => o.rel).sort();
+  assert.deepEqual(moved, [
+    "docs/specs/gate-state -> docs/drafts/gate-state",
+    "docs/specs/shaping -> docs/drafts/shaping",
+  ]);
+  assert.ok(existsSync(join(root, "docs/specs/shaping")), "--check must not write");
+  assert.ok(!existsSync(join(root, "docs/drafts/shaping")), "--check must not write");
+
+  const res = upgrade(root, { check: false });
+  assert.equal(res.wrote, true);
+  for (const slug of ["shaping", "gate-state"]) {
+    assert.ok(!existsSync(join(root, "docs/specs", slug)), `${slug} left specs/`);
+    assert.ok(existsSync(join(root, "docs/drafts", slug, "spec.md")), `${slug} landed in drafts/`);
+    assert.ok(existsSync(join(root, "docs/drafts", slug, "relations.md")), `${slug}'s relations.md moved with it`);
+    // the frontmatter status line itself is never stripped — churn buys nothing
+    assert.match(readFileSync(join(root, "docs/drafts", slug, "spec.md"), "utf8"), /^status: (draft|ratified)$/m);
+  }
+  for (const slug of ["under-way", "untagged"]) {
+    assert.ok(existsSync(join(root, "docs/specs", slug, "spec.md")), `${slug} must stay in specs/`);
+  }
+  assert.ok(existsSync(join(root, "docs/drafts/README.md")), "the new drafts/ folder gets its README in the same pass");
+
+  assert.equal(upgrade(root, { check: true }).clean, true, "no more pending moves");
+  assert.equal(run(root, { changed: [], now: "2026-06-15" }).summary.errors, 0);
 });
 
 test("repeated init preserves authored starters", (context) => {
