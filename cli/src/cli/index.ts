@@ -217,7 +217,6 @@ async function main(): Promise<void> {
   if (args.command === "init") {
     if (existsSync(args.path) && !statSync(args.path).isDirectory()) fail(`${args.path} is not a directory`);
     const res = init(args.path, {
-      tier: 1,
       decider: args.decider,
       githubAction: await resolveGithubAction(args),
       check: args.check,

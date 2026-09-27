@@ -6,13 +6,13 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { isMap, isScalar, parseDocument } from "yaml";
+import { LineCounter, isMap, isScalar, parseDocument } from "yaml";
 import {
-  FOLDER_DOCS, TIER_FOLDERS, renderReadme, renderDocsReadme, isGenerated,
-  docArchitecture, architectureMd, githubWorkflow, speclineYml,
+  FOLDER_DOCS, SCAFFOLD_FOLDERS, renderReadme, renderDocsReadme, isGenerated,
+  docArchitecture, architectureMd, githubWorkflow, speclineYml, specTemplate,
 } from "./content.ts";
 import { InputError, resolveRepoRoot } from "../engine/model.ts";
-import { CANON } from "../version.ts";
+import { CANON_MM } from "../version.ts";
 
 export type FileKind = "generated" | "scaffold";
 export type Action = "create" | "update" | "skip-authored" | "skip-exists" | "ok";
@@ -21,16 +21,17 @@ interface Planned { rel: string; content: string; kind: FileKind; }
 export interface Outcome { rel: string; action: Action; }
 export interface RunResult { outcomes: Outcome[]; clean: boolean; wrote: boolean; }
 
-export interface InitOptions { tier: number; decider: string; githubAction: boolean; check: boolean; }
+export interface InitOptions { decider: string; githubAction: boolean; check: boolean; }
 export interface SyncOptions { check: boolean; }
 
 function planInit(opts: InitOptions): Planned[] {
-  const folders = TIER_FOLDERS[opts.tier] ?? TIER_FOLDERS[1]!;
+  const folders = SCAFFOLD_FOLDERS;
   const plan: Planned[] = folders.map((f) => ({ rel: `docs/${f}/README.md`, content: renderReadme(f), kind: "generated" as const }));
   plan.push({ rel: "docs/README.md", content: renderDocsReadme(folders), kind: "generated" });
-  plan.push({ rel: "specline.yml", content: speclineYml(opts.tier, opts.decider), kind: "scaffold" });
+  plan.push({ rel: "specline.yml", content: speclineYml(opts.decider), kind: "scaffold" });
   plan.push({ rel: "docs/architecture.md", content: architectureMd(), kind: "scaffold" });
-  plan.push({ rel: "docs/conventions/doc-architecture.md", content: docArchitecture(opts.tier, opts.decider), kind: "scaffold" });
+  plan.push({ rel: "docs/conventions/doc-architecture.md", content: docArchitecture(opts.decider), kind: "scaffold" });
+  plan.push({ rel: "docs/conventions/spec-template.md", content: specTemplate(opts.decider), kind: "scaffold" });
   if (opts.githubAction) plan.push({ rel: ".github/workflows/specline.yml", content: githubWorkflow(), kind: "generated" });
   return plan;
 }
@@ -78,7 +79,6 @@ function run(root: string, plan: Planned[], check: boolean): RunResult {
 }
 
 export function init(root: string, opts: InitOptions): RunResult {
-  if (![0, 1, 2].includes(opts.tier)) throw new InputError("tier must be 0, 1, or 2");
   if (typeof opts.decider !== "string" || opts.decider.trim() === "") throw new InputError("decider must be a non-empty name");
   return run(root, planInit(opts), opts.check);
 }
@@ -95,9 +95,52 @@ const PIN_REWRITES: { rel: string; re: RegExp; replace: string }[] = [
   {
     rel: "docs/conventions/doc-architecture.md",
     re: /(\*\*Canon\*\*\s*\|\s*Specline\s*`?)[0-9][^`\s|]*/,
-    replace: `$1${CANON}`,
+    replace: `$1${CANON_MM}`,
   },
 ];
+
+/** "3.1.0-draft" -> "3.1". A repo pin tracks MAJOR.MINOR, which is also the grain
+ *  CANON-PIN-MISMATCH compares at — so a canon patch must not churn every repo. */
+function majorMinor(v: string): string | null {
+  const m = v.trim().replace(/^v/i, "").match(/^(\d+)\.(\d+)/);
+  return m ? `${m[1]}.${m[2]}` : null;
+}
+
+/** Drop the v3.0 `| **Tier** |` row. Tiers are gone (canon 3.1), and a stale row is
+ *  worse than none: it tells a reader the repo is configured by something inert. */
+function dropTierRow(cur: string): string {
+  const eol = cur.includes("\r\n") ? "\r\n" : "\n";
+  const lines = cur.split(/\r?\n/).filter((l) => !/^\s*\|\s*\*\*Tier\*\*\s*\|/.test(l));
+  return lines.join(eol);
+}
+
+/** Migrate the v3.0 `tier:` key. `tier: 2` was "governance", which is what the
+ *  unattended switch now means, so it maps across; `tier: 0|1` differed only in
+ *  whether knowledge/ and archive/ existed, and the record's rules only fire on
+ *  folders that exist — so the line carried no information and is dropped. The
+ *  rewrite is located by the YAML parser and applied to that one line, so inline
+ *  comments, key order, quoting style and line endings survive. */
+function migrateTier(cur: string): string {
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(cur, { schema: "failsafe", lineCounter, prettyErrors: false });
+  if (doc.errors.length > 0) throw new InputError(`specline.yml: ${doc.errors[0]!.message}`);
+  if (!isMap(doc.contents)) throw new InputError("specline.yml must be a `key: value` mapping");
+  const pair = doc.contents.items.find((i) => isScalar(i.key) && i.key.value === "tier");
+  if (pair === undefined) return cur;
+  if (!isScalar(pair.value) || typeof pair.value.value !== "string" || !isScalar(pair.key) || !pair.key.range) {
+    throw new InputError("specline.yml tier must be a scalar value");
+  }
+  const eol = cur.includes("\r\n") ? "\r\n" : "\n";
+  const lines = cur.split(/\r?\n/);
+  const at = lineCounter.linePos(pair.key.range[0]).line - 1;
+  const already = doc.get("unattended", true) !== undefined && doc.get("unattended", true) !== null;
+  if (pair.value.value === "2" && !already) {
+    lines[at] = lines[at]!.replace(/tier:[^\S\r\n]*("?)2\1/, "unattended: true");
+  } else {
+    lines.splice(at, 1);
+  }
+  return lines.join(eol);
+}
 
 /** Rewrite (or add) `canon:` in a specline.yml, changing nothing else. A regex
  *  rewrite of the value stripped the quotes off `canon: "2.4.0"`; splicing over
@@ -113,20 +156,21 @@ function rewritePin(cur: string): string {
     const eol = cur.includes("\r\n") ? "\r\n" : "\n";
     const lines = cur.split(/\r?\n/);
     const at = lines.findIndex((l) => l.trim() !== "" && !l.trimStart().startsWith("#"));
-    lines.splice(at === -1 ? lines.length : at, 0, `canon: ${CANON}`);
+    lines.splice(at === -1 ? lines.length : at, 0, `canon: ${CANON_MM}`);
     return lines.join(eol);
   }
   if (!isScalar(pin) || typeof pin.value !== "string" || !pin.range) {
     throw new InputError("specline.yml canon must be a version string");
   }
-  if (pin.value === CANON) return cur;
-  const quoted = pin.type === "QUOTE_DOUBLE" ? JSON.stringify(CANON) : pin.type === "QUOTE_SINGLE" ? `'${CANON}'` : CANON;
+  // Already tracking this canon at MAJOR.MINOR: leave the author's exact string alone.
+  if (majorMinor(pin.value) === CANON_MM) return cur;
+  const quoted = pin.type === "QUOTE_DOUBLE" ? JSON.stringify(CANON_MM) : pin.type === "QUOTE_SINGLE" ? `'${CANON_MM}'` : CANON_MM;
   return cur.slice(0, pin.range[0]) + quoted + cur.slice(pin.range[1]);
 }
 
-/** Bring a repo to the canon this tool serves: rewrite the pin in specline.yml and
- *  doc-architecture.md, then regenerate the generated files (same as sync). One step,
- *  so a pin bump and the generated headers can never drift apart. */
+/** Bring a repo to the canon this tool serves: migrate the config, rewrite the pin in
+ *  specline.yml and doc-architecture.md, then regenerate the generated files (same as
+ *  sync). One step, so a pin bump and the generated headers can never drift apart. */
 export function upgrade(root: string, opts: SyncOptions): RunResult {
   root = resolveRepoRoot(root);
   const outcomes: Outcome[] = [];
@@ -136,7 +180,7 @@ export function upgrade(root: string, opts: SyncOptions): RunResult {
   const yml = join(root, "specline.yml");
   if (existsSync(yml)) {
     const cur = readFileSync(yml, "utf8");
-    const next = rewritePin(cur);
+    const next = rewritePin(migrateTier(cur));
     if (next === cur) {
       outcomes.push({ rel: "specline.yml", action: "ok" });
     } else {
@@ -153,7 +197,7 @@ export function upgrade(root: string, opts: SyncOptions): RunResult {
     const abs = join(root, pin.rel);
     if (!existsSync(abs)) continue; // no pin to bump here
     const cur = readFileSync(abs, "utf8");
-    const next = cur.replace(pin.re, pin.replace);
+    const next = dropTierRow(cur.replace(pin.re, pin.replace));
     if (next === cur) {
       outcomes.push({ rel: pin.rel, action: "ok" });
       continue;
