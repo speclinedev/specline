@@ -30,6 +30,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
       - uses: oven-sh/setup-bun@v2
       - name: Bundle integrity (canon file + embedded copy match the source)
         run: node scripts/sync-canon.mjs --check
@@ -39,11 +45,8 @@ jobs:
           for t in linux-x64 darwin-arm64 darwin-x64; do
             bun build src/cli/index.ts --compile --target=bun-$t --outfile "dist/specline-$t"
           done
-      - name: Smoke test (native linux binary must serve its embedded canon)
-        run: |
-          ./dist/specline-linux-x64 spec | grep -q "Canon version:" || { echo "binary cannot serve its canon"; exit 1; }
-          ./dist/specline-linux-x64 rules | grep -q "STRUCT-MISSING-SPEC" || { echo "rule catalog missing"; exit 1; }
-          echo "smoke ok: $(./dist/specline-linux-x64 spec | grep -m1 'Canon version:')"
+      - name: Smoke test compiled canon, check, and init dry run
+        run: node scripts/smoke-binary.mjs dist/specline-linux-x64
       - name: Verify the cross-compiled macOS binaries built
         run: |
           for t in darwin-arm64 darwin-x64; do

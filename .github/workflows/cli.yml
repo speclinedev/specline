@@ -9,6 +9,7 @@ on:
     paths:
       - "cli/**"
       - "specline-*.md"
+      - ".github/workflows/**"
 defaults:
   run:
     working-directory: cli
@@ -20,7 +21,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --test test/*.test.ts
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - uses: oven-sh/setup-bun@v2
+      - run: bun build src/cli/index.ts --compile --target=bun-linux-x64 --outfile dist/specline
+      - run: node scripts/smoke-binary.mjs dist/specline
   bundle-integrity:
     runs-on: ubuntu-latest
     steps:
