@@ -7,16 +7,18 @@ import Docs from "../../layouts/Docs.astro";
 // the authoritative machine-readable copy.
 const rules = [
   // Integrity — blocks
-  ["STRUCT-MISSING-SPEC", "error", "spec", "1", "a specs/ folder has no spec.md — the constitutive file; the folder is not a spec without it."],
-  ["FRONTMATTER-UNPARSEABLE", "error", "spec", "1", "spec.md frontmatter is missing or doesn't parse."],
-  ["FRONTMATTER-SLUG-MISMATCH", "error", "spec", "1", "frontmatter slug doesn't match the directory."],
-  ["ENUM-INVALID", "error", "spec", "1", "blast_radius / target_model holds a value outside the allowed set."],
-  ["RELATION-DANGLING", "error", "repo", "1", "a relations.md edge points to a slug that exists nowhere."],
-  ["LINK-DANGLING", "error", "repo", "1", "a relative link under docs/ doesn't resolve."],
-  ["SLUG-DUPLICATE", "error", "repo", "1", "a slug appears in more than one of specs/, knowledge/, or archive/ — each slug is a unique identity."],
-  ["KNOWLEDGE-HAS-STATUS", "error", "repo", "1", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
-  ["ARCHIVE-EDITED", "error", "repo", "1", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
+  ["STRUCT-MISSING-SPEC", "error", "spec", "0", "a specs/ folder has no spec.md — the constitutive file; the folder is not a spec without it."],
+  ["FRONTMATTER-UNPARSEABLE", "error", "spec", "0", "spec.md frontmatter is missing or doesn't parse."],
+  ["FRONTMATTER-SLUG-MISMATCH", "error", "spec", "0", "frontmatter slug doesn't match the directory."],
+  ["ENUM-INVALID", "error", "spec", "0", "a known enum (including status and build) has an invalid value or shape."],
+  ["RELATION-DANGLING", "error", "repo", "0", "a relations.md edge points to a slug that exists nowhere."],
+  ["LINK-DANGLING", "error", "repo", "0", "a relative link under docs/ doesn't resolve."],
+  ["SLUG-DUPLICATE", "error", "repo", "0", "an active spec slug collides with knowledge/ or archive/; the graduated knowledge + archive pair is legal."],
+  ["KNOWLEDGE-HAS-STATUS", "error", "repo", "0", "knowledge/ contains a lifecycle artifact (status.md, open-questions.md)."],
+  ["ARCHIVE-EDITED", "error", "repo", "0", "an archived spec is modified (adding one is graduation, allowed) — the audit trail is immutable."],
+  ["RELATION-UNPARSEABLE", "error", "repo", "0", "forward relations in specs or knowledge have invalid YAML or field shapes."],
   // Advisory — warns, never blocks
+  ["UNATTENDED-INCOMPLETE", "warning", "spec", "1", "build: unattended lacks blast_radius, loop_budget, status.md, or stale_after once building or blocked."],
   ["STRUCT-MISSING-RELATIONS", "warning", "spec", "1", "a specs/ folder has no relations.md — an auxiliary file."],
   ["STATUS-SCHEMA", "warning", "spec", "1", "status.md is missing or duplicates a required section."],
   ["UNKNOWN-FRONTMATTER-KEY", "warning", "spec", "1", "an unrecognized frontmatter key — preserved, not failed (newer canon)."],
@@ -69,5 +71,5 @@ const rules = [
       </tbody>
     </table>
   </div>
-  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Only the nine integrity rules block; everything else is advice the decider weighs. A few canon checks that need git history (<code>specline diff</code>) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
+  <p class="doc-note">This table mirrors <code>specline rules --format json</code> — that command, not this page, is the authoritative machine-readable catalog. Integrity rules run at tier 0 and above; everything else is advice the decider weighs. A few canon checks that need git history (<code>specline diff</code>) or aren't built yet (<code>relations-index --fix</code>) are marked planned in the canon.</p>
 </Docs>

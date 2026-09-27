@@ -2,7 +2,7 @@
 import Docs from "../../../layouts/Docs.astro";
 
 const fields = [
-  { field: "slug", values: "kebab-case", when: "Always. The spec's identity — matches the folder name; unique across specs/, knowledge/, and archive/. Frozen once the spec lands on the merge target: renaming a referenced spec dangles its inbound edges. Re-slugging before it lands is legal — nothing points at it yet." },
+  { field: "slug", values: "kebab-case", when: "Always. The spec's identity — matches the folder name; unique to one feature across specs/, knowledge/, and archive/. Graduation preserves the same slug in its knowledge + archive pair. Frozen once the spec lands on the merge target: renaming a referenced spec dangles its inbound edges. Re-slugging before it lands is legal — nothing points at it yet." },
   { field: "type", values: "feature | bug | chore | parent", when: "Always. A bug is a spec with type: bug; a decomposition parent is type: parent." },
   { field: "status", values: "draft | ratified | building | blocked | shipped | killed", when: "Always. shipped and killed are set during archiving and exist only in archive/." },
   { field: "decider", values: "a named human", when: "Always. The PO accountable for this spec." },

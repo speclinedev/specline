@@ -1,4 +1,5 @@
 ---
+import { CANON_VERSION } from "../../canon.ts";
 import Docs from "../../layouts/Docs.astro";
 ---
 <Docs title="Getting started — set up or convert a repo">
@@ -12,10 +13,10 @@ import Docs from "../../layouts/Docs.astro";
 
   <h2>What you need first</h2>
   <ul>
-    <li><a href="/docs/install">Install</a> the <code>specline</code> command (Node 22+, no build).</li>
+    <li><a href="/docs/install">Install</a> the <code>specline</code> command (Node 22.18+).</li>
     <li>For the agent path: register the <a href="/docs/mcp">MCP server</a> and drop the <a href="/docs/agent"><code>CLAUDE.md</code> brief</a> into the repo.</li>
   </ul>
-  <p class="doc-note">There's no <code>specline init</code> command yet — setup today is agent-driven or by hand (a generated <code>init</code>/<code>migrate</code> is the planned next tool).</p>
+  <p class="doc-note">Run <code>specline init . --tier 1 --yes</code> to create the starting structure, or add <code>--check</code> to preview without writing. Existing authored files are preserved.</p>
 
   <h2>Start a new repo</h2>
 
@@ -31,7 +32,7 @@ import Docs from "../../layouts/Docs.astro";
   architecture.md                  <span class="cmt"># a few lines: what this system is, read first</span>
   <span class="dir">specs/</span>                          <span class="cmt"># one folder per in-flight spec; the folder name is its slug</span></pre>
   <p>One file carries the settings. <code>specline.yml</code> at the repo root is where Specline reads your tier and thresholds — nothing else:</p>
-  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">2.7</span>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">{CANON_VERSION}</span>
 <span class="k">tier</span>: <span class="acc">1</span>            <span class="cmt"># 1 — the loop</span>
 <span class="k">deciders</span>: <span class="v">[your-name]</span></pre></div>
   <p class="doc-note"><code>docs/conventions/doc-architecture.md</code> is now optional prose/rationale — the machine-readable pins and thresholds live in <code>specline.yml</code>.</p>
@@ -51,12 +52,12 @@ import Docs from "../../layouts/Docs.astro";
   <h3>Convert it by hand</h3>
   <ol>
     <li>Add <code>specline.yml</code> at the repo root with the canon + tier pin (as above).</li>
-    <li>For each shipped feature's existing doc, create <code>docs/knowledge/&lt;slug&gt;/</code> (the folder name is a descriptive slug, unique across <code>specs/</code>, <code>knowledge/</code>, and <code>archive/</code>). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts Specline rejects in <code>knowledge/</code>).</li>
+    <li>For each shipped feature's existing doc, create <code>docs/knowledge/&lt;slug&gt;/</code> (the folder name is a descriptive slug, unique for each feature; graduation may pair matching <code>knowledge/</code> and <code>archive/</code> folders). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts Specline rejects in <code>knowledge/</code>).</li>
     <li>Leave <code>archive/</code> empty — it fills as new features go forward through the loop. Backfill a contract only for a feature whose original spec still carries value.</li>
   </ol>
   <div class="callout"><span class="ci">▲</span><p>Specline permits <code>knowledge/</code> entries with no archived spec, so a converted repo is conformant on day one. You don't backfill history. The audit trail in <code>archive/</code> grows forward, never retroactively.</p></div>
 
   <h2 id="verify">Verify</h2>
   <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div><pre>specline check .</pre></div>
-  <p>Zero <code>error</code> findings (exit 0) means the shape is right. Warnings don't block — they point at things worth a look, not things to stop on. From here every new feature runs the <a href="/">loop</a>: shape → sign → build → graduate.</p>
+  <p>Zero <code>error</code> findings (exit 0) means no blocking integrity findings for the supplied changed paths; it does not establish semantic correctness. Warnings don't block — they point at things worth a look, not things to stop on. From here every new feature runs the <a href="/">loop</a>: shape → sign → build → graduate.</p>
 </Docs>

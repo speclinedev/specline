@@ -27,8 +27,8 @@ import Docs from "../../layouts/Docs.astro";
   <div class="tbl-wrap"><table class="book-table">
     <thead><tr><th>Loop input</th><th>Specline (validates shape)</th><th>orchestrator (consumes)</th></tr></thead>
     <tbody>
-      <tr><td>Goal — the target</td><td>present &amp; falsifiable-shaped</td><td>converges toward it</td></tr>
-      <tr><td>Agent-loopable checks — the exit</td><td>runnable command present</td><td>runs them each iteration</td></tr>
+      <tr><td>Goal — the target</td><td>Goal heading present (advisory)</td><td>converges toward it</td></tr>
+      <tr><td>Agent-loopable checks — the exit</td><td>agent-loopable label present; optional run suffix syntax checked</td><td>runs them each iteration</td></tr>
       <tr><td>status.md — memory</td><td>required sections + entries</td><td>resumes from / appends to it</td></tr>
       <tr><td>loop_budget / stale_after — autonomy</td><td>well-formed values</td><td>counts cycles / clock; escalates</td></tr>
       <tr><td>blast_radius / target_model — routing</td><td>allowed values</td><td>selects model effort + reviewer depth</td></tr>
@@ -43,5 +43,5 @@ import Docs from "../../layouts/Docs.astro";
     quietly extends a boundary and never edits a ratified spec. It speaks through artifacts
     and <code>status.md</code>, not a reasoning transcript.
   </p>
-  <p>See the handbook's <a href="/#build">How agents build</a> and <a href="/#escalation">Escalation</a> chapters for the narrative, and <a href="/spec.md">/spec.md</a> § <em>The build loop</em> for the normative contract.</p>
+  <p>See the handbook's <a href="/handbook/building">How agents build</a> and <a href="/handbook/building">unattended escalation</a> discussion for the narrative, and <a href="/spec.md">/spec.md</a> § <em>The build loop</em> for the normative contract.</p>
 </Docs>

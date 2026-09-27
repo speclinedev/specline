@@ -16,21 +16,24 @@ import Docs from "../../layouts/Docs.astro";
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>
     <pre>claude mcp add --scope user specline -- \
-  node /abs/path/to/cli/src/mcp/index.ts</pre>
+  node /abs/path/to/specline/cli/src/mcp/index.ts</pre>
   </div>
-  <p class="doc-note">Use your actual absolute path to <code>cli/src/mcp/index.ts</code>. Verify with <code>claude mcp get specline</code> — it should report <code>✔ Connected</code>. The server is dependency-free stdio JSON-RPC; nothing to install.</p>
+  <p class="doc-note">Use your actual absolute path to <code>cli/src/mcp/index.ts</code>. Verify with <code>claude mcp get specline</code> — it should report <code>✔ Connected</code>. Run <code>npm ci</code> in <code>cli/</code> first, as in the install guide. The server uses stdio JSON-RPC.</p>
 
   <h2>The three tools</h2>
   <div class="tbl-wrap">
     <table class="book-table">
       <thead><tr><th>Tool</th><th>Does</th><th>Arguments</th></tr></thead>
       <tbody>
-        <tr><td>specline_check</td><td>Validate a repo; returns the JSON report.</td><td><code>path</code> (req), <code>mode</code>, <code>changed[]</code>, <code>now</code>, <code>tier</code></td></tr>
+        <tr><td>specline_check</td><td>Validate a repo; returns the JSON report.</td><td><code>path</code> (req), <code>mode</code>, <code>changed[]</code>, <code>modified[]</code>, <code>now</code>, <code>tier</code></td></tr>
         <tr><td>specline_spec</td><td>Return the pinned canon — inject to make the agent aware of Specline.</td><td>—</td></tr>
         <tr><td>specline_rules</td><td>Return the rule catalog the agent will be checked against.</td><td>—</td></tr>
       </tbody>
     </table>
   </div>
+
+  <h2>Prompts</h2>
+  <p><code>shape</code> guides collaborative spec writing; <code>build</code> briefs an attended builder. Unattended builds use the explicit envelope and runner contract in the canon.</p>
 
   <h2>How an agent uses it</h2>
   <ol>

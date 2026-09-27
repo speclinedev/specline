@@ -1,8 +1,9 @@
 ---
+import { CANON_VERSION } from "../../../canon.ts";
 import Docs from "../../../layouts/Docs.astro";
 
 const yaml = `# specline.yml
-canon: 2.6
+canon: ${CANON_VERSION}
 tier: 1
 deciders: [jonathan]
 deputy: null
@@ -49,6 +50,7 @@ const keys = [
     not the <em>methodology</em>: it does not configure rules, schema, or partitions. Absent → Specline
     falls back to canon defaults.
   </p>
+  <p>Configuration and frontmatter use YAML mappings. Known enum fields must be scalar strings; relations accept a string or a list, including annotated <code>slug: rationale</code> entries. Duplicate keys are invalid. Unknown fields, including nested values, are preserved for compatibility.</p>
   <pre class="code"><code>{yaml}</code></pre>
   <div class="tbl-wrap">
     <table class="book-table">

@@ -68,7 +68,7 @@ const here = Astro.url.pathname.replace(/\/$/, "") || "/";
     <div class="progress" id="progress"></div>
 
     <header class="topbar">
-      <button class="tb-btn tb-menu" id="menuBtn" aria-label="Open navigation">☰</button>
+      <button class="tb-btn tb-menu" id="menuBtn" aria-controls="toc" aria-expanded="false" aria-label="Open navigation">☰</button>
       <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
         <span class="glyph" aria-hidden="true"></span>
         <span class="wordmark">Specline</span>
@@ -106,16 +106,14 @@ const here = Astro.url.pathname.replace(/\/$/, "") || "/";
     </footer>
 
     <script>
+      import { setupNavigation } from "../scripts/navigation.ts";
       const root = document.documentElement;
       document.getElementById("themeBtn")?.addEventListener("click", () => {
         const next = root.dataset.theme === "paper" ? "dark" : "paper";
         root.dataset.theme = next;
         try { localStorage.setItem("specline-theme", next); } catch (e) {}
       });
-      const body = document.body;
-      const close = () => body.classList.remove("toc-open");
-      document.getElementById("menuBtn")?.addEventListener("click", () => body.classList.toggle("toc-open"));
-      document.getElementById("tocBackdrop")?.addEventListener("click", close);
+      setupNavigation();
       const progress = document.getElementById("progress");
       const onScroll = () => {
         const h = document.documentElement;

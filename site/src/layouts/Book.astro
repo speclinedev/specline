@@ -32,7 +32,7 @@ const { title, chapters, canon = CANON_LABEL } = Astro.props;
     <div class="progress" id="progress"></div>
 
     <header class="topbar">
-      <button class="tb-btn tb-menu" id="menuBtn" aria-label="Open contents">☰</button>
+      <button class="tb-btn tb-menu" id="menuBtn" aria-controls="toc" aria-expanded="false" aria-label="Open contents">☰</button>
       <span class="glyph" aria-hidden="true"></span>
       <span class="wordmark">Specline</span>
       <span class="canon">{canon}</span>
@@ -58,6 +58,7 @@ const { title, chapters, canon = CANON_LABEL } = Astro.props;
     </footer>
 
     <script>
+      import { setupNavigation } from "../scripts/navigation.ts";
       const root = document.documentElement;
       const themeBtn = document.getElementById("themeBtn");
       themeBtn?.addEventListener("click", () => {
@@ -66,14 +67,7 @@ const { title, chapters, canon = CANON_LABEL } = Astro.props;
         try { localStorage.setItem("specline-theme", next); } catch (e) {}
       });
 
-      const body = document.body;
-      const menuBtn = document.getElementById("menuBtn");
-      const backdrop = document.getElementById("tocBackdrop");
-      const closeToc = () => body.classList.remove("toc-open");
-      menuBtn?.addEventListener("click", () => body.classList.toggle("toc-open"));
-      backdrop?.addEventListener("click", closeToc);
-      document.querySelectorAll(".toc a").forEach((a) => a.addEventListener("click", closeToc));
-
+      setupNavigation();
       const progress = document.getElementById("progress");
       const onScroll = () => {
         const h = document.documentElement;
