@@ -20,7 +20,7 @@ const base = { tier: 1, decider: "jonathan", check: false } as const;
 test("init produces a repo doctor validates with zero errors", (context) => {
   const t = fresh(context);
   init(t, { ...base, githubAction: true });
-  const r = run(t, { mode: "gate", changed: [], now: "2026-06-15" });
+  const r = run(t, { changed: [], now: "2026-06-15" });
   assert.equal(r.summary.errors, 0, JSON.stringify(r.findings, null, 2));
   assert.equal(exitCodeFor(r), 0);
 });
@@ -85,7 +85,7 @@ test("--check writes nothing and flags a missing/stale repo", (context) => {
 });
 
 const hasPinMismatch = (root: string) =>
-  run(root, { mode: "gate", changed: [], now: "2026-06-15" }).findings.some((f) => f.rule_id === "CANON-PIN-MISMATCH");
+  run(root, { changed: [], now: "2026-06-15" }).findings.some((f) => f.rule_id === "CANON-PIN-MISMATCH");
 
 test("upgrade on a current repo is a no-op", (context) => {
   const t = fresh(context);
@@ -141,7 +141,7 @@ for (const tier of [0, 1, 2]) {
     init(root, { ...base, tier, githubAction: true, decider: "someone else" });
     assert.equal(readFileSync(join(root, "docs/architecture.md"), "utf8"), authored);
     assert.match(readFileSync(join(root, "specline.yml"), "utf8"), /jonathan/);
-    const report = run(root, { mode: "gate", changed: [], now: null });
+    const report = run(root, { changed: [], now: null });
     // canon 3.1 removed tiers; while `init --tier` still exists the scaffolded
     // `tier: 2` maps onto the unattended switch, and nothing else about tier does
     // anything. The flag itself goes in the scaffolder rewrite.

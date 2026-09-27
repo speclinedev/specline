@@ -24,11 +24,11 @@ function fixture(t: TestContext) {
   spec();
   /** Flip the repo's one switch. Part-3 rules do not run without it. */
   const unattended = (on: boolean): void => put("specline.yml", `unattended: ${on}\n`);
-  const check = (changed = ["docs/specs/widget/spec.md"]) => run(root, { mode: "gate", changed, now: "2026-06-14" });
+  const check = (changed = ["docs/specs/widget/spec.md"]) => run(root, { changed, now: "2026-06-14" });
   return { root, put, spec, unattended, check };
 }
 const matching = (report: ReturnType<typeof run>, id: string) => report.findings.filter((f) => f.rule_id === id);
-const options: RunOptions = { mode: "gate", changed: [], now: null };
+const options: RunOptions = { changed: [], now: null };
 
 test("enums reject unknown values and accept every member", (t) => {
   const f = fixture(t);

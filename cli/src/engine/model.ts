@@ -30,8 +30,7 @@ function validatePaths(key: string, value: unknown): void {
 
 /** Every adapter funnels through here, so "the validator ran on what you meant"
  *  is checked once rather than per transport. */
-export function validateRunOptions(opts: { mode: unknown; changed: unknown; modified?: unknown; now: unknown }): void {
-  if (opts.mode !== "gate" && opts.mode !== "author") throw new InputError("mode must be gate or author");
+export function validateRunOptions(opts: { changed: unknown; modified?: unknown; now: unknown }): void {
   validatePaths("changed", opts.changed);
   validatePaths("modified", opts.modified ?? []);
   if (opts.now !== null && opts.now !== undefined) {

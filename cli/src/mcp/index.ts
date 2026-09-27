@@ -55,7 +55,6 @@ const TOOLS = [
       type: "object",
       properties: {
         path: { type: "string", description: "Path to the repo root (contains docs/)." },
-        mode: { type: "string", enum: ["gate", "author"], description: "Default gate." },
         changed: { type: "array", items: { type: "string" }, description: "Repo-relative changed paths." },
         modified: { type: "array", items: { type: "string" }, description: "Repo-relative modifications/deletions, excluding additions (archive edit detection)." },
         now: { type: "string", description: "Reference ISO date for time-dependent checks." },
@@ -110,7 +109,6 @@ function callTool(name: string, args: Record<string, unknown>): unknown {
       // must be a visible error, never a silent default: `path` defaulting to "."
       // used to validate whatever directory the server happened to start in.
       if (typeof args.path !== "string" || args.path.trim() === "") throw new Error("path is required and must be a nonempty string");
-      if (args.mode !== undefined && args.mode !== "author" && args.mode !== "gate") throw new Error("mode must be author or gate");
       for (const key of ["changed", "modified"]) {
         const value = args[key];
         if (value !== undefined && (!Array.isArray(value) || !value.every((p) => typeof p === "string"))) {
@@ -119,7 +117,6 @@ function callTool(name: string, args: Record<string, unknown>): unknown {
       }
       if (args.now !== undefined && args.now !== null && typeof args.now !== "string") throw new Error("now must be an ISO date");
       const report = run(args.path, {
-        mode: args.mode === "author" ? "author" : "gate",
         changed: (args.changed as string[] | undefined) ?? [],
         modified: (args.modified as string[] | undefined) ?? [],
         now: typeof args.now === "string" ? args.now : null,

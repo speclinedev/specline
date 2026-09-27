@@ -5,7 +5,7 @@
 
 import { existsSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
-import { run, exitCodeFor, type Mode, type Report } from "../engine/run.ts";
+import { run, exitCodeFor, type Report } from "../engine/run.ts";
 import { InputError, readUnattendedSwitch } from "../engine/model.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { init, sync, upgrade, type RunResult } from "../init/scaffold.ts";
@@ -15,8 +15,8 @@ import { refreshLatest, staleness } from "../staleness.ts";
 
 const USAGE = `specline — spec-driven development tooling
 
-  specline check  [PATH] [--mode author|gate] [--format json|human]
-                         [--changed <file>...] [--now <iso-date>]
+  specline check  [PATH] [--format json|human]
+                         [--changed <file>...] [--modified <file>...] [--now <iso-date>]
   specline init    [PATH] [--decider <name>]
                           [--github-action | --no-github-action] [--check] [--yes]
   specline sync    [PATH] [--check]
@@ -38,7 +38,6 @@ type Format = "json" | "human" | "markdown";
 interface Args {
   command: "check" | "rules" | "spec" | "init" | "sync" | "upgrade";
   path: string;
-  mode: Mode;
   format: Format | null;
   changed: string[];
   modified: string[];
@@ -59,7 +58,7 @@ function fail(msg: string): never {
 
 function parseArgs(argv: string[]): Args {
   const a: Args = {
-    command: "check", path: ".", mode: "gate", format: null, changed: [], modified: [], now: null,
+    command: "check", path: ".", format: null, changed: [], modified: [], now: null,
     decider: "you", githubAction: "ask", check: false, yes: false,
   };
   const sub = argv[0];
@@ -80,12 +79,6 @@ function parseArgs(argv: string[]): Args {
   for (let i = 1; i < argv.length; i++) {
     const arg = argv[i]!;
     switch (arg) {
-      case "--mode": {
-        const v = argv[++i];
-        if (v !== "author" && v !== "gate") fail(`--mode must be author or gate`);
-        a.mode = v;
-        break;
-      }
       case "--format": {
         const v = argv[++i];
         if (v !== "json" && v !== "human" && v !== "markdown") fail(`--format must be json, human, or markdown`);
@@ -167,7 +160,7 @@ const SEV_LABEL: Record<string, string> = { error: "ERROR ", warning: "WARN  ", 
 
 function renderHuman(report: Report, path: string): string {
   const out: string[] = [];
-  out.push(`specline ${report.tool_version} · canon ${report.canon} · mode ${report.mode}${report.unattended ? " · unattended (experimental)" : ""}`);
+  out.push(`specline ${report.tool_version} · canon ${report.canon}${report.unattended ? " · unattended (experimental)" : ""}`);
   out.push(path);
   out.push("");
   if (report.findings.length === 0) {
@@ -246,7 +239,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now });
+  const report = run(args.path, { changed: args.changed, modified: args.modified, now: args.now });
   const format = args.format ?? "human";
   if (format === "json") {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

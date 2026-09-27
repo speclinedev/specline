@@ -6,10 +6,7 @@ import { loadRepo, validateRunOptions, type Repo, type Finding, type RawFinding 
 import { REGISTRY_BY_ID, RULES, type RuleContext } from "./rules.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
 
-export type Mode = "gate" | "author";
-
 export interface RunOptions {
-  mode: Mode;
   changed: string[];
   /** subset of changed that are modifications/deletions (not adds); for edit detection. */
   modified?: string[];
@@ -19,7 +16,6 @@ export interface RunOptions {
 export interface Report {
   tool_version: string;
   canon: string;
-  mode: Mode;
   /** whether Part 3 was in force for this run (the repo's `unattended:` switch). */
   unattended: boolean;
   summary: { errors: number; warnings: number; info: number };
@@ -96,7 +92,7 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
     else summary.info++;
   }
 
-  return { tool_version: TOOL_VERSION, canon: CANON, mode: opts.mode, unattended: repo.unattended, summary, findings };
+  return { tool_version: TOOL_VERSION, canon: CANON, unattended: repo.unattended, summary, findings };
 }
 
 /** Load a repo at `root` and evaluate it. */

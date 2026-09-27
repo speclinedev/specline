@@ -101,7 +101,7 @@ function repo(t: TestContext, spec: string, rel: string = REL, status: string | 
   return root;
 }
 const ruleIds = (root: string): string[] =>
-  run(root, { mode: "gate", changed: [], now: "2026-09-27" }).findings.map((f) => f.rule_id);
+  run(root, { changed: [], now: "2026-09-27" }).findings.map((f) => f.rule_id);
 
 const cases: [string, string, string[]][] = [
   ["a clean spec is silent", FM + BODY, []],
@@ -154,7 +154,7 @@ test("a malformed relations.md is RELATION-UNPARSEABLE, not silence", (t) => {
 
 test("RELATION-UNPARSEABLE is an error that blocks, and it covers knowledge/ too", (t) => {
   const root = repo(t, FM + BODY, "depends_on:\n  widget:\n    why: nested\n");
-  const r = run(root, { mode: "gate", changed: [], now: "2026-09-27" });
+  const r = run(root, { changed: [], now: "2026-09-27" });
   const f = r.findings.find((x) => x.rule_id === "RELATION-UNPARSEABLE");
   assert.equal(f!.severity, "error", "repo-scoped integrity errors everywhere");
   assert.equal(f!.file, "docs/specs/widget/relations.md");

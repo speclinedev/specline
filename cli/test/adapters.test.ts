@@ -74,7 +74,10 @@ test("CLI exit codes separate findings from invalid input", (t) => {
     ["check", "/missing-specline-root"],
     ["check", fixture("clean"), "--now", "2026-02-30"],
     ["check", fixture("clean"), "--now", "yesterday"],
-    ["check", fixture("clean"), "--tier", "2"], // canon 3.1: tiers are gone, so this is an unknown flag
+    // canon 3.1: one mode, no tiers — both flags are gone, so both are unknown flags
+    ["check", fixture("clean"), "--tier", "2"],
+    ["check", fixture("clean"), "--mode", "author"],
+    ["check", fixture("clean"), "--mode", "gate"],
     ["check", fixture("clean"), "--changed", "../escape"],
     ["init", file, "--yes"],
   ]) {
@@ -86,7 +89,7 @@ test("CLI exit codes separate findings from invalid input", (t) => {
 
 test("MCP validates its arguments and matches the CLI report byte for byte", () => {
   for (const args of [null, [], {}, { path: 42 }, { path: "/missing-specline-root" }, ...[
-    { mode: "banana" }, { now: "banana" }, { now: "2026-02-30" }, { now: 42 },
+    { now: "banana" }, { now: "2026-02-30" }, { now: 42 },
     { changed: [1] }, { modified: "docs/archive/old/spec.md" }, { changed: ["../escape"] },
   ].map((extra) => ({ path: fixture("clean"), ...extra }))]) {
     assert.equal(tool(args).isError, true, JSON.stringify(args));

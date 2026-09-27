@@ -11,7 +11,7 @@ import { REGISTRY } from "../src/engine/rules.ts";
 import { fx, unattendedOn, withMutatedFixture } from "./support.ts";
 
 const ids = (r: ReturnType<typeof run>) => new Set(r.findings.map((f) => f.rule_id));
-const check = (root: string) => run(root, { mode: "gate", changed: [], modified: [], now: "2026-06-16" });
+const check = (root: string) => run(root, { changed: [], modified: [], now: "2026-06-16" });
 
 const PART3 = REGISTRY.filter((r) => r.part === 3).map((r) => r.rule_id);
 
