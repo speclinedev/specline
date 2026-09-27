@@ -89,9 +89,10 @@ const ALLOWED_SIZE = new Set(["small", "large"]);
 const ALLOWED_TYPE = new Set(["feature", "bug", "chore", "parent"]);
 const ALLOWED_TARGET_MODEL = new Set(["light", "standard", "frontier"]);
 const ALLOWED_BUILD = new Set(["attended", "unattended"]);
-// Status is descriptive (canon 3.1 Part 1): `draft | building | shipped | killed`.
-// `blocked` belongs to Part 3 and is allowed once the switch is on.
-const ALLOWED_STATUS = ["draft", "building", "shipped", "killed"];
+// canon 3.1: "state is location." `status` in frontmatter carries no meaning in
+// drafts/ or specs/ — it is recognised silently and never checked. It survives only
+// in archive/, where location alone can't tell shipped from killed apart.
+const ARCHIVE_ALLOWED_STATUS = ["shipped", "killed"];
 const STATUS_REQUIRED_SECTIONS = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends", "Corrections"];
 const RELATION_KEYS = ["depends_on", "part_of", "supersedes", "conflicts_with"];
 
@@ -112,13 +113,30 @@ function fmString(f: SpecFolder, key: string): string | null {
   return typeof v === "string" ? v : null;
 }
 
-/** The status every rule reads. `ratified` was v3.0's gate state; canon 3.1 makes
- *  status descriptive and drops it, so it is recognised silently — never an error,
- *  never a warning — and read as `building`. A v3.0 spec keeps producing exactly the
- *  findings it produced before. */
-function statusOf(f: SpecFolder): string | null {
-  const s = fmString(f, "status");
-  return s === "ratified" ? "building" : s;
+/** The build's handoff token — the first non-blank line under `## State` in
+ *  status.md. canon 3.1: build state (`building | blocked: <why> | ...`) lives only
+ *  in status.md, never in frontmatter, so this is the one place any rule reads it. */
+function stateToken(f: SpecFolder): string | null {
+  if (f.statusContent === null) return null;
+  const heads = headings(f.statusContent).filter((h) => h.level === 2);
+  const start = heads.find((h) => h.title.toLowerCase() === "state");
+  if (!start) return null;
+  const lines = f.statusContent.split(/\r?\n/);
+  const next = heads.find((h) => h.line > start.line);
+  const end = next ? next.line - 1 : lines.length;
+  for (let i = start.line; i < end; i++) {
+    const line = (lines[i] ?? "").trim();
+    if (line !== "") return line;
+  }
+  return null;
+}
+
+/** Whether the State token begins with `prefix` ("building" or "blocked"). No
+ *  status.md, or a State section with no token, reads as not-building —
+ *  UNATTENDED-INCOMPLETE already flags a missing status.md on its own. */
+function stateIs(f: SpecFolder, prefix: "building" | "blocked"): boolean {
+  const token = stateToken(f);
+  return token !== null && token.toLowerCase().startsWith(prefix);
 }
 
 function asEdges(value: string | string[] | undefined): string[] {
@@ -135,12 +153,12 @@ const structMissing: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (!f.hasSpec) {
-      out.push({ rule_id: "STRUCT-MISSING-SPEC", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "STRUCT-MISSING-SPEC", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: `spec folder ${f.dirName} has no spec.md`,
-        fix_hint: "add spec.md with frontmatter (slug, type, status) and an Intent section" });
+        fix_hint: "add spec.md with frontmatter (slug, type, decider, created) and an Intent section" });
     }
     if (!f.hasRelations) {
-      out.push({ rule_id: "STRUCT-MISSING-RELATIONS", file: `${f.rel}/relations.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "STRUCT-MISSING-RELATIONS", file: `${f.rel}/relations.md`, line: null, specDir: f.dirName, location: f.kind,
         message: `spec folder ${f.dirName} has no relations.md`,
         fix_hint: "add relations.md; use `depends_on: none` if it is the first spec" });
     }
@@ -148,20 +166,23 @@ const structMissing: Rule = ({ repo }) => {
   return out;
 };
 
+// FRONTMATTER-UNPARSEABLE / -SLUG-MISMATCH run from drafts/ onward (canon 3.1:
+// "drafts are checked lightly," but parse-level integrity is exactly what still
+// runs there) — not on knowledge/, which carries no spec.md frontmatter.
 const frontmatterWellFormed: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  for (const f of [...repo.specs, ...repo.archive]) {
+  for (const f of [...repo.drafts, ...repo.specs, ...repo.archive]) {
     if (f.specContent === null || f.frontmatter === null) continue;
     const fm = f.frontmatter;
     if (!fm.present || !fm.ok) {
-      out.push({ rule_id: "FRONTMATTER-UNPARSEABLE", file: `${f.rel}/spec.md`, line: 1, specDir: f.dirName,
+      out.push({ rule_id: "FRONTMATTER-UNPARSEABLE", file: `${f.rel}/spec.md`, line: 1, specDir: f.dirName, location: f.kind,
         message: `frontmatter does not parse: ${fm.error ?? "missing --- block"}`,
         fix_hint: "wrap frontmatter in `---` fences; one `key: value` per line" });
       continue;
     }
     const slugVal = fmString(f, "slug");
     if (slugVal !== null && slugVal !== f.slug) {
-      out.push({ rule_id: "FRONTMATTER-SLUG-MISMATCH", file: `${f.rel}/spec.md`, line: fm.lineOf["slug"] ?? 1, specDir: f.dirName,
+      out.push({ rule_id: "FRONTMATTER-SLUG-MISMATCH", file: `${f.rel}/spec.md`, line: fm.lineOf["slug"] ?? 1, specDir: f.dirName, location: f.kind,
         message: `frontmatter slug "${slugVal}" does not match directory "${f.slug}"`,
         fix_hint: `set slug to ${f.slug} or rename the directory to match` });
     }
@@ -173,9 +194,12 @@ const frontmatterWellFormed: Rule = ({ repo }) => {
 // approving merge to the main branch is the ratification record, and git owns the
 // author + timestamp. Specline does not duplicate or check it (canon 2.6).
 
+// Part 3 does not run in drafts/ at all (canon 3.1: "drafts are checked lightly" —
+// only the Part-1/2 integrity list). Iterate the three non-draft locations
+// explicitly rather than `repo.allFolders`, which now includes drafts.
 const statusSchema: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  for (const f of repo.allFolders) {
+  for (const f of [...repo.specs, ...repo.knowledge, ...repo.archive]) {
     if (f.statusContent === null) continue;
     const h2 = headings(f.statusContent).filter((h) => h.level === 2);
     for (const req of STATUS_REQUIRED_SECTIONS) {
@@ -183,11 +207,11 @@ const statusSchema: Rule = ({ repo }) => {
       // let "## Done thinking about it" satisfy "## Done".
       const matches = h2.filter((h) => h.title.toLowerCase() === req.toLowerCase());
       if (matches.length === 0) {
-        out.push({ rule_id: "STATUS-SCHEMA", file: `${f.rel}/status.md`, line: null, specDir: f.dirName,
+        out.push({ rule_id: "STATUS-SCHEMA", file: `${f.rel}/status.md`, line: null, specDir: f.dirName, location: f.kind,
           message: `status.md missing required section "${req}"`,
           fix_hint: `add a "## ${req}" section (shape only; Specline never reads its prose)` });
       } else if (matches.length > 1) {
-        out.push({ rule_id: "STATUS-SCHEMA", file: `${f.rel}/status.md`, line: matches[1]!.line, specDir: f.dirName,
+        out.push({ rule_id: "STATUS-SCHEMA", file: `${f.rel}/status.md`, line: matches[1]!.line, specDir: f.dirName, location: f.kind,
           message: `status.md has a duplicated required section "${req}"`,
           fix_hint: `merge the duplicate "## ${req}" sections into one` });
       }
@@ -203,15 +227,9 @@ interface EnumCheck { key: string; allowed: string[]; recognised?: string[] }
 
 const enumValues: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  const checks: EnumCheck[] = [
-    { key: "type", allowed: [...ALLOWED_TYPE] },
-    // `ratified` is always read silently. `blocked` is Part 3's state: checked when
-    // the switch is on, recognised silently when it is off.
-    repo.unattended
-      ? { key: "status", allowed: [...ALLOWED_STATUS, "blocked"], recognised: [...ALLOWED_STATUS, "blocked", "ratified"] }
-      : { key: "status", allowed: ALLOWED_STATUS, recognised: [...ALLOWED_STATUS, "blocked", "ratified"] },
-  ];
-  // The envelope is legal on any spec but only *checked* when Part 3 is in force.
+  const checks: EnumCheck[] = [{ key: "type", allowed: [...ALLOWED_TYPE] }];
+  // The envelope is legal on any spec (drafts included) but only *checked* when
+  // Part 3 is in force.
   if (repo.unattended) {
     checks.push(
       { key: "build", allowed: [...ALLOWED_BUILD] },
@@ -220,14 +238,30 @@ const enumValues: Rule = ({ repo }) => {
       { key: "target_model", allowed: [...ALLOWED_TARGET_MODEL] },
     );
   }
-  for (const f of [...repo.specs, ...repo.archive]) {
+  for (const f of [...repo.drafts, ...repo.specs, ...repo.archive]) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
     for (const { key, allowed, recognised } of checks) {
       const v = fmString(f, key);
       if (v === null || (recognised ?? allowed).includes(v)) continue;
-      out.push({ rule_id: "ENUM-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName,
+      out.push({ rule_id: "ENUM-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName, location: f.kind,
         message: `${key} "${v}" is not one of ${allowed.join("|")}`,
         fix_hint: `set ${key} to one of: ${allowed.join(", ")}` });
+    }
+    // canon 3.1: `status` carries meaning only in archive/ (`shipped | killed`) —
+    // state is location everywhere else, so drafts/ and specs/ never check it.
+    // `ratified` (a pre-3.1 gate state) is recognised silently. Unlike every other
+    // key here, a *missing* status in archive/ is itself a violation: location
+    // alone can't tell shipped from killed apart, so the field is required there.
+    if (f.kind === "archive") {
+      const v = fmString(f, "status");
+      const ok = v !== null && (ARCHIVE_ALLOWED_STATUS.includes(v) || v === "ratified");
+      if (!ok) {
+        out.push({ rule_id: "ENUM-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName, location: f.kind,
+          message: v === null
+            ? `status is missing — archive/ requires one of ${ARCHIVE_ALLOWED_STATUS.join("|")}`
+            : `status "${v}" is not one of ${ARCHIVE_ALLOWED_STATUS.join("|")}`,
+          fix_hint: `set status to one of: ${ARCHIVE_ALLOWED_STATUS.join(", ")}` });
+      }
     }
   }
   return out;
@@ -239,7 +273,7 @@ const loopBudgetValid: Rule = ({ repo }) => {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
     const v = fmString(f, "loop_budget");
     if (v !== null && !/^[1-9]\d*$/.test(v)) {
-      out.push({ rule_id: "LOOP-BUDGET-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["loop_budget"] ?? 1, specDir: f.dirName,
+      out.push({ rule_id: "LOOP-BUDGET-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["loop_budget"] ?? 1, specDir: f.dirName, location: f.kind,
         message: `loop_budget "${v}" is not a positive integer`,
         fix_hint: "loop_budget is the autonomy grant — a positive integer of build cycles before escalating to a human gate" });
     }
@@ -253,7 +287,7 @@ const unknownFrontmatterKeys: Rule = ({ repo }) => {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
     for (const key of Object.keys(f.frontmatter.data)) {
       if (!KNOWN_FRONTMATTER_KEYS.has(key)) {
-        out.push({ rule_id: "UNKNOWN-FRONTMATTER-KEY", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName,
+        out.push({ rule_id: "UNKNOWN-FRONTMATTER-KEY", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName, location: f.kind,
           message: `unknown frontmatter key "${key}" (preserved, not an error)`,
           fix_hint: "likely a newer-canon key; safe to leave, or remove if a typo" });
       }
@@ -268,7 +302,7 @@ const unknownSections: Rule = ({ repo }) => {
     if (f.specContent === null) continue;
     for (const h of headings(f.specContent).filter((x) => x.level === 2)) {
       if (!KNOWN_SECTIONS.has(h.title)) {
-        out.push({ rule_id: "UNKNOWN-SECTION", file: `${f.rel}/spec.md`, line: h.line, specDir: f.dirName,
+        out.push({ rule_id: "UNKNOWN-SECTION", file: `${f.rel}/spec.md`, line: h.line, specDir: f.dirName, location: f.kind,
           message: `unknown body section "## ${h.title}" (preserved, not an error)`,
           fix_hint: "likely a newer-canon section; safe to leave, or rename to a known section" });
       }
@@ -285,7 +319,7 @@ const goalMissing: Rule = ({ repo }) => {
     if (f.specContent === null) continue;
     const has = headings(f.specContent).some((h) => h.level === 2 && h.title === "Goal");
     if (!has) {
-      out.push({ rule_id: "GOAL-MISSING", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "GOAL-MISSING", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: "spec has no `## Goal` section — the build loop has no single falsifiable target",
         fix_hint: "add a one-line falsifiable Goal: the observable outcome that means done" });
     }
@@ -332,7 +366,7 @@ const judgeableNoSection: Rule = ({ repo }) => {
     // judgeable's falsifiability gate is a named section — a `§` or the word "section".
     if (!/§|\bsection\b/i.test(acc)) {
       const head = headings(f.specContent).find((h) => h.level === 2 && h.title.toLowerCase().startsWith("acceptance"));
-      out.push({ rule_id: "JUDGEABLE-NO-SECTION", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName,
+      out.push({ rule_id: "JUDGEABLE-NO-SECTION", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName, location: f.kind,
         message: "a judgeable acceptance item cites no spec section to verify against — it is not falsifiable (B5)",
         fix_hint: 'name the section each judgeable item is judged against (e.g. "matches §4.3"); that reference is judgeable\'s falsifiability gate' });
     }
@@ -357,7 +391,7 @@ const checkRunMalformed: Rule = ({ repo }) => {
       if (!/^[-*]\s/.test(item) || !marker.test(item)) continue;
       if (!wellFormed.test(item)) {
         const head = headings(f.specContent).find((h) => h.level === 2 && h.title.toLowerCase().startsWith("acceptance"));
-        out.push({ rule_id: "CHECK-RUN-MALFORMED", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName,
+        out.push({ rule_id: "CHECK-RUN-MALFORMED", file: `${f.rel}/spec.md`, line: head?.line ?? null, specDir: f.dirName, location: f.kind,
           message: `an acceptance item carries "\u2014 run:" but not a single backtick-fenced command: "${item.slice(0, 80)}"`,
           fix_hint: "shape: <claim> \u2014 run: `<command>` \u2014 one backtick-fenced shell invocation; exit 0 settles the claim" });
       }
@@ -376,7 +410,7 @@ const scopeExceedsSize: Rule = ({ repo }) => {
     const count = countListItems(sectionBody(f.specContent, "behavior")) +
       countListItems(sectionBody(f.specContent, "acceptance"));
     if (count > threshold) {
-      out.push({ rule_id: "SCOPE-EXCEEDS-SIZE", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "SCOPE-EXCEEDS-SIZE", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: `${count} Behavior + Acceptance items (over ${threshold}) while size is ${size ?? "small (default)"}`,
         fix_hint: "slice it into smaller scopes, or declare size: large if this is a genuinely atomic build" });
     }
@@ -389,7 +423,7 @@ const parentHasMechanics: Rule = ({ repo }) => {
   for (const f of repo.specs) {
     if (f.specContent === null || fmString(f, "type") !== "parent") continue;
     if (hasSection(f.specContent, "behavior") || hasSection(f.specContent, "acceptance")) {
-      out.push({ rule_id: "PARENT-HAS-MECHANICS", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "PARENT-HAS-MECHANICS", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: "a parent-map carries Behavior/Acceptance — it is regressing into a plan",
         fix_hint: "a parent stays a map: intent, shared non-goals, invariants, and a child-scope index. Push mechanics down into child scopes" });
     }
@@ -409,7 +443,7 @@ const parentNoScopes: Rule = ({ repo }) => {
   for (const f of repo.specs) {
     if (f.specContent === null || fmString(f, "type") !== "parent") continue;
     if (!parented.has(f.slug)) {
-      out.push({ rule_id: "PARENT-NO-SCOPES", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "PARENT-NO-SCOPES", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: `parent-map ${f.slug} has no child scopes (nothing declares part_of: ${f.slug}) — it is a misfiled scope`,
         fix_hint: "give the parent child scopes (each an ordinary spec with part_of: this id), or make this an ordinary scope (type: feature)" });
     }
@@ -427,7 +461,7 @@ const CORRECTION_TAIL = /[—–-]\s+(provable|judgeable|tasteable)\s+[—–-]\
 
 const correctionsMalformed: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  for (const f of repo.allFolders) {
+  for (const f of [...repo.specs, ...repo.knowledge, ...repo.archive]) {
     if (f.statusContent === null) continue;
     const lines = f.statusContent.split(/\r?\n/);
     const heads = headings(f.statusContent).filter((h) => h.level === 2);
@@ -439,7 +473,7 @@ const correctionsMalformed: Rule = ({ repo }) => {
       const item = (lines[i] ?? "").match(/^\s*(?:[-*]|\d+[.)])\s+(.*\S)\s*$/);
       if (!item) continue; // only list-item entries are checked
       if (!CORRECTION_TAIL.test(item[1]!)) {
-        out.push({ rule_id: "CORRECTIONS-MALFORMED", file: `${f.rel}/status.md`, line: i + 1, specDir: f.dirName,
+        out.push({ rule_id: "CORRECTIONS-MALFORMED", file: `${f.rel}/status.md`, line: i + 1, specDir: f.dirName, location: f.kind,
           message: "corrections entry does not match \"<what> — <altitude> — <who caught it>\" (altitude: provable|judgeable|tasteable; who: implementer|reviewer|decider)",
           fix_hint: 'one entry per line, e.g. "- default limit too high — tasteable — decider"' });
       }
@@ -450,24 +484,23 @@ const correctionsMalformed: Rule = ({ repo }) => {
 
 // ── lifecycle completeness + the Part-3 envelope ──────────────────────────────
 
-const ACTIVE_STATES = new Set(["building", "blocked"]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Part 3: the distance to unattended-ready, reported the moment the promise is made.
 // Absence of the `build` key never fires anything — only a spec that has *declared*
 // it will be built by a builder who cannot ask is held to the envelope. `stale_after`
-// is required once building OR blocked, as the canon body says (the Checks appendix
-// used to say "once building", which was the narrower of the two).
+// is required once the build's status.md reads building OR blocked (canon 3.1: build
+// state lives in status.md's `## State` token, never in frontmatter).
 const unattendedIncomplete: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (fmString(f, "build") !== "unattended") continue;
     const required = ["blast_radius", "loop_budget"];
-    if (ACTIVE_STATES.has(statusOf(f) ?? "")) required.push("stale_after");
+    if (stateIs(f, "building") || stateIs(f, "blocked")) required.push("stale_after");
     const missing = required.filter((key) => (fmString(f, key) ?? "").trim() === "");
     if (f.statusContent === null) missing.push("status.md");
     if (missing.length === 0) continue;
-    out.push({ rule_id: "UNATTENDED-INCOMPLETE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["build"] ?? null, specDir: f.dirName,
+    out.push({ rule_id: "UNATTENDED-INCOMPLETE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["build"] ?? null, specDir: f.dirName, location: f.kind,
       message: `build: unattended, but the envelope is missing ${missing.join(", ")}`,
       fix_hint: "complete the unattended envelope before handing the build to a builder who cannot ask, or drop `build: unattended`" });
   }
@@ -484,7 +517,7 @@ const acceptanceUnpartitioned: Rule = ({ repo }) => {
     if (fmString(f, "build") !== "unattended") continue;
     const acc = sectionBody(f.specContent, "acceptance");
     if (AGENT_LOOPABLE_PARTITION.test(acc)) continue;
-    out.push({ rule_id: "ACCEPTANCE-UNPARTITIONED", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+    out.push({ rule_id: "ACCEPTANCE-UNPARTITIONED", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
       message: "an unattended spec has no `### agent-loopable` acceptance partition — the build loop has no labelled exit condition",
       fix_hint: "partition Acceptance checks under `### agent-loopable` / `### judgeable` / `### human-gate`; the implementer loops on the first set" });
   }
@@ -495,9 +528,9 @@ const archiveNeedsAcceptance: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.archive) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    if (statusOf(f) !== "shipped" || fmString(f, "type") === "bug") continue;
+    if (fmString(f, "status") !== "shipped" || fmString(f, "type") === "bug") continue;
     if (fmString(f, "acceptance_results") === null) {
-      out.push({ rule_id: "ARCHIVE-NO-ACCEPTANCE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName,
+      out.push({ rule_id: "ARCHIVE-NO-ACCEPTANCE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName, location: f.kind,
         message: `shipped spec ${f.dirName} was archived without a linked acceptance_results (B5)`,
         fix_hint: "graduation executes the agent-loopable checks and links the run; add acceptance_results: <link> before archiving" });
     }
@@ -524,16 +557,17 @@ function openQuestionEntries(content: string): OQEntry[] {
   });
 }
 
+// canon 3.1: neither open-question rule is gated by status any more — the canon
+// states them unconditionally ("Specline warns on entries past deadline or missing a
+// default or decider"), and state is location, not a frontmatter value to key off.
 const openQuestionIncomplete: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
-    if (f.openQuestionsContent === null || f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = statusOf(f);
-    if (status !== "building") continue; // build-readiness only
+    if (f.openQuestionsContent === null) continue;
     for (const q of openQuestionEntries(f.openQuestionsContent)) {
       if (!q.hasDecider || !q.hasDefault) {
-        out.push({ rule_id: "OPEN-QUESTION-INCOMPLETE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName,
-          message: `open question "${q.title}" lacks a ${!q.hasDecider ? "decider" : "default"} — a ${status} spec can't carry an undecidable question`,
+        out.push({ rule_id: "OPEN-QUESTION-INCOMPLETE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName, location: f.kind,
+          message: `open question "${q.title}" lacks a ${!q.hasDecider ? "decider" : "default"} — a spec can't carry an undecidable question`,
           fix_hint: "each entry needs a decider, options, a default, and a deadline; the default is what keeps the build moving" });
       }
     }
@@ -545,12 +579,10 @@ const openQuestionOverdue: Rule = ({ repo, now }) => {
   if (now === null) return [];
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
-    if (f.openQuestionsContent === null || f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = statusOf(f);
-    if (status === null || !ACTIVE_STATES.has(status)) continue;
+    if (f.openQuestionsContent === null) continue;
     for (const q of openQuestionEntries(f.openQuestionsContent)) {
       if (q.deadline !== null && q.deadline < now) {
-        out.push({ rule_id: "OPEN-QUESTION-OVERDUE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName,
+        out.push({ rule_id: "OPEN-QUESTION-OVERDUE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName, location: f.kind,
           message: `open question "${q.title}" is past its deadline ${q.deadline} (now ${now})`,
           fix_hint: "decide it, or take the stated default and remove the entry; an overdue question is a stalled decision" });
       }
@@ -559,23 +591,29 @@ const openQuestionOverdue: Rule = ({ repo, now }) => {
   return out;
 };
 
+// canon 3.1: build state lives in status.md's `## State` token, never in
+// frontmatter, so staleness reads it there — no status.md or no token is "not
+// building", not stale (UNATTENDED-INCOMPLETE already flags the missing file).
 const staleQuarantine: Rule = ({ repo, now }) => {
   if (now === null) return [];
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = statusOf(f);
-    if (status === null || !ACTIVE_STATES.has(status)) continue;
+    const label = stateIs(f, "building") ? "building" : stateIs(f, "blocked") ? "blocked" : null;
+    if (label === null) continue;
     const stale = fmString(f, "stale_after");
     if (stale !== null && ISO_DATE.test(stale) && stale < now) {
-      out.push({ rule_id: "STALE-QUARANTINE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["stale_after"] ?? 1, specDir: f.dirName,
-        message: `${status} spec is past stale_after ${stale} (now ${now}) — quarantined (B4)`,
+      out.push({ rule_id: "STALE-QUARANTINE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["stale_after"] ?? 1, specDir: f.dirName, location: f.kind,
+        message: `${label} spec is past stale_after ${stale} (now ${now}) — quarantined (B4)`,
         fix_hint: "reshape (re-ratify, which resets stale_after) or kill it; staleness hands an abandoned build back to a human" });
     }
   }
   return out;
 };
 
+// "building" is read from status.md (a spec is only *actually* building once a
+// builder started and said so there); "active" is every entry in specs/ — the
+// decider's queue is everything approved for build, not just what's in motion.
 const deciderOverBudget: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   const building = new Map<string, number>();
@@ -583,21 +621,20 @@ const deciderOverBudget: Rule = ({ repo }) => {
   for (const f of repo.specs) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
     const d = fmString(f, "decider");
-    const s = statusOf(f);
-    if (d === null || s === null) continue;
-    if (s === "building") building.set(d, (building.get(d) ?? 0) + 1);
-    if (ACTIVE_STATES.has(s)) active.set(d, (active.get(d) ?? 0) + 1);
+    if (d === null) continue;
+    active.set(d, (active.get(d) ?? 0) + 1);
+    if (stateIs(f, "building")) building.set(d, (building.get(d) ?? 0) + 1);
   }
   const bMax = repo.config.focusLimitBuilding;
   const aMax = repo.config.focusLimitActive;
   for (const [d, n] of [...building.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (n > bMax) out.push({ rule_id: "DECIDER-OVER-BUDGET", file: null, line: null, specDir: null,
-      message: `decider ${d} has ${n} specs in building, over the focus limit of ${bMax} (B7)`,
+      message: `decider ${d} has ${n} specs building, over the focus limit of ${bMax} (B7)`,
       fix_hint: "WIP limits apply to the human, not the machine; ship or park one before starting another" });
   }
   for (const [d, n] of [...active.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (n > aMax) out.push({ rule_id: "DECIDER-OVER-BUDGET", file: null, line: null, specDir: null,
-      message: `decider ${d} has ${n} active specs (building|blocked), over the focus limit of ${aMax} (B7)`,
+      message: `decider ${d} has ${n} specs in specs/, over the focus limit of ${aMax} (B7)`,
       fix_hint: "the decider's queue is the constraint, not agent capacity; close some before opening more" });
   }
   return out;
@@ -636,7 +673,7 @@ const couplingCeiling: Rule = ({ repo }) => {
     if (f.specContent === null) continue;
     const chars = forcedLoadChars(repo, f);
     if (chars > budget) {
-      out.push({ rule_id: "COUPLING-CEILING", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      out.push({ rule_id: "COUPLING-CEILING", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName, location: f.kind,
         message: `spec + forced loads is ~${chars} chars, over the coupling ceiling of ${budget} (${repo.config.couplingCeilingPct}% of ${repo.config.contextWindowChars}) (B2)`,
         fix_hint: "too entangled — slice the feature or cut relations; if reading the spec already fills the window, the model has no room left to work" });
     }
@@ -648,20 +685,23 @@ const couplingCeiling: Rule = ({ repo }) => {
 
 const relationEdges: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
+  // Slug resolution globs all four lifecycle folders (canon 3.1).
   const knownSlugs = new Set(repo.allFolders.map((f) => f.slug));
-  const killedSlugs = new Set(
-    repo.allFolders.filter((f) => statusOf(f) === "killed").map((f) => f.slug),
-  );
+  // `status` is only meaningful in archive/ now — "killed" lives nowhere else.
+  const killedSlugs = new Set(repo.archive.filter((f) => fmString(f, "status") === "killed").map((f) => f.slug));
   // Every repo-local edge must resolve at some lifecycle stage, and knowledge folders
-  // carry a relations.md too — so the graph is read from specs/ *and* knowledge/.
-  for (const f of [...repo.specs, ...repo.knowledge]) {
+  // carry a relations.md too — so the graph is read from drafts/, specs/, and
+  // knowledge/. Drafts are checked lightly: RELATION-DANGLING and
+  // RELATION-UNPARSEABLE apply there, but RELATION-CROSS-REPO and RELATION-KILLED
+  // (Part 2 advisories, not integrity) do not.
+  for (const f of [...repo.drafts, ...repo.specs, ...repo.knowledge]) {
     if (f.relationsContent === null) continue;
     const parsed = parseFlatYaml(f.relationsContent);
     // A malformed *known* file is integrity, the same class as unparseable
     // frontmatter. It used to produce nothing at all: the edges silently vanished and
     // the file read as "no dependencies", which is the one answer it cannot mean.
     if (!parsed.ok) {
-      out.push({ rule_id: "RELATION-UNPARSEABLE", file: `${f.rel}/relations.md`, line: null, specDir: null,
+      out.push({ rule_id: "RELATION-UNPARSEABLE", file: `${f.rel}/relations.md`, line: null, specDir: null, location: f.kind,
         message: `relations.md does not parse: ${parsed.error}`,
         fix_hint: "relations.md is flat YAML: `depends_on: slug`, a `- slug` list, or `none`. Quote an annotated edge as `- \"slug: why\"`" });
       continue;
@@ -670,18 +710,20 @@ const relationEdges: Rule = ({ repo }) => {
       for (const edge of asEdges(parsed.data[key])) {
         const line = parsed.lineOf[key] ?? null;
         if (edge.startsWith("repo:")) {
-          out.push({ rule_id: "RELATION-CROSS-REPO", file: `${f.rel}/relations.md`, line, specDir: null,
+          if (f.kind === "draft") continue;
+          out.push({ rule_id: "RELATION-CROSS-REPO", file: `${f.rel}/relations.md`, line, specDir: null, location: f.kind,
             message: `cross-repo edge ${edge} (${key}) is validated weakly`,
             fix_hint: "cross-repo edges are warn-only; ensure the sibling repo/slug exists out of band" });
           continue;
         }
         // the edge value is a slug (canon 2.7); it resolves to a folder name directly.
         if (!knownSlugs.has(edge)) {
-          out.push({ rule_id: "RELATION-DANGLING", file: `${f.rel}/relations.md`, line, specDir: null,
-            message: `${key} edge ${edge} points to a slug that exists nowhere in specs/, knowledge/, or archive/`,
+          out.push({ rule_id: "RELATION-DANGLING", file: `${f.rel}/relations.md`, line, specDir: null, location: f.kind,
+            message: `${key} edge ${edge} points to a slug that exists nowhere in drafts/, specs/, knowledge/, or archive/`,
             fix_hint: "fix the slug, or remove the edge if the target was never created" });
         } else if (killedSlugs.has(edge)) {
-          out.push({ rule_id: "RELATION-KILLED", file: `${f.rel}/relations.md`, line, specDir: null,
+          if (f.kind === "draft") continue;
+          out.push({ rule_id: "RELATION-KILLED", file: `${f.rel}/relations.md`, line, specDir: null, location: f.kind,
             message: `${key} edge ${edge} points to killed spec ${edge}`,
             fix_hint: "edges to killed specs are warn-only; drop the edge if it is no longer meaningful" });
         }
@@ -714,7 +756,7 @@ const knowledgeHasStatus: Rule = ({ repo }) => {
   for (const f of repo.knowledge) {
     for (const bad of ["status.md", "open-questions.md"]) {
       if (f.files.includes(bad)) {
-        out.push({ rule_id: "KNOWLEDGE-HAS-STATUS", file: `${f.rel}/${bad}`, line: null, specDir: null,
+        out.push({ rule_id: "KNOWLEDGE-HAS-STATUS", file: `${f.rel}/${bad}`, line: null, specDir: null, location: f.kind,
           message: `knowledge/ must not contain ${bad} (lifecycle artifact)`,
           fix_hint: `delete ${bad} from knowledge/; knowledge records rules and rationale, not lifecycle state` });
       }
@@ -731,7 +773,7 @@ const archiveEdited: Rule = ({ modified }) => {
   const archivedSpec = /^docs\/archive\/[^/]+\//;
   for (const path of [...modified].sort()) {
     if (archivedSpec.test(path)) {
-      out.push({ rule_id: "ARCHIVE-EDITED", file: path, line: null, specDir: null,
+      out.push({ rule_id: "ARCHIVE-EDITED", file: path, line: null, specDir: null, location: "archive",
         message: `archive/ is read-only; ${path} was reported changed`,
         fix_hint: "revert the edit; archived specs are an immutable audit trail" });
     }
@@ -741,23 +783,32 @@ const archiveEdited: Rule = ({ modified }) => {
 
 const slugIntegrity: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  // A slug is the identity of one feature and is never reused for a different one, so
-  // the comparison is specs/ against knowledge/ ∪ archive/. The same slug in
-  // knowledge/ AND archive/ is the normal end state of graduation, not a collision —
-  // which is why the pair itself is never compared. Two in-flight specs cannot
-  // collide: the same folder name is a filesystem impossibility. What this catches is
-  // a new spec reusing a slug already spent. (`main` compared specs ∪ archive only,
-  // so a spec reusing a *graduated* slug — knowledge/ with no archive/ — slipped past.)
-  const landed = new Map<string, SpecFolder>();
-  for (const f of [...repo.knowledge, ...repo.archive]) {
-    if (!landed.has(f.slug)) landed.set(f.slug, f);
+  // A slug is the identity of one feature, never reused for a different one — across
+  // all four lifecycle folders (canon 3.1). Two folders of the *same* kind can never
+  // collide (the same directory name is a filesystem impossibility), so the only
+  // possible pairings for one slug are draft/spec/knowledge/archive combinations.
+  // The one legal multi-occupancy is knowledge/ + archive/ — graduation's normal end
+  // state. Anything else sharing the slug (a draft or a spec) is a real collision:
+  // drafts/ vs. anything is a collision, specs/ vs. drafts/ is a collision, and a
+  // draft or spec reusing an already-graduated slug is a collision too.
+  const bySlug = new Map<string, SpecFolder[]>();
+  for (const f of repo.allFolders) {
+    const list = bySlug.get(f.slug);
+    if (list) list.push(f); else bySlug.set(f.slug, [f]);
   }
-  for (const f of [...repo.specs].sort((a, b) => a.rel.localeCompare(b.rel))) {
-    const previous = landed.get(f.slug);
-    if (previous === undefined) continue;
-    out.push({ rule_id: "SLUG-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["slug"] ?? null, specDir: f.dirName,
-      message: `slug "${f.slug}" also names ${previous.rel}`,
-      fix_hint: "slugs are permanent and never reused for a different feature; re-slug the new spec to a fresh name while nothing references it" });
+  for (const slug of [...bySlug.keys()].sort()) {
+    const folders = bySlug.get(slug)!;
+    if (folders.length < 2) continue;
+    const other = folders.filter((f) => f.kind === "draft" || f.kind === "spec").sort((a, b) => a.rel.localeCompare(b.rel));
+    if (other.length === 0) continue; // just the knowledge/archive graduation pair
+    const graduated = folders.filter((f) => f.kind === "knowledge" || f.kind === "archive").sort((a, b) => a.rel.localeCompare(b.rel));
+    const reference = graduated[0] ?? other[0]!;
+    for (const f of other) {
+      if (f === reference) continue;
+      out.push({ rule_id: "SLUG-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["slug"] ?? null, specDir: f.dirName, location: f.kind,
+        message: `slug "${slug}" also names ${reference.rel}`,
+        fix_hint: "slugs are permanent and never reused for a different feature; re-slug the new spec to a fresh name while nothing references it" });
+    }
   }
   return out;
 };

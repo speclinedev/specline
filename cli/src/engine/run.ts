@@ -80,6 +80,7 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
       line: r.line,
       message: r.message,
       fix_hint: r.fix_hint,
+      location: r.location ?? null,
     });
   }
 

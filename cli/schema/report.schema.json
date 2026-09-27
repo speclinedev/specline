@@ -30,7 +30,8 @@
           "line": { "type": ["integer", "null"] },
           "message": { "type": "string" },
           "fix_hint": { "type": "string" },
-          "label": { "type": "string" }
+          "label": { "type": "string" },
+          "location": { "type": ["string", "null"], "enum": ["draft", "spec", "knowledge", "archive", null] }
         }
       }
     }

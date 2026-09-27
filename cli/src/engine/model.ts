@@ -57,7 +57,9 @@ export function resolveRepoRoot(root: string): string {
 
 export type Severity = "error" | "warning" | "info";
 export type Scope = "repo" | "spec";
-export type SpecKind = "spec" | "knowledge" | "archive";
+/** canon 3.1: "where a spec lives is its state." `draft` is the fourth lifecycle
+ *  location — same anatomy as a spec, checked lightly (see rules.ts). */
+export type SpecKind = "draft" | "spec" | "knowledge" | "archive";
 
 export interface RuleMeta {
   rule_id: string;
@@ -77,6 +79,8 @@ export interface RawFinding {
   fix_hint: string;
   /** the spec dirName this finding belongs to, for quarantine; null = repo-wide. */
   specDir?: string | null;
+  /** which lifecycle folder this finding's subject lives in; null/absent = repo-wide. */
+  location?: SpecKind | null;
 }
 
 export interface Finding {
@@ -88,6 +92,7 @@ export interface Finding {
   message: string;
   fix_hint: string;
   label?: string;
+  location?: SpecKind | null;
 }
 
 export interface SpecFolder {
@@ -148,10 +153,13 @@ export interface Repo {
   config: RepoConfig;
   /** the repo's declared canon pin, or null when none is declared. */
   canonPin: CanonPin | null;
+  /** being shaped (canon 3.1's fourth lifecycle folder); checked lightly. */
+  drafts: SpecFolder[];
   specs: SpecFolder[];
   knowledge: SpecFolder[];
   archive: SpecFolder[];
-  /** every spec/knowledge/archive folder, flattened. */
+  /** every draft/spec/knowledge/archive folder, flattened — the glob slug
+   *  resolution (relations, links) reads against. */
   allFolders: SpecFolder[];
   mdFiles: MdFile[];
 }
@@ -336,10 +344,12 @@ export function readUnattendedSwitch(root: string): boolean {
 export function loadRepo(root: string): Repo {
   root = resolveRepoRoot(root);
   const docsDir = join(root, "docs");
+  const draftsDir = join(docsDir, "drafts");
   const specsDir = join(docsDir, "specs");
   const knowledgeDir = join(docsDir, "knowledge");
   const archiveDir = join(docsDir, "archive");
 
+  const drafts = listDirs(draftsDir).map((d) => loadFolder("draft", join(draftsDir, d), root));
   const specs = listDirs(specsDir).map((d) => loadFolder("spec", join(specsDir, d), root));
   const knowledge = listDirs(knowledgeDir).map((d) => loadFolder("knowledge", join(knowledgeDir, d), root));
   const archive = listDirs(archiveDir).map((d) => loadFolder("archive", join(archiveDir, d), root));
@@ -355,10 +365,11 @@ export function loadRepo(root: string): Repo {
     unattended,
     config,
     canonPin: canonPin ?? readCanonPin(root),
+    drafts,
     specs,
     knowledge,
     archive,
-    allFolders: [...specs, ...knowledge, ...archive],
+    allFolders: [...drafts, ...specs, ...knowledge, ...archive],
     mdFiles,
   };
 }

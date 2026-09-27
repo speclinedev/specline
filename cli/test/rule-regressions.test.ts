@@ -18,14 +18,17 @@ function fixture(t: TestContext) {
     writeFileSync(join(root, path), content);
   };
   const spec = (fields = "", body = "## Goal\nObservable outcome\n", slug = "widget"): void => {
-    put(`docs/specs/${slug}/spec.md`, `---\nslug: ${slug}\ntype: feature\nstatus: draft\n${fields}---\n${body}`);
+    put(`docs/specs/${slug}/spec.md`, `---\nslug: ${slug}\ntype: feature\n${fields}---\n${body}`);
     put(`docs/specs/${slug}/relations.md`, "depends_on: []\n");
   };
+  /** The status.md `## State` token — canon 3.1's only source of build state. */
+  const setState = (token: string, slug = "widget"): void =>
+    put(`docs/specs/${slug}/status.md`, `## State\n${token}\n## Done\n## In progress\n## Last green checkpoint\nnone — pre-green\n## Dead ends\n## Corrections\n`);
   spec();
   /** Flip the repo's one switch. Part-3 rules do not run without it. */
   const unattended = (on: boolean): void => put("specline.yml", `unattended: ${on}\n`);
   const check = (changed = ["docs/specs/widget/spec.md"]) => run(root, { changed, now: "2026-06-14" });
-  return { root, put, spec, unattended, check };
+  return { root, put, spec, setState, unattended, check };
 }
 const matching = (report: ReturnType<typeof run>, id: string) => report.findings.filter((f) => f.rule_id === id);
 const options: RunOptions = { changed: [], now: null };
@@ -34,7 +37,7 @@ test("enums reject unknown values and accept every member", (t) => {
   const f = fixture(t);
   f.unattended(true); // the envelope enums are only checked with Part 3 in force
   const enums = {
-    type: "feature", status: "draft", build: "unattended",
+    type: "feature", build: "unattended",
     blast_radius: "low", size: "small", target_model: "standard",
   };
   for (const [key, good] of Object.entries(enums)) {
@@ -45,6 +48,48 @@ test("enums reject unknown values and accept every member", (t) => {
     assert.equal(found[0]!.line, 3);
     f.put("docs/specs/widget/spec.md", `---\nslug: widget\n${key}: ${good}\n---\n`);
     assert.equal(matching(f.check(), "ENUM-INVALID").length, 0, key);
+  }
+});
+
+// canon 3.1: "state is location." `status` carries no meaning in drafts/ or specs/ —
+// any value, valid-looking or not, is recognised silently and never checked there.
+// It survives only in archive/, where location alone can't distinguish shipped from
+// killed.
+test("status is ignored entirely in specs/, whatever the switch, and checked only in archive/", (t) => {
+  const f = fixture(t);
+  for (const on of [false, true]) {
+    f.unattended(on);
+    for (const status of ["draft", "building", "ratified", "nonsense", "shipped", "killed"]) {
+      f.put("docs/specs/widget/spec.md", `---\nslug: widget\ntype: feature\nstatus: ${status}\n---\n`);
+      assert.deepEqual(matching(f.check(), "ENUM-INVALID"), [], `status: ${status} (switch ${on})`);
+      assert.deepEqual(matching(f.check(), "UNKNOWN-FRONTMATTER-KEY"), [], `status: ${status} (switch ${on})`);
+    }
+  }
+
+  const archiveStatus = (status: string) => f.put("docs/archive/widget/spec.md", `---\nslug: widget\ntype: feature\nstatus: ${status}\n---\n`);
+  for (const status of ["shipped", "killed", "ratified"]) {
+    archiveStatus(status);
+    assert.deepEqual(matching(f.check(), "ENUM-INVALID"), [], `archive status: ${status}`);
+  }
+  for (const status of ["draft", "building", "blocked", "nonsense"]) {
+    archiveStatus(status);
+    const found = matching(f.check(), "ENUM-INVALID");
+    assert.equal(found.length, 1, `archive status: ${status}`);
+    assert.match(found[0]!.message, /shipped\|killed$/);
+  }
+  // archive/ is the one place status is required: location alone can't tell shipped
+  // from killed apart, so a missing status is itself a violation there.
+  f.put("docs/archive/widget/spec.md", "---\nslug: widget\ntype: feature\n---\n");
+  assert.equal(matching(f.check(), "ENUM-INVALID").length, 1, "archive status missing entirely");
+});
+
+test("a specs/ spec with no status line at all, or `status: draft`/`ratified`, is clean", (t) => {
+  const f = fixture(t);
+  for (const fields of ["", "status: draft\n", "status: ratified\n"]) {
+    f.put("docs/specs/widget/spec.md", `---\nslug: widget\ntype: feature\ndecider: jonathan\ncreated: 2026-01-01\n${fields}---\n## Goal\nx\n`);
+    const r = f.check();
+    assert.equal(r.summary.errors, 0, `${JSON.stringify(fields)}: ${JSON.stringify(r.findings, null, 2)}`);
+    assert.deepEqual(matching(r, "ENUM-INVALID"), []);
   }
 });
 
@@ -66,43 +111,30 @@ test("the envelope is checked with the switch on and recognised silently with it
   assert.equal(matching(f.check(), "LOOP-BUDGET-INVALID").length, 1);
 });
 
-test("`ratified` is always silent; `blocked` is silent off and checked on", (t) => {
-  const f = fixture(t);
-  const withStatus = (status: string) =>
-    f.put("docs/specs/widget/spec.md", `---\nslug: widget\ntype: feature\nstatus: ${status}\n---\n`);
-
-  for (const on of [false, true]) {
-    f.unattended(on);
-    withStatus("ratified");
-    assert.deepEqual(matching(f.check(), "ENUM-INVALID"), [], `ratified must never fire (switch ${on})`);
-    withStatus("nonsense");
-    assert.equal(matching(f.check(), "ENUM-INVALID").length, 1, `an unknown status errors (switch ${on})`);
-  }
-
-  withStatus("blocked");
-  f.unattended(false);
-  assert.deepEqual(matching(f.check(), "ENUM-INVALID"), [], "blocked is a Part-3 state, recognised silently when off");
-  assert.ok(!matching(f.check(), "ENUM-INVALID").length);
-  f.unattended(true);
-  assert.deepEqual(matching(f.check(), "ENUM-INVALID"), [], "...and legal when on");
-  // the off-state message names only the states the canon tells you to write
-  f.unattended(false);
-  withStatus("nonsense");
-  assert.match(matching(f.check(), "ENUM-INVALID")[0]!.message, /draft\|building\|shipped\|killed$/);
-  f.unattended(true);
-  assert.match(matching(f.check(), "ENUM-INVALID")[0]!.message, /draft\|building\|shipped\|killed\|blocked$/);
-});
-
-test("`ratified` is read as `building` by the rules that key off status", (t) => {
+// canon 3.1: build state (`building | blocked: <why> | ...`) lives only in
+// status.md's `## State` token — never in frontmatter, so STALE-QUARANTINE reads it
+// there, whatever the (now-ignored) frontmatter `status` says.
+test("STALE-QUARANTINE and OPEN-QUESTION-INCOMPLETE fire off the status.md State token, not frontmatter status", (t) => {
   const f = fixture(t);
   f.unattended(true);
   const fm = "type: feature\ndecider: owner\nstale_after: 2026-01-01\n";
-  for (const status of ["ratified", "building"]) {
-    f.put("docs/specs/widget/spec.md", `---\nslug: widget\nstatus: ${status}\n${fm}---\n`);
-    f.put("docs/specs/widget/open-questions.md", "## Decision\ndecider: owner\n");
-    assert.equal(matching(f.check(), "STALE-QUARANTINE").length, 1, `${status}: stale`);
-    assert.equal(matching(f.check(), "OPEN-QUESTION-INCOMPLETE").length, 1, `${status}: no default`);
+  f.put("docs/specs/widget/open-questions.md", "## Decision\ndecider: owner\n");
+  for (const frontmatterStatus of ["ratified", "building", "draft", "nonsense"]) {
+    f.put("docs/specs/widget/spec.md", `---\nslug: widget\nstatus: ${frontmatterStatus}\n${fm}---\n`);
+    f.setState("building");
+    assert.equal(matching(f.check(), "STALE-QUARANTINE").length, 1, `${frontmatterStatus}: stale`);
+    assert.equal(matching(f.check(), "OPEN-QUESTION-INCOMPLETE").length, 1, `${frontmatterStatus}: no default`);
   }
+  // no status.md at all — not building, not stale (UNATTENDED-INCOMPLETE covers the
+  // missing file on its own); the open-question rule is unconditional regardless.
+  f.put("docs/specs/widget/status.md", "");
+  assert.deepEqual(matching(f.check(), "STALE-QUARANTINE"), [], "no State token is not-building");
+  assert.equal(matching(f.check(), "OPEN-QUESTION-INCOMPLETE").length, 1, "unconditional in specs/");
+
+  // ...and with no frontmatter `status` line at all — OPEN-QUESTION-INCOMPLETE never
+  // read frontmatter status to begin with, but this nails down that it needs none.
+  f.put("docs/specs/widget/spec.md", `---\nslug: widget\n${fm}---\n`);
+  assert.equal(matching(f.check(), "OPEN-QUESTION-INCOMPLETE").length, 1, "fires with no status field present");
 });
 
 test("an empty `decider:` line counts as missing, not as present", (t) => {
@@ -117,37 +149,40 @@ test("an empty `decider:` line counts as missing, not as present", (t) => {
   assert.deepEqual(matching(f.check(), "OPEN-QUESTION-INCOMPLETE"), []);
 });
 
-// Part 3's envelope completeness, and the two things that are NOT triggers: the
-// absence of the `build` key, and `build: attended`.
+// Part 3's envelope completeness, and the things that are NOT triggers: the
+// absence of the `build` key, `build: attended`, and (canon 3.1) frontmatter
+// `status` — stale_after is only required once status.md's `## State` token itself
+// reads building or blocked.
 test("UNATTENDED-INCOMPLETE reports the distance to unattended-ready", (t) => {
   const f = fixture(t);
   f.unattended(true);
-  const status = "## State\nbuilding\n## Done\n## In progress\n## Last green checkpoint\nnone — pre-green\n## Dead ends\n## Corrections\n";
   const spec = (fields: string) =>
     f.put("docs/specs/widget/spec.md", `---\nslug: widget\ntype: feature\n${fields}---\n## Goal\nDone.\n\n## Acceptance checks\n\n### agent-loopable\n- it works\n`);
 
-  spec("status: draft\nbuild: unattended\n");
+  spec("build: unattended\n");
   assert.equal(matching(f.check(), "UNATTENDED-INCOMPLETE").length, 1);
   assert.match(matching(f.check(), "UNATTENDED-INCOMPLETE")[0]!.message, /blast_radius, loop_budget, status\.md/);
 
-  f.put("docs/specs/widget/status.md", status);
-  spec("status: draft\nbuild: unattended\nblast_radius: low\nloop_budget: 5\n");
-  assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), [], "draft needs no stale_after");
+  // a status.md whose State is neither building nor blocked needs no stale_after
+  f.setState("ready-for-review");
+  spec("build: unattended\nblast_radius: low\nloop_budget: 5\n");
+  assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), [], "ready-for-review needs no stale_after");
 
-  for (const state of ["building", "blocked"]) {
-    spec(`status: ${state}\nbuild: unattended\nblast_radius: low\nloop_budget: 5\n`);
-    assert.match(matching(f.check(), "UNATTENDED-INCOMPLETE")[0]!.message, /stale_after/, state);
-    spec(`status: ${state}\nbuild: unattended\nblast_radius: low\nloop_budget: 5\nstale_after: 2027-01-01\n`);
-    assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), [], state);
+  for (const token of ["building", "blocked: waiting on the decider"]) {
+    f.setState(token);
+    spec("build: unattended\nblast_radius: low\nloop_budget: 5\n");
+    assert.match(matching(f.check(), "UNATTENDED-INCOMPLETE")[0]!.message, /stale_after/, token);
+    spec("build: unattended\nblast_radius: low\nloop_budget: 5\nstale_after: 2027-01-01\n");
+    assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), [], token);
   }
 
   // absence of `build` never fires anything, and neither does an attended build
-  for (const fields of ["status: building\n", "status: building\nbuild: attended\n"]) {
+  for (const fields of ["", "build: attended\n"]) {
     spec(fields);
     assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), [], fields);
   }
   // ...and with the switch off, none of it is checked
-  spec("status: building\nbuild: unattended\n");
+  spec("build: unattended\n");
   f.unattended(false);
   assert.deepEqual(matching(f.check(), "UNATTENDED-INCOMPLETE"), []);
 });
@@ -252,7 +287,8 @@ test("scope and focus limits fire above their threshold, never at it", (t) => {
   repo.config.suggestSlicingPast = 1;
   assert.equal(matching(evaluate(repo, options), "SCOPE-EXCEEDS-SIZE").length, 0);
 
-  f.put("docs/specs/widget/spec.md", "---\nslug: widget\nstatus: building\ndecider: owner\n---\n");
+  f.put("docs/specs/widget/spec.md", "---\nslug: widget\ndecider: owner\n---\n");
+  f.setState("building"); // "building" is read from status.md, never frontmatter
   repo = loadRepo(f.root);
   repo.unattended = true; // DECIDER-OVER-BUDGET is Part 3
   repo.config.focusLimitBuilding = 1;
