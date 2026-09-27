@@ -38,6 +38,7 @@ export const REGISTRY: RuleMeta[] = [
   // ── Part 2 — the record ─────────────────────────────────────────────────────
   { rule_id: "SLUG-DUPLICATE", severity: "error", scope: "repo", part: 2 },
   { rule_id: "RELATION-DANGLING", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "RELATION-UNPARSEABLE", severity: "error", scope: "repo", part: 2 },
   { rule_id: "LINK-DANGLING", severity: "error", scope: "repo", part: 2 },
   { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", part: 2 },
   { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", part: 2 },
@@ -51,14 +52,14 @@ export const REGISTRY: RuleMeta[] = [
   // Every one of these reads a key, a state, a heading, or a file that belongs to
   // the unattended machinery. With the switch off they neither run nor are listed,
   // so nothing advertises a rule that will not fire.
+  { rule_id: "UNATTENDED-INCOMPLETE", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "STATUS-SCHEMA", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "LOOP-BUDGET-INVALID", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "JUDGEABLE-NO-SECTION", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "CHECK-RUN-MALFORMED", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", part: 3 },
-  { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "warning", scope: "spec", part: 3 },
-  { rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "ACCEPTANCE-UNPARTITIONED", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "ARCHIVE-NO-ACCEPTANCE", severity: "warning", scope: "repo", part: 3 },
   { rule_id: "STALE-QUARANTINE", severity: "warning", scope: "spec", part: 3 },
   { rule_id: "DECIDER-OVER-BUDGET", severity: "warning", scope: "repo", part: 3 },
@@ -67,8 +68,12 @@ export const REGISTRY: RuleMeta[] = [
 
 export const REGISTRY_BY_ID: Map<string, RuleMeta> = new Map(REGISTRY.map((r) => [r.rule_id, r]));
 
+// The envelope keys (`build`, `blast_radius`, `size`, `target_model`, `stale_after`,
+// `loop_budget`) are *known* whatever the switch says — a repo that turns the switch
+// off must not start warning about keys its specs already carry. What the switch
+// changes is whether their values are checked, not whether they are recognised.
 const KNOWN_FRONTMATTER_KEYS = new Set([
-  "slug", "type", "status", "decider", "blast_radius", "size", "target_model",
+  "slug", "type", "status", "decider", "build", "blast_radius", "size", "target_model",
   "ratified_by", "ratified_at", "created", "canon", "shipped", "stale_after",
   "acceptance_results", "deputy", "killed_reason", "loop_budget",
 ]);
@@ -83,6 +88,10 @@ const ALLOWED_BLAST_RADIUS = new Set(["low", "medium", "high"]);
 const ALLOWED_SIZE = new Set(["small", "large"]);
 const ALLOWED_TYPE = new Set(["feature", "bug", "chore", "parent"]);
 const ALLOWED_TARGET_MODEL = new Set(["light", "standard", "frontier"]);
+const ALLOWED_BUILD = new Set(["attended", "unattended"]);
+// Status is descriptive (canon 3.1 Part 1): `draft | building | shipped | killed`.
+// `blocked` belongs to Part 3 and is allowed once the switch is on.
+const ALLOWED_STATUS = ["draft", "building", "shipped", "killed"];
 const STATUS_REQUIRED_SECTIONS = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends", "Corrections"];
 const RELATION_KEYS = ["depends_on", "part_of", "supersedes", "conflicts_with"];
 
@@ -101,6 +110,15 @@ export type Rule = (ctx: RuleContext) => RawFinding[];
 function fmString(f: SpecFolder, key: string): string | null {
   const v = f.frontmatter?.data[key];
   return typeof v === "string" ? v : null;
+}
+
+/** The status every rule reads. `ratified` was v3.0's gate state; canon 3.1 makes
+ *  status descriptive and drops it, so it is recognised silently — never an error,
+ *  never a warning — and read as `building`. A v3.0 spec keeps producing exactly the
+ *  findings it produced before. */
+function statusOf(f: SpecFolder): string | null {
+  const s = fmString(f, "status");
+  return s === "ratified" ? "building" : s;
 }
 
 function asEdges(value: string | string[] | undefined): string[] {
@@ -161,7 +179,9 @@ const statusSchema: Rule = ({ repo }) => {
     if (f.statusContent === null) continue;
     const h2 = headings(f.statusContent).filter((h) => h.level === 2);
     for (const req of STATUS_REQUIRED_SECTIONS) {
-      const matches = h2.filter((h) => h.title.toLowerCase().startsWith(req.toLowerCase()));
+      // The canon's schema is literal headings, so the match is exact: a prefix match
+      // let "## Done thinking about it" satisfy "## Done".
+      const matches = h2.filter((h) => h.title.toLowerCase() === req.toLowerCase());
       if (matches.length === 0) {
         out.push({ rule_id: "STATUS-SCHEMA", file: `${f.rel}/status.md`, line: null, specDir: f.dirName,
           message: `status.md missing required section "${req}"`,
@@ -176,21 +196,38 @@ const statusSchema: Rule = ({ repo }) => {
   return out;
 };
 
+/** An enum check: `allowed` is what the canon says to write, `recognised` is what is
+ *  read without complaint. They differ only where a value belongs to a part that is
+ *  not in force — a spec written against the other switch position must not error. */
+interface EnumCheck { key: string; allowed: string[]; recognised?: string[] }
+
 const enumValues: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  const checks: [string, Set<string>][] = [
-    ["type", ALLOWED_TYPE], ["blast_radius", ALLOWED_BLAST_RADIUS],
-    ["size", ALLOWED_SIZE], ["target_model", ALLOWED_TARGET_MODEL],
+  const checks: EnumCheck[] = [
+    { key: "type", allowed: [...ALLOWED_TYPE] },
+    // `ratified` is always read silently. `blocked` is Part 3's state: checked when
+    // the switch is on, recognised silently when it is off.
+    repo.unattended
+      ? { key: "status", allowed: [...ALLOWED_STATUS, "blocked"], recognised: [...ALLOWED_STATUS, "blocked", "ratified"] }
+      : { key: "status", allowed: ALLOWED_STATUS, recognised: [...ALLOWED_STATUS, "blocked", "ratified"] },
   ];
+  // The envelope is legal on any spec but only *checked* when Part 3 is in force.
+  if (repo.unattended) {
+    checks.push(
+      { key: "build", allowed: [...ALLOWED_BUILD] },
+      { key: "blast_radius", allowed: [...ALLOWED_BLAST_RADIUS] },
+      { key: "size", allowed: [...ALLOWED_SIZE] },
+      { key: "target_model", allowed: [...ALLOWED_TARGET_MODEL] },
+    );
+  }
   for (const f of [...repo.specs, ...repo.archive]) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    for (const [key, allowed] of checks) {
+    for (const { key, allowed, recognised } of checks) {
       const v = fmString(f, key);
-      if (v !== null && !allowed.has(v)) {
-        out.push({ rule_id: "ENUM-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName,
-          message: `${key} "${v}" is not one of ${[...allowed].join("|")}`,
-          fix_hint: `set ${key} to one of: ${[...allowed].join(", ")}` });
-      }
+      if (v === null || (recognised ?? allowed).includes(v)) continue;
+      out.push({ rule_id: "ENUM-INVALID", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf[key] ?? 1, specDir: f.dirName,
+        message: `${key} "${v}" is not one of ${allowed.join("|")}`,
+        fix_hint: `set ${key} to one of: ${allowed.join(", ")}` });
     }
   }
   return out;
@@ -277,6 +314,14 @@ function hasSection(specContent: string, prefix: string): boolean {
 function countListItems(body: string): number {
   return body.split(/\r?\n/).filter((l) => /^\s*(\d+[.)]|[-*])\s+\S/.test(l)).length;
 }
+
+// Acceptance sub-headings are `###` under `## Acceptance checks`. Part 1 keeps one
+// optional marker — `### human`, for items only a person can settle, with
+// `### human-gate` recognised silently as its pre-3.1 spelling. Part 3 refines the
+// same list into `### agent-loopable` / `### judgeable` / `### human-gate`. All of
+// them are level-3 headings, which UNKNOWN-SECTION does not look at, so every one is
+// recognised silently whichever way the switch is set.
+const AGENT_LOOPABLE_PARTITION = /^ {0,3}###\s+`?agent-loopable`?\s*#*\s*$/im;
 
 const judgeableNoSection: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
@@ -403,39 +448,45 @@ const correctionsMalformed: Rule = ({ repo }) => {
   return out;
 };
 
-// ── lifecycle completeness + tier-2 governance ───────────────────────────────
+// ── lifecycle completeness + the Part-3 envelope ──────────────────────────────
 
-const RATIFIABLE = new Set(["ratified", "building"]);
-const ACTIVE_STATES = new Set(["ratified", "building", "blocked"]);
+const ACTIVE_STATES = new Set(["building", "blocked"]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const ratifiedNeedsBlastRadius: Rule = ({ repo }) => {
+// Part 3: the distance to unattended-ready, reported the moment the promise is made.
+// Absence of the `build` key never fires anything — only a spec that has *declared*
+// it will be built by a builder who cannot ask is held to the envelope. `stale_after`
+// is required once building OR blocked, as the canon body says (the Checks appendix
+// used to say "once building", which was the narrower of the two).
+const unattendedIncomplete: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
-    if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status === null || !RATIFIABLE.has(status)) continue;
-    if (fmString(f, "blast_radius") === null) {
-      out.push({ rule_id: "RATIFIED-NO-BLAST-RADIUS", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName,
-        message: `status "${status}" requires a blast_radius value (B5)`,
-        fix_hint: "declare blast_radius: low|medium|high — the ratification-time risk judgment that routes effort and model tier" });
-    }
+    if (fmString(f, "build") !== "unattended") continue;
+    const required = ["blast_radius", "loop_budget"];
+    if (ACTIVE_STATES.has(statusOf(f) ?? "")) required.push("stale_after");
+    const missing = required.filter((key) => (fmString(f, key) ?? "").trim() === "");
+    if (f.statusContent === null) missing.push("status.md");
+    if (missing.length === 0) continue;
+    out.push({ rule_id: "UNATTENDED-INCOMPLETE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["build"] ?? null, specDir: f.dirName,
+      message: `build: unattended, but the envelope is missing ${missing.join(", ")}`,
+      fix_hint: "complete the unattended envelope before handing the build to a builder who cannot ask, or drop `build: unattended`" });
   }
   return out;
 };
 
-const ratifiedNeedsPartition: Rule = ({ repo }) => {
+// Part 3: unattended, the one acceptance list is refined into altitudes, and the
+// implementer needs its own labelled set. No longer keyed to a status — the promise
+// that matters is `build: unattended`, not how far along the spec is.
+const acceptanceUnpartitioned: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
-    if (f.specContent === null || f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status === null || !RATIFIABLE.has(status)) continue;
+    if (f.specContent === null) continue;
+    if (fmString(f, "build") !== "unattended") continue;
     const acc = sectionBody(f.specContent, "acceptance");
-    if (!/agent-loopable/i.test(acc)) {
-      out.push({ rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
-        message: `a ${status} spec has no agent-loopable acceptance checks — the build loop has no mechanical exit (B5)`,
-        fix_hint: "partition Acceptance checks; label the runnable set `agent-loopable` (each leads with a command in backticks)" });
-    }
+    if (AGENT_LOOPABLE_PARTITION.test(acc)) continue;
+    out.push({ rule_id: "ACCEPTANCE-UNPARTITIONED", file: `${f.rel}/spec.md`, line: null, specDir: f.dirName,
+      message: "an unattended spec has no `### agent-loopable` acceptance partition — the build loop has no labelled exit condition",
+      fix_hint: "partition Acceptance checks under `### agent-loopable` / `### judgeable` / `### human-gate`; the implementer loops on the first set" });
   }
   return out;
 };
@@ -444,7 +495,7 @@ const archiveNeedsAcceptance: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.archive) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    if (fmString(f, "status") !== "shipped" || fmString(f, "type") === "bug") continue;
+    if (statusOf(f) !== "shipped" || fmString(f, "type") === "bug") continue;
     if (fmString(f, "acceptance_results") === null) {
       out.push({ rule_id: "ARCHIVE-NO-ACCEPTANCE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["status"] ?? 1, specDir: f.dirName,
         message: `shipped spec ${f.dirName} was archived without a linked acceptance_results (B5)`,
@@ -461,11 +512,13 @@ function openQuestionEntries(content: string): OQEntry[] {
   return heads.map((h, i) => {
     const next = heads[i + 1];
     const body = lines.slice(h.line, next ? next.line - 1 : undefined).join("\n");
-    const deadline = body.match(/(?:^|\n)\s*deadline:\s*(\d{4}-\d{2}-\d{2})/i);
+    const deadline = body.match(/(?:^|\n)[^\S\r\n]*deadline:[^\S\r\n]*(\d{4}-\d{2}-\d{2})/i);
+    // `\s` matches a newline, so `decider:\ndefault: keep` used to read as a decider
+    // of "default:" — an empty field counted as present. The field ends at its line.
     return {
       title: h.title, line: h.line,
-      hasDecider: /(?:^|\n)\s*decider:\s*\S/i.test(body),
-      hasDefault: /(?:^|\n)\s*default:\s*\S/i.test(body),
+      hasDecider: /(?:^|\n)[^\S\r\n]*decider:[^\S\r\n]*\S/i.test(body),
+      hasDefault: /(?:^|\n)[^\S\r\n]*default:[^\S\r\n]*\S/i.test(body),
       deadline: deadline ? deadline[1]! : null,
     };
   });
@@ -475,8 +528,8 @@ const openQuestionIncomplete: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (f.openQuestionsContent === null || f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status === null || !RATIFIABLE.has(status)) continue; // ratify-readiness only
+    const status = statusOf(f);
+    if (status !== "building") continue; // build-readiness only
     for (const q of openQuestionEntries(f.openQuestionsContent)) {
       if (!q.hasDecider || !q.hasDefault) {
         out.push({ rule_id: "OPEN-QUESTION-INCOMPLETE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName,
@@ -493,8 +546,8 @@ const openQuestionOverdue: Rule = ({ repo, now }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (f.openQuestionsContent === null || f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status !== "building" && status !== "blocked") continue;
+    const status = statusOf(f);
+    if (status === null || !ACTIVE_STATES.has(status)) continue;
     for (const q of openQuestionEntries(f.openQuestionsContent)) {
       if (q.deadline !== null && q.deadline < now) {
         out.push({ rule_id: "OPEN-QUESTION-OVERDUE", file: `${f.rel}/open-questions.md`, line: q.line, specDir: f.dirName,
@@ -511,8 +564,8 @@ const staleQuarantine: Rule = ({ repo, now }) => {
   const out: RawFinding[] = [];
   for (const f of repo.specs) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
-    const status = fmString(f, "status");
-    if (status !== "building" && status !== "blocked") continue;
+    const status = statusOf(f);
+    if (status === null || !ACTIVE_STATES.has(status)) continue;
     const stale = fmString(f, "stale_after");
     if (stale !== null && ISO_DATE.test(stale) && stale < now) {
       out.push({ rule_id: "STALE-QUARANTINE", file: `${f.rel}/spec.md`, line: f.frontmatter.lineOf["stale_after"] ?? 1, specDir: f.dirName,
@@ -530,7 +583,7 @@ const deciderOverBudget: Rule = ({ repo }) => {
   for (const f of repo.specs) {
     if (f.frontmatter === null || !f.frontmatter.ok) continue;
     const d = fmString(f, "decider");
-    const s = fmString(f, "status");
+    const s = statusOf(f);
     if (d === null || s === null) continue;
     if (s === "building") building.set(d, (building.get(d) ?? 0) + 1);
     if (ACTIVE_STATES.has(s)) active.set(d, (active.get(d) ?? 0) + 1);
@@ -544,7 +597,7 @@ const deciderOverBudget: Rule = ({ repo }) => {
   }
   for (const [d, n] of [...active.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     if (n > aMax) out.push({ rule_id: "DECIDER-OVER-BUDGET", file: null, line: null, specDir: null,
-      message: `decider ${d} has ${n} active specs (ratified|building|blocked), over the focus limit of ${aMax} (B7)`,
+      message: `decider ${d} has ${n} active specs (building|blocked), over the focus limit of ${aMax} (B7)`,
       fix_hint: "the decider's queue is the constraint, not agent capacity; close some before opening more" });
   }
   return out;
@@ -597,11 +650,22 @@ const relationEdges: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
   const knownSlugs = new Set(repo.allFolders.map((f) => f.slug));
   const killedSlugs = new Set(
-    repo.allFolders.filter((f) => fmString(f, "status") === "killed").map((f) => f.slug),
+    repo.allFolders.filter((f) => statusOf(f) === "killed").map((f) => f.slug),
   );
-  for (const f of repo.specs) {
+  // Every repo-local edge must resolve at some lifecycle stage, and knowledge folders
+  // carry a relations.md too — so the graph is read from specs/ *and* knowledge/.
+  for (const f of [...repo.specs, ...repo.knowledge]) {
     if (f.relationsContent === null) continue;
     const parsed = parseFlatYaml(f.relationsContent);
+    // A malformed *known* file is integrity, the same class as unparseable
+    // frontmatter. It used to produce nothing at all: the edges silently vanished and
+    // the file read as "no dependencies", which is the one answer it cannot mean.
+    if (!parsed.ok) {
+      out.push({ rule_id: "RELATION-UNPARSEABLE", file: `${f.rel}/relations.md`, line: null, specDir: null,
+        message: `relations.md does not parse: ${parsed.error}`,
+        fix_hint: "relations.md is flat YAML: `depends_on: slug`, a `- slug` list, or `none`. Quote an annotated edge as `- \"slug: why\"`" });
+      continue;
+    }
     for (const key of RELATION_KEYS) {
       for (const edge of asEdges(parsed.data[key])) {
         const line = parsed.lineOf[key] ?? null;
@@ -677,24 +741,23 @@ const archiveEdited: Rule = ({ modified }) => {
 
 const slugIntegrity: Rule = ({ repo }) => {
   const out: RawFinding[] = [];
-  // Duplicates count only spec.md-bearing locations (specs/ + archive/). A
-  // graduated feature legitimately has the same slug in both archive/ and
-  // knowledge/ — that is the shipped state, not a collision. (Two in-flight specs
-  // can't collide: same folder name is a filesystem impossibility. What this
-  // catches is a new spec reusing a slug already spent in archive/.)
-  const bySlug = new Map<string, SpecFolder[]>();
-  for (const f of [...repo.specs, ...repo.archive]) {
-    (bySlug.get(f.slug) ?? bySlug.set(f.slug, []).get(f.slug)!).push(f);
+  // A slug is the identity of one feature and is never reused for a different one, so
+  // the comparison is specs/ against knowledge/ ∪ archive/. The same slug in
+  // knowledge/ AND archive/ is the normal end state of graduation, not a collision —
+  // which is why the pair itself is never compared. Two in-flight specs cannot
+  // collide: the same folder name is a filesystem impossibility. What this catches is
+  // a new spec reusing a slug already spent. (`main` compared specs ∪ archive only,
+  // so a spec reusing a *graduated* slug — knowledge/ with no archive/ — slipped past.)
+  const landed = new Map<string, SpecFolder>();
+  for (const f of [...repo.knowledge, ...repo.archive]) {
+    if (!landed.has(f.slug)) landed.set(f.slug, f);
   }
-  for (const [slug, folders] of [...bySlug.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    if (folders.length > 1) {
-      const sorted = [...folders].sort((a, b) => a.rel.localeCompare(b.rel));
-      for (const f of sorted.slice(1)) {
-        out.push({ rule_id: "SLUG-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["slug"] ?? null, specDir: f.dirName,
-          message: `slug "${slug}" also names ${sorted[0]!.rel}`,
-          fix_hint: "re-slug the later-merged spec to a fresh, unique name; nothing should reference it yet" });
-      }
-    }
+  for (const f of [...repo.specs].sort((a, b) => a.rel.localeCompare(b.rel))) {
+    const previous = landed.get(f.slug);
+    if (previous === undefined) continue;
+    out.push({ rule_id: "SLUG-DUPLICATE", file: `${f.rel}/spec.md`, line: f.frontmatter?.lineOf["slug"] ?? null, specDir: f.dirName,
+      message: `slug "${f.slug}" also names ${previous.rel}`,
+      fix_hint: "slugs are permanent and never reused for a different feature; re-slug the new spec to a fresh name while nothing references it" });
   }
   return out;
 };
@@ -738,8 +801,8 @@ export const RULES: Rule[] = [
   parentHasMechanics,
   parentNoScopes,
   correctionsMalformed,
-  ratifiedNeedsBlastRadius,
-  ratifiedNeedsPartition,
+  unattendedIncomplete,
+  acceptanceUnpartitioned,
   archiveNeedsAcceptance,
   openQuestionIncomplete,
   openQuestionOverdue,

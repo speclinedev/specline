@@ -134,9 +134,36 @@ for (const [name, spec, expected] of cases) {
   });
 }
 
-test("a malformed relations.md stays silent (no edges, no finding)", (t) => {
-  // v3.1: RELATION-UNPARSEABLE lands here.
-  assert.deepEqual(ruleIds(repo(t, FM + BODY, "This spec has no upstream dependencies.\n" + REL)), []);
+// canon 3.1: a malformed *known* file is integrity, the same class as unparseable
+// frontmatter. Before, the parse failed silently: the edges vanished and the file
+// read as "no dependencies" — the one thing it cannot mean.
+test("a malformed relations.md is RELATION-UNPARSEABLE, not silence", (t) => {
+  for (const rel of [
+    "This spec has no upstream dependencies.\n" + REL, // prose above the mapping
+    "depends_on:\n  widget:\n    why: nested\n",       // a nested map is not the contract
+    "depends_on: a\ndepends_on: b\n",                  // last-wins used to pass silently
+    "depends_on: [a, b\n",                             // unterminated flow sequence
+  ]) {
+    assert.deepEqual(ruleIds(repo(t, FM + BODY, rel)), ["RELATION-UNPARSEABLE"], rel);
+  }
+  // ...and a relations.md that parses stays silent, with or without edges.
+  for (const rel of [REL, "depends_on: none\n", "depends_on: []\n", "", "# just a comment\n"]) {
+    assert.deepEqual(ruleIds(repo(t, FM + BODY, rel)), [], JSON.stringify(rel));
+  }
+});
+
+test("RELATION-UNPARSEABLE is an error that blocks, and it covers knowledge/ too", (t) => {
+  const root = repo(t, FM + BODY, "depends_on:\n  widget:\n    why: nested\n");
+  const r = run(root, { mode: "gate", changed: [], now: "2026-09-27" });
+  const f = r.findings.find((x) => x.rule_id === "RELATION-UNPARSEABLE");
+  assert.equal(f!.severity, "error", "repo-scoped integrity errors everywhere");
+  assert.equal(f!.file, "docs/specs/widget/relations.md");
+
+  const ok = repo(t, FM + BODY);
+  mkdirSync(join(ok, "docs", "knowledge", "shipped"), { recursive: true });
+  writeFileSync(join(ok, "docs", "knowledge", "shipped", "overview.md"), "# Shipped\n");
+  writeFileSync(join(ok, "docs", "knowledge", "shipped", "relations.md"), "supersedes:\n  a:\n    b: c\n");
+  assert.deepEqual(ruleIds(ok), ["RELATION-UNPARSEABLE"], "a knowledge folder's relations are read too");
 });
 
 test("a `## ` heading inside a blockquote does not satisfy status.md's schema", (t) => {

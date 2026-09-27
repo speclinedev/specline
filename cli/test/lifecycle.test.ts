@@ -7,15 +7,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { run, exitCodeFor } from "../src/engine/run.ts";
+import { REGISTRY } from "../src/engine/rules.ts";
 import { fx, unattendedOn, withMutatedFixture } from "./support.ts";
 
 const ids = (r: ReturnType<typeof run>) => new Set(r.findings.map((f) => f.rule_id));
 const check = (root: string) => run(root, { mode: "gate", changed: [], modified: [], now: "2026-06-16" });
 
-const PART3 = [
-  "RATIFIED-NO-BLAST-RADIUS", "RATIFIED-ACCEPTANCE-UNPARTITIONED", "ARCHIVE-NO-ACCEPTANCE",
-  "STALE-QUARANTINE", "DECIDER-OVER-BUDGET", "COUPLING-CEILING",
-];
+const PART3 = REGISTRY.filter((r) => r.part === 3).map((r) => r.rule_id);
+
+test("every rule belongs to exactly one part, and the census matches the canon", () => {
+  const census = { 1: 0, 2: 0, 3: 0 } as Record<number, number>;
+  for (const r of REGISTRY) {
+    assert.ok([1, 2, 3].includes(r.part), `${r.rule_id} has no part`);
+    census[r.part]!++;
+    assert.ok(!("tier" in r), `${r.rule_id} still carries a tier`);
+    assert.ok(!("downgradable" in r), `${r.rule_id} still carries downgradable`);
+  }
+  assert.deepEqual(census, { 1: 9, 2: 12, 3: 12 });
+  assert.equal(new Set(REGISTRY.map((r) => r.rule_id)).size, REGISTRY.length, "no duplicate rule_id");
+  // Part 3 is advisory in full: nothing experimental may block a merge.
+  for (const r of REGISTRY.filter((x) => x.part === 3)) assert.equal(r.severity, "warning", r.rule_id);
+});
 
 test("switch off (the default): Part-2 advisories fire, every Part-3 rule is silent", () => {
   const r = check(fx("lifecycle-gaps"));
