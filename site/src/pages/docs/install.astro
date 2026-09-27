@@ -6,7 +6,7 @@ import Docs from "../../layouts/Docs.astro";
   <h1>Install</h1>
   <p class="doc-lead">The <code>specline</code> CLI validates with <code>check</code>, scaffolds with <code>init</code>, and serves its bundled canon offline.</p>
   <h2>Run from source</h2>
-  <p>Use Node 22.18 or newer. Install the locked dependencies in the CLI subtree:</p>
+  <p>Use Node 22.18 or newer — it runs the TypeScript source directly. Install the one runtime dependency (<code>yaml</code>) in the CLI subtree:</p>
   <div class="codeblock"><pre>git clone https://github.com/speclinedev/specline
 cd specline/cli
 npm ci
@@ -21,7 +21,8 @@ exec node /abs/path/to/cli/src/cli/index.ts "$@"</pre>
   <p class="doc-note">Then <code>chmod +x ~/.local/bin/specline</code> (ensure <code>~/.local/bin</code> is on your PATH). The canon path resolves relative to the source, so it works from anywhere.</p>
 
   <h2>Standalone executable</h2>
-  <p>The repository's <a href="https://github.com/speclinedev/specline/releases">release assets</a> provide Linux x64 and macOS arm64/x64 executables. Download the matching <code>specline-*</code> asset, mark it executable, and place it on your PATH as <code>specline</code>. It embeds the canon and needs no Node installation. For a local build, run <code>npm run build</code> in <code>cli/</code> with Bun installed.</p>
+  <p>The repository's <a href="https://github.com/speclinedev/specline/releases">release assets</a> provide Linux x64 and macOS arm64/x64 executables, all cross-compiled on a Linux runner. Download the matching <code>specline-*</code> asset, mark it executable, and place it on your PATH as <code>specline</code>. It embeds the canon and needs no Node installation. For a local build, run <code>npm run build</code> in <code>cli/</code> with <a href="https://bun.sh">Bun</a> installed — Bun is only needed to compile the binary, not to run it.</p>
+  <p class="doc-note">The composite GitHub Action installs its own dependencies on the runner it executes on — it needs neither Node nor Bun pre-installed on your workflow.</p>
   <h2>Check that it works</h2>
   <div class="codeblock">
     <div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div>

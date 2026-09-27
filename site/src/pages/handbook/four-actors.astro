@@ -25,16 +25,17 @@ import Chapter from "../../layouts/Chapter.astro";
       <p>Equipped with the codebase's standards (<code>conventions/</code>, <code>technical/</code>) and what already exists (the relations graph), it builds from the spec until it can establish the goal is met — then stops and hands to review.</p>
     </div>
     <div class="bcard">
-      <h3>The reviewer agent — checks the interpretation</h3>
-      <p>A fresh, outside agent that judges how the implementer interpreted the spec against the goal and the standards — including the nuanced bars, like performance and security, the goal can't fully state.</p>
+      <h3>The reviewer agent — checks the interpretation <em>(experimental)</em></h3>
+      <p>A fresh, outside agent that judges how the implementer interpreted the spec against the goal and the standards — including the nuanced bars, like performance and security, the goal can't fully state. This role only exists in the unattended build's outer loop; attended, the builder raises a disagreement with you directly and the spec is amended by agreement.</p>
     </div>
     <p>
-      And bracketing all of it: <strong>you, at the two gates</strong> — <em>ratify</em> the
-      spec — your go, recorded in git — before the build, <em>accept</em> the result after. The whole point of the
+      And bracketing all of it: <strong>you, at the two gates</strong> — <em>approve</em> the
+      spec (your go, recorded in git as the move to <code>docs/specs/</code>) before the build,
+      <em>accept</em> the result after. The whole point of the
       consistent shape is that it equips the agents in the middle; the whole point of the gates
       is that the irreducible judgment stays human. The rest of the handbook walks these four
       through one feature — but first, the thing they all read: the spec itself.
     </p>
-    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/boundaries">the seven boundaries</a> that define the line.</p></div>
+    <div class="callout"><span class="ci">▸</span><p>Reference: <a href="/docs/reference/boundaries">the boundaries</a> that define the line.</p></div>
   </section>
 </Chapter>

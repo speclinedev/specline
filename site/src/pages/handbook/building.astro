@@ -1,12 +1,14 @@
 ---
 import Chapter from "../../layouts/Chapter.astro";
+import Experimental from "../../components/Experimental.astro";
 ---
 <Chapter title="Building: the implementer and the goal" slug="building">
   <section class="chapter">
     <div class="head-eyebrow">07 · Building</div>
     <h2>Building: the implementer and the goal</h2>
     <p class="lead">
-      Once you ratify the spec — your go, recorded in git, on whichever branch the work is on —
+      Once you approve the spec — your go, recorded in git as the move from <code>docs/drafts/</code>
+      to <code>docs/specs/</code>, on whichever branch the work is on —
       an implementer agent builds the feature without you in each turn. It can do that because it
       arrives fully equipped: it has the codebase's standards (<code>conventions/</code>,
       <code>technical/</code>), the relations graph (what already exists and what's coming), and
@@ -16,7 +18,7 @@ import Chapter from "../../layouts/Chapter.astro";
       <em>Almost.</em> By default a build is <strong>attended</strong>: you're reachable, so when
       the build teaches something the contract got wrong, the builder says so in product terms,
       you agree or you don't, and the spec is edited in the branch. That edit is the record — no
-      status flip, no separate PR, no re-ratification ceremony. Declare
+      status flip, no separate PR, no re-approval ceremony. Declare
       <code>build: unattended</code> and you've made the opposite promise: a builder that
       <em>can't</em> ask has everything it needs. The brakes below belong to that promise;
       attended, you are the shortest brake there is.
@@ -39,7 +41,14 @@ import Chapter from "../../layouts/Chapter.astro";
       where they fit, assessing against the code where they don't — and a passing suite is the
       strongest evidence of that, never a substitute for it.
     </p>
-    <h3>The inner loop, and its two brakes</h3>
+    <h3>The inner loop, and its two brakes <em>(experimental)</em></h3>
+    <Experimental />
+    <p>
+      Everything below is the <strong>unattended</strong> build's contract — in force only once
+      a spec declares <code>build: unattended</code> in a repo that has set
+      <code>unattended: true</code>. Attended (the default), there's no loop to run: you're the
+      shortest brake there is, and a contradiction is just a conversation.
+    </p>
     <p>
       The build is a loop, not a single pass. Each iteration resumes from <code>status.md</code>
       — the loop's memory: the last green checkpoint to start from, and the dead ends not to
@@ -50,7 +59,7 @@ import Chapter from "../../layouts/Chapter.astro";
     <div class="tbl-wrap"><table class="book-table">
       <thead><tr><th>Brake</th><th>Axis</th><th>What it catches</th></tr></thead>
       <tbody>
-        <tr><td><code>loop_budget</code></td><td>Progress — cycles with no advance</td><td>Thrashing. It's the PO's autonomy grant, set at ratification: how long the build may run unattended before calling you.</td></tr>
+        <tr><td><code>loop_budget</code></td><td>Progress — cycles with no advance</td><td>Thrashing. It's the PO's autonomy grant, set at the decider's go: how long the build may run unattended before calling you.</td></tr>
         <tr><td><code>stale_after</code></td><td>Time — wall-clock since the build opened</td><td>Abandonment. A build left open too long, regardless of progress.</td></tr>
       </tbody>
     </table></div>

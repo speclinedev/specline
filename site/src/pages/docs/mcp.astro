@@ -25,24 +25,24 @@ import Docs from "../../layouts/Docs.astro";
     <table class="book-table">
       <thead><tr><th>Tool</th><th>Does</th><th>Arguments</th></tr></thead>
       <tbody>
-        <tr><td>specline_check</td><td>Validate a repo; returns the JSON report.</td><td><code>path</code> (req), <code>mode</code>, <code>changed[]</code>, <code>modified[]</code>, <code>now</code>, <code>tier</code></td></tr>
-        <tr><td>specline_spec</td><td>Return the pinned canon — inject to make the agent aware of Specline.</td><td>—</td></tr>
-        <tr><td>specline_rules</td><td>Return the rule catalog the agent will be checked against.</td><td>—</td></tr>
+        <tr><td>specline_check</td><td>Validate a repo; returns the JSON report. Specline runs in one mode — every finding is reported, and the run exits nonzero on any error.</td><td><code>path</code> (req), <code>changed[]</code>, <code>modified[]</code>, <code>now</code></td></tr>
+        <tr><td>specline_spec</td><td>Return the pinned canon — inject to make the agent aware of Specline. Sliced at Part 3 unless the repo at <code>path</code> sets <code>unattended: true</code>.</td><td><code>path</code> (optional)</td></tr>
+        <tr><td>specline_rules</td><td>Return the rule catalog the agent will be checked against. Part-3 rules listed only when the repo at <code>path</code> sets <code>unattended: true</code>.</td><td><code>path</code> (optional)</td></tr>
       </tbody>
     </table>
   </div>
 
   <h2>Prompts</h2>
-  <p><code>shape</code> guides collaborative spec writing; <code>build</code> briefs an attended builder. Unattended builds use the explicit envelope and runner contract in the canon.</p>
+  <p><code>shape</code> guides collaborative spec writing — the only prompt the server currently registers. Building is attended by default: the brief in <a href="/docs/agent"><code>CLAUDE.md</code></a> covers it. Unattended builds (experimental) use the explicit envelope and runner contract in the canon.</p>
 
   <h2>How an agent uses it</h2>
   <ol>
     <li>On opening a Specline repo, the agent calls <code>specline_spec</code> to load the methodology and <code>specline_rules</code> to learn what it'll be graded on.</li>
-    <li>While shaping a spec with you, it calls <code>specline_check</code> in <code>author</code> mode, naming the files it touched — and self-corrects from each finding's <code>rule_id</code> + <code>fix_hint</code>.</li>
-    <li>Before handoff, one <code>specline_check</code> in <code>gate</code> mode confirms zero errors.</li>
+    <li>While shaping a spec with you, it calls <code>specline_check</code>, naming the files it touched — and self-corrects from each finding's <code>rule_id</code> + <code>fix_hint</code>. In <code>docs/drafts/</code> only parse-level integrity runs, so an incomplete draft is expected.</li>
+    <li>Before handoff — moving the spec to <code>docs/specs/</code> — one more <code>specline_check</code> confirms zero errors.</li>
   </ol>
   <div class="callout"><span class="ci">↩</span><p>It's the same canon, reached two ways. <a href="/spec.md">/spec.md</a> serves it over HTTP for you; <code>specline_spec</code> hands it to the agent inside the repo.</p></div>
 
   <h2>You don't need MCP for this</h2>
-  <p>An agent with shell access — Claude Code, say — can already run the <a href="/docs/cli">CLI</a> straight: <code>specline check --mode author --format json</code>, then parse the result. MCP earns its keep by making Specline a first-class tool the agent discovers on its own, in any client. That's the whole difference.</p>
+  <p>An agent with shell access — Claude Code, say — can already run the <a href="/docs/cli">CLI</a> straight: <code>specline check --format json</code>, then parse the result. MCP earns its keep by making Specline a first-class tool the agent discovers on its own, in any client. That's the whole difference.</p>
 </Docs>

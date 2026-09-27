@@ -1,6 +1,8 @@
 ---
 import { CANON_VERSION } from "../../canon.ts";
 import Docs from "../../layouts/Docs.astro";
+
+const CANON_MM = CANON_VERSION.match(/^(\d+\.\d+)/)?.[1] ?? CANON_VERSION;
 ---
 <Docs title="Getting started — set up or convert a repo">
   <div class="doc-kicker">Specline · Getting started</div>
@@ -16,7 +18,7 @@ import Docs from "../../layouts/Docs.astro";
     <li><a href="/docs/install">Install</a> the <code>specline</code> command (Node 22.18+).</li>
     <li>For the agent path: register the <a href="/docs/mcp">MCP server</a> and drop the <a href="/docs/agent"><code>CLAUDE.md</code> brief</a> into the repo.</li>
   </ul>
-  <p class="doc-note">Run <code>specline init . --tier 1 --yes</code> to create the starting structure, or add <code>--check</code> to preview without writing. Existing authored files are preserved.</p>
+  <p class="doc-note">Run <code>specline init . --yes</code> to create the starting structure, or add <code>--check</code> to preview without writing. Existing authored files are preserved. There's no tier to choose — it's one system throughout, and Part 3 (unattended builds) is a separate opt-in switch (see below).</p>
 
   <h2>Start a new repo</h2>
 
@@ -27,21 +29,22 @@ import Docs from "../../layouts/Docs.astro";
 
   <h3>Build it by hand</h3>
   <p>There isn't much to it. The minimal valid setup is four things:</p>
-  <pre class="tree"><span class="dir">specline.yml</span>                       <span class="cmt"># the canon + tier pin — Specline reads tier here</span>
+  <pre class="tree"><span class="dir">specline.yml</span>                       <span class="cmt"># the canon pin — Specline reads it here</span>
 <span class="dir">docs/</span>
   architecture.md                  <span class="cmt"># a few lines: what this system is, read first</span>
-  <span class="dir">specs/</span>                          <span class="cmt"># one folder per in-flight spec; the folder name is its slug</span></pre>
-  <p>One file carries the settings. <code>specline.yml</code> at the repo root is where Specline reads your tier and thresholds — nothing else:</p>
-  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">{CANON_VERSION}</span>
-<span class="k">tier</span>: <span class="acc">1</span>            <span class="cmt"># 1 — the loop</span>
+  <span class="dir">drafts/</span>                         <span class="cmt"># being-shaped specs; not a commitment</span>
+  <span class="dir">specs/</span>                          <span class="cmt"># one folder per approved-for-build spec; the folder name is its slug</span></pre>
+  <p>One file carries the settings. <code>specline.yml</code> at the repo root is where Specline reads your canon pin and thresholds — nothing else:</p>
+  <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">specline.yml</span></div><pre><span class="k">canon</span>: <span class="v">{CANON_MM}</span>
+<span class="k">unattended</span>: <span class="acc">false</span>   <span class="cmt"># experimental — Part 3. default false</span>
 <span class="k">deciders</span>: <span class="v">[your-name]</span></pre></div>
   <p class="doc-note"><code>docs/conventions/doc-architecture.md</code> is now optional prose/rationale — the machine-readable pins and thresholds live in <code>specline.yml</code>.</p>
-  <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/specs/ranch-mgmt/</code> — the folder name is the slug, which is the spec's identity.</p>
+  <p>Then validate (see <a href="#verify">Verify</a>), and shape your first feature into <code>docs/drafts/ranch-mgmt/</code> — the folder name is the slug, which is the spec's identity. Moving it to <code>docs/specs/</code> is the decider's go.</p>
 
   <h2>Convert an existing repo</h2>
   <p>
     Your shipped features never had a Specline spec, and you can't write one for the
-    past. So don't. They aren't plans to sign or archive — they're facts about what's
+    past. So don't. They aren't plans to approve or archive — they're facts about what's
     true now, and they go straight into <code>knowledge/</code>.
   </p>
 
@@ -51,7 +54,7 @@ import Docs from "../../layouts/Docs.astro";
 
   <h3>Convert it by hand</h3>
   <ol>
-    <li>Add <code>specline.yml</code> at the repo root with the canon + tier pin (as above).</li>
+    <li>Add <code>specline.yml</code> at the repo root with the canon pin (as above).</li>
     <li>For each shipped feature's existing doc, create <code>docs/knowledge/&lt;slug&gt;/</code> (the folder name is a descriptive slug, unique for each feature; graduation may pair matching <code>knowledge/</code> and <code>archive/</code> folders). Rewrite to present tense; keep intent, rules, and rationale; <strong>drop</strong> any status, open-questions, or to-do content (those are lifecycle artifacts Specline rejects in <code>knowledge/</code>).</li>
     <li>Leave <code>archive/</code> empty — it fills as new features go forward through the loop. Backfill a contract only for a feature whose original spec still carries value.</li>
   </ol>
@@ -59,5 +62,5 @@ import Docs from "../../layouts/Docs.astro";
 
   <h2 id="verify">Verify</h2>
   <div class="codeblock"><div class="cb-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="fn">shell</span></div><pre>specline check .</pre></div>
-  <p>Zero <code>error</code> findings (exit 0) means no blocking integrity findings for the supplied changed paths; it does not establish semantic correctness. Warnings don't block — they point at things worth a look, not things to stop on. From here every new feature runs the <a href="/">loop</a>: shape → sign → build → graduate.</p>
+  <p>Zero <code>error</code> findings (exit 0) means no blocking integrity findings for the supplied changed paths; it does not establish semantic correctness. Warnings don't block — they point at things worth a look, not things to stop on. From here every new feature runs the <a href="/">loop</a>: shape → approve → build → graduate.</p>
 </Docs>

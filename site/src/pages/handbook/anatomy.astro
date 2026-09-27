@@ -19,7 +19,7 @@ import Chapter from "../../layouts/Chapter.astro";
         <tr><td><strong>Behavior</strong></td><td>Numbered, observable statements of what it does.</td><td>The implementer (what to build) and the reviewer (what to check against).</td></tr>
         <tr><td><strong>Business rules</strong></td><td>Must / should / may constraints.</td><td>The implementer and reviewer — the hard limits.</td></tr>
         <tr><td><strong>Assumptions</strong></td><td>What it takes as given about systems it doesn't control — and what to do at a contradiction.</td><td>The implementer — where to <em>escalate fast</em> instead of hacking around a seam.</td></tr>
-        <tr><td><strong>Acceptance checks</strong></td><td>How done is certified, at three altitudes (next chapters).</td><td>All three: the implementer (provable), the reviewer (judgeable), you (tasteable).</td></tr>
+        <tr><td><strong>Acceptance checks</strong></td><td>How done is certified: one falsifiable list, with anything only you can settle under a <code>### human</code> sub-heading.</td><td>The implementer, and you. (Unattended — experimental — this one list refines into three altitudes; next chapters.)</td></tr>
       </tbody>
     </table></div>
     <p>
@@ -27,9 +27,11 @@ import Chapter from "../../layouts/Chapter.astro";
       what this feature depends on and what's coming — so it builds with the rest of the system
       in view. <code>implementation.md</code> (optional) is the build-scratch: the detailed,
       line-level <em>how</em> (and any suggested UI approach) — kept for the builder, but never
-      graduated, because mechanics rot. And the frontmatter carries routing and governance — <code>blast_radius</code>,
-      <code>size</code>, <code>loop_budget</code> — which set how hard the build runs and when
-      it calls you back.
+      graduated, because mechanics rot. Frontmatter itself is just four keys — identity, not
+      governance (<code>slug</code>, <code>type</code>, <code>decider</code>, <code>created</code>);
+      the routing envelope — <code>blast_radius</code>, <code>size</code>, <code>loop_budget</code> —
+      is experimental, legal on any spec but only meaningful once it declares
+      <code>build: unattended</code>.
     </p>
     <p>
       The discipline is one line: <strong>the spec carries the feature's delta, nothing

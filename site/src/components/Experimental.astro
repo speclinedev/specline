@@ -1,0 +1,13 @@
+---
+// Reuses the site's existing `.callout` tokens (accent-soft background, inherited
+// `--ink` text) so contrast tracks whatever the rest of the site already uses —
+// computed at ~13.8:1 (dark) / ~12.6:1 (paper), both far over the 4.5:1 floor.
+---
+<div class="callout callout-experimental" role="note" aria-label="Experimental feature">
+  <span class="ci" aria-hidden="true">▲</span>
+  <p>
+    <strong>Experimental</strong> — in force only when <code>specline.yml</code> sets
+    <code>unattended: true</code>. Off by default; nothing here is checked or listed
+    until you turn it on.
+  </p>
+</div>
