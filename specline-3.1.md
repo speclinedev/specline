@@ -12,7 +12,8 @@ repo root; this contract changes first, repo conventions follow.
 > otherwise: a person, or an agent with the decider reachable, builds it, and the
 > spec is edited by agreement as the build teaches. No spec has to merge before
 > work begins: one branch may carry shaping, building, and graduation, and its
-> approving merge is the record. There are no tiers — one system, and one switch.
+> approving merge is the record. Where a spec lives is its state: `drafts/` while
+> shaping, `specs/` once approved. There are no tiers — one system, and one switch.
 >
 > **v2.6 — gate integrity, advise on taste** (still the law). Specline blocks only on *integrity*
 > (facts that are false regardless of any opinion about good specs: a `specs/`
@@ -180,11 +181,15 @@ findings, so this is a MINOR under the versioning policy above. (Shaping record:
     contract it was.
 27. **Tiers are removed.** One system. The validator checks what is present;
     `unattended` is the only switch. `--mode` and `--tier` go with it.
-28. **Ratification stops being a gate.** `status` is descriptive —
-    `draft | building | shipped | killed` — and whoever does the work flips it.
-    The decider's go is the commit that flips `status` to `building`; the
-    approving merge is the record. The `ratified` waypoint is retired from the
-    enum and recognised silently in existing specs.
+28. **Approval is a folder move, and the lifecycle is location.** A spec being
+    shaped lives in `docs/drafts/`; moving it to `docs/specs/` is the decider's
+    go, recorded by git like any other change; graduation moves it on to
+    `knowledge/` + `archive/`. The frontmatter `status` field is retired from
+    `drafts/` and `specs/` — where a spec lives is its state — and survives only
+    in `archive/` (`shipped | killed`), where location cannot tell the two apart.
+    Existing `status:` lines (including `ratified`) are recognised silently. The
+    sequence is not prescribed: shape, approve, build, and graduate may be one
+    commit or several branches; Specline reads folders, not order.
 29. **Acceptance is one list of falsifiable checks.** The three altitudes stop
     being required vocabulary in Part 1; an optional `### human` sub-heading
     marks the items only a person can settle (`### human-gate` in existing specs
@@ -225,21 +230,19 @@ versioned, validated artifacts; work is built from them; shipped work graduates
 into a permanent product memory; the full contract for every shipped feature is
 archived, never deleted.
 
-The loop:
+**Where a spec lives is its state.** Four folders under `docs/` carry the whole
+lifecycle, and a spec is in exactly one of them:
 
-```
-SHAPE ──► RATIFY ──► BUILD ──► GRADUATE (+ ARCHIVE)
-(agent+PO)  (PO)    (agent)        (agent)
-   ▲___________________│
-     reshape is normal
-```
+| Location | Meaning |
+|---|---|
+| `drafts/<slug>/` | being shaped — an idea, not a commitment; may be incomplete, may be deleted |
+| `specs/<slug>/` | approved for build — the decider's go was the move here |
+| `knowledge/<slug>/` | shipped — what actually exists, written descriptively |
+| `archive/<slug>/` | the contract as built, verbatim, read-only — `shipped` or `killed` |
 
-One branch is the normal shape: shaping, building, and graduation may all happen
-on the same branch, and the approving merge of that branch is the record of all
-three. Ratification is the decider's go, recorded in git — in practice the commit
-that flips `status` to `building`, made or approved by the decider on whichever
-branch the work is on. A spec PR merged ahead of the build is legal and useful
-when shaping runs well ahead of building; it is not the rule.
+How a spec moves between them — in one commit or several, on one branch or
+many, shaped and approved and built in a single pull request or across weeks —
+is yours. Specline reads folders, not order. Reshaping mid-build is normal.
 
 ### Claims, mechanisms, failure modes
 
@@ -327,26 +330,24 @@ descriptive and ungated, the same shape as `architecture.md`. A spec proposes
 
 ### Frontmatter (in `spec.md`)
 
-Required on every spec: `slug`, `type`, `status`, `decider`, `created`. A draft
-carries only what is known.
+Required on every spec: `slug`, `type`, `decider`, `created`. A draft carries
+only what is known.
 
 ```yaml
 ---
 slug: ranch-mgmt        # the folder name; a spec's identity. must match the directory
 type: feature           # feature | bug | chore | parent
-status: building        # draft | building | shipped | killed
 decider: jonathan
 created: 2026-06-10     # NOTE: the decider's go is recorded in git — no ratified_by/at field
 ---
 ```
 
-Frontmatter is identity and state — nothing else. The graph lives only in
-`relations.md`. An agent triages any spec from its first ten lines. `shipped`
-and `killed` are set during archiving and exist only in `archive/`.
-
-**`status`** is descriptive, flipped by whoever is doing the work; no rule hangs
-off the transition. It replaces presence-semantics: agents reliably miss the
-*absence* of a file, so the state is written down rather than inferred.
+Frontmatter is identity — nothing else. State is where the spec lives (see
+*Where a spec lives*), so there is no `status` field to keep in step with the
+folder; the one exception is `archive/`, where `status: shipped | killed` records
+what location cannot. The graph lives only in `relations.md`. An agent triages
+any spec from its path and its first ten lines. A `status:` line written against
+an earlier canon is recognised silently.
 
 ### `spec.md` body
 
@@ -440,7 +441,9 @@ docs/
 ├── decisions/            # Repo-local ADRs. slug.md. Append-only once accepted.
 ├── strategy/             # Vision, roadmap snapshots, launch contracts. Dated; archived, not deleted.
 ├── technical/            # Cross-cutting implementation patterns. Only when non-obvious.
-├── specs/                # IN-FLIGHT work. Prescriptive. Temporary by design.
+├── drafts/               # BEING SHAPED. Not a commitment. May be incomplete or deleted.
+│   └── slug/             # Same anatomy as a spec; moving it to specs/ is the decider's go
+├── specs/                # APPROVED FOR BUILD. Prescriptive. Temporary by design.
 │   └── slug/             # One folder per feature; the folder name IS its identity
 ├── knowledge/            # SHIPPED reality. Descriptive. Permanent.
 │   ├── slug/             # Graduated features (slug retained)
@@ -549,13 +552,16 @@ rule: renaming a spec that anything depends on dangles every inbound edge
 (`RELATION-DANGLING`, an integrity error), and renaming an archived spec trips
 `ARCHIVE-EDITED` — so a rename that would break a reference cannot pass the gate.
 (Re-slugging *is* legal before the spec lands, precisely because nothing
-references it yet.) Abandoning a spec does not free its slug: it moves to `archive/` with
-`status: killed` and reason "abandoned", exactly like a kill, so every landed
-slug resolves in `specs/ ∪ knowledge/ ∪ archive/` forever.
+references it yet.) Abandoning an approved spec does not free its slug: it moves
+to `archive/` with `status: killed` and reason "abandoned", exactly like a kill,
+so every approved slug resolves in `specs/ ∪ knowledge/ ∪ archive/` forever. A
+draft is different: nothing may depend on it, so an unpursued draft may simply
+be deleted — and a draft rejected for a reason worth keeping may be archived as
+`killed` with its tombstone, at the decider's discretion.
 
 **References cite slugs, never lifecycle-managed paths.** Write `spec ranch-mgmt`
 or `depends_on: ranch-mgmt`. Resolution is
-`glob docs/{specs,knowledge,archive}/ranch-mgmt/` — every landed slug resolves
+`glob docs/{drafts,specs,knowledge,archive}/ranch-mgmt/` — every approved slug resolves
 *forever*, because terminal states land in `archive/`. The edge is
 self-describing: a reader knows what `depends_on: ranch-mgmt` means without
 dereferencing it. Cross-repo references use `repo:slug`; Specline validates
@@ -630,26 +636,23 @@ returns. The system degrades to paused, never to improvised.
 
 ## Lifecycle
 
-### One branch, or two
+### One branch, or many
 
-The normal shape is **one branch**: the spec folder is added, the decider's go
-flips `status: building`, the build lands against it, graduation runs, and one
-pull request carries all three. Its approving merge is the record of contract,
-build, and graduation — traceable spec → decider → diff → knowledge.
+The folders fix what a spec *is*; git records how it got there, and the shape of
+that is yours. One branch may carry all of it: the folder is created in
+`drafts/`, moved to `specs/` when the decider says go, built against, graduated
+into `knowledge/` + `archive/`, and one pull request's approving merge is the
+record of contract, build, and graduation — traceable spec → decider → diff →
+knowledge. Or the pieces land separately: a draft pushed to be shaped in the
+open; a move to `specs/` merged on its own so a slug is claimed early or a build
+can start later; the implementation and graduation in a following PR (the shape
+an unattended runner needs — see Part 3). Every shape is legal; none is the rule.
 
-A **spec PR ahead of the build** is the two-branch shape: the spec folder lands
-first (optionally critiqued by a spec-critic agent, which also flags
-mechanics-creep), and the implementation PR follows, referencing the slug,
-settling the acceptance checks (results linked from the PR), and containing
-graduation. Use it when shaping runs well ahead of building, when
-several branches are shaping in parallel and a slug needs claiming early, or when
-an unattended runner requires a landed baseline (see Part 3). It is
-a legal shape, not the rule.
-
-In both shapes the decider's go is the commit that flips `status` to `building`,
-and the approving merge is the record; no frontmatter field records either.
-Humans decide and humans accept; everything else is delegable. A spec no human
-approved did not need to exist.
+What does not vary: the decider's go is the move into `specs/`, recorded by git
+like any other change, and the approving merge of whatever carries the build is
+the record. No frontmatter field records either. Humans decide and humans
+accept; everything else is delegable. A spec no human approved did not need to
+exist.
 
 ### Amendment (reshape) mechanics
 
@@ -658,8 +661,8 @@ teaches. The builder finds a contradiction, a gap, or a cheaper cut, and says so
 in product terms. The decider agrees or not in the conversation. On
 agreement the builder edits `spec.md` in the branch — acceptance checks included,
 proposed before they are changed, never silently — and the diff is the record.
-The approving merge ratifies the amended contract with the code. No status flip,
-no separate PR, no re-ratification ceremony: reshaping is a normal move.
+The approving merge ratifies the amended contract with the code. No folder move,
+no separate PR, no re-approval ceremony: reshaping is a normal move.
 
 Reshaping is a normal transition, not a failure; Specline's own
 instrumentation expects a meaningful share of specs to change mid-build.
@@ -694,11 +697,12 @@ one-sitting question.
 (adding the bug slug to a `corrected_by` line) and archives the bug spec as
 `shipped`. No knowledge folder is created; the slug resolves in `archive/` forever.
 
-**Kills (and abandonment)**: spec moves to `archive/` with `status: killed` and a
-one-line tombstone stating why (a deliberate kill, or "abandoned" for a draft
-dropped before ship). There is no bare-delete of an allocated spec — this is what
-makes every slug resolve forever. Slugs stay burned; edges to a killed slug are Specline
-*warnings*.
+**Kills (and abandonment)**: an approved spec moves to `archive/` with
+`status: killed` and a one-line tombstone stating why (a deliberate kill, or
+"abandoned" for work dropped before ship). There is no bare-delete of an approved
+spec — this is what makes every approved slug resolve forever. Slugs stay burned;
+edges to a killed slug are Specline *warnings*. A draft may be deleted (see *Slugs
+and references*).
 
 ### Precedence
 
@@ -707,11 +711,11 @@ historical record and outranks nothing.
 
 ### The record rule
 
-**Never delete a decision.** Slugs are permanent and archive is immutable: when
+**Never delete a decision.** An approved slug is permanent and archive is immutable: when
 something ships, a knowledge doc lands and the spec is archived; when it is
 killed, it is archived with a one-line tombstone. Nothing is bare-deleted. This
 is the one rule the integrity checks exist to protect, and the reason every
-landed slug resolves forever.
+approved slug resolves forever.
 
 ---
 
@@ -733,6 +737,12 @@ an edit to `archive/`. Everything else warns.
 
 **Quarantine semantics.** Spec-scoped violations error only on PRs touching
 that spec and warn repo-wide; repo-scoped violations error everywhere.
+
+**Drafts are checked lightly.** In `drafts/` only the parse-level integrity
+rules run — frontmatter parses, `slug` matches the folder, links and edges
+resolve, the slug is not already taken — and no advisory rule fires: incomplete
+is what a draft is for. Everything else in this catalog applies from `specs/`
+onward.
 
 **Self-describing.** Specline emits its own contract for agents: `Specline spec`
 prints the pinned canon (for prompt injection), and `Specline rules` prints the
@@ -774,8 +784,9 @@ integrity, blocks; **(A)** = advisory, warns only.
 
 **Part 2 — the record.**
 
-- **(I)** Slug integrity: each slug is unique across `specs/` + `knowledge/` +
-  `archive/` (`SLUG-DUPLICATE`). A landed slug is frozen by consequence, not a
+- **(I)** Slug integrity: one feature per slug across `drafts/` + `specs/` +
+  `knowledge/` + `archive/` — the `knowledge/` + `archive/` pair left by
+  graduation is one feature, not a collision (`SLUG-DUPLICATE`). A landed slug is frozen by consequence, not a
   dedicated rule — renaming a referenced spec dangles its inbound edges
   (`RELATION-DANGLING`) and renaming an archived one trips `ARCHIVE-EDITED`. No
   counter, so no counter-gap check.
@@ -817,7 +828,7 @@ what runs and what's promised.
 
 ## Adoption
 
-Adopt **Part 1** first: `docs/specs/` and one spec folder, validated — one
+Adopt **Part 1** first: `docs/drafts/` or `docs/specs/` and one spec folder, validated — one
 agent-buildable contract, in an afternoon. Then adopt **Part 2**: the decider's
 go in git, one branch or two, graduation, `archive/` and `knowledge/` — product
 memory and an audit trail. **Part 3** is not a further stage but a switch — set
@@ -831,7 +842,7 @@ memory and an audit trail. **Part 3** is not a further stage but a switch — se
 | Graduation skipped | Run the graduation prompt retroactively; the archive-integrity check finds the gap. |
 | Staleness quarantine | Decider chooses reshape or kill within one sitting. |
 | **`loop_budget` exhausted** | The build loop escalated without converging. The decider reads the `status.md` Dead ends, then reshapes the spec (clearer Goal / better-specified checks) or takes the build over by hand. |
-| Gate bypassed | Revert the status flip; the spec returns to draft. |
+| Gate bypassed | Move the spec back to `drafts/`. |
 | Decider absent | Deputy decides; no deputy → defaults apply, spec parks `blocked`. |
 | **Blast-radius under-declared (found mid-build)** | **Re-ratify with the corrected value; the orchestrator re-routes effort/model. Logged to routing-accuracy instrumentation.** |
 
@@ -928,7 +939,6 @@ posture is known: `build`. The **unattended envelope** — `target_model`,
 ---
 slug: ranch-mgmt        # the folder name; a spec's identity. must match the directory
 type: feature            # feature | bug | chore | parent
-status: building         # draft | building | blocked | shipped | killed
 decider: jonathan
 build: unattended        # OPTIONAL (v3.0): attended | unattended. Absent means attended; write it when known.
 blast_radius: medium     # low | medium | high — declared risk; set at the decider's go (planner proposes, decider confirms)
@@ -949,9 +959,12 @@ completeness only when `build: unattended` (`UNATTENDED-INCOMPLETE`, advisory).
 The key changes no rule's severity; it tells a builder or a runner which posture
 and which part of this canon applies.
 
-**`status: blocked`** belongs to this part alone: an unattended build that hits a
-contradiction parks there until the amendment lands (see *the unattended
-handback*). With the switch off it is recognised silently.
+**`blocked`** belongs to this part alone: an unattended build that hits a
+contradiction parks there — the `## State` token in `status.md` reads
+`blocked: <why>` — until the amendment lands (see *the unattended handback*).
+The build state of an unattended spec lives in `status.md`, never in
+frontmatter; a `status: building|blocked` frontmatter line written against an
+earlier canon is recognised silently.
 
 **`blast_radius`** is the spec's declared risk surface — how much breaks if
 this is wrong. It is the decider's judgment, not a default — the planner may
@@ -1083,13 +1096,14 @@ judgment is the reviewer's, then the human's. Specline guarantees the spec is
 
 There is no conversation to have, so an amendment is a handback:
 
-1. Builder hits a contradiction → flips `status: blocked` (`stale_after` per
-   *Staleness*) and records it under `status.md` *Dead ends* if an approach was
-   abandoned.
+1. Builder hits a contradiction → sets `status.md ## State` to `blocked: <why>`
+   (`stale_after` per *Staleness*) and records it under *Dead ends* if an
+   approach was abandoned.
 2. The amendment lands as a **spec-amendment commit** touching only the spec
    folder. The builder may draft it; the decider (or deputy, per Roles) approves it
    and resets `stale_after` in the same commit. Nothing resumes on an unapproved draft.
-3. `status: building` resumes against the amended contract.
+3. `## State` returns to `building` and the build resumes against the amended
+   contract.
 
 ## Corrections and promotion
 
