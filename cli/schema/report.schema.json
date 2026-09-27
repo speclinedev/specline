@@ -3,12 +3,12 @@
   "$id": "https://specline.dev/schema/doctor-report.json",
   "title": "doctor report",
   "type": "object",
-  "required": ["tool_version", "canon", "mode", "tier", "summary", "findings"],
+  "required": ["tool_version", "canon", "mode", "unattended", "summary", "findings"],
   "properties": {
     "tool_version": { "type": "string" },
     "canon": { "type": "string" },
     "mode": { "type": "string", "enum": ["gate", "author"] },
-    "tier": { "type": "integer" },
+    "unattended": { "type": "boolean" },
     "summary": {
       "type": "object",
       "required": ["errors", "warnings", "info"],

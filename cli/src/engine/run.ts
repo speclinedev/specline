@@ -1,6 +1,6 @@
-// The orchestrator: load -> run tier-applicable rules -> apply author-mode
-// downgrade and quarantine -> deterministic sort -> summary. Pure given (repo
-// state, options); the only inputs are the model and the run options.
+// The orchestrator: load -> run the rules whose part is in force -> apply
+// quarantine -> deterministic sort -> summary. Pure given (repo state, options);
+// the only inputs are the model and the run options.
 
 import { loadRepo, validateRunOptions, type Repo, type Finding, type RawFinding } from "./model.ts";
 import { REGISTRY_BY_ID, RULES, type RuleContext } from "./rules.ts";
@@ -14,14 +14,14 @@ export interface RunOptions {
   /** subset of changed that are modifications/deletions (not adds); for edit detection. */
   modified?: string[];
   now: string | null;
-  tierOverride?: number;
 }
 
 export interface Report {
   tool_version: string;
   canon: string;
   mode: Mode;
-  tier: number;
+  /** whether Part 3 was in force for this run (the repo's `unattended:` switch). */
+  unattended: boolean;
   summary: { errors: number; warnings: number; info: number };
   findings: Finding[];
 }
@@ -65,7 +65,8 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
   for (const r of raw) {
     const meta = REGISTRY_BY_ID.get(r.rule_id);
     if (!meta) throw new Error(`internal: rule_id ${r.rule_id} is not in the registry`);
-    if (meta.tier > repo.tier) continue; // tier-gated off for this repo
+    // Parts 1–2 always run. Part 3 is experimental and opt-in.
+    if (meta.part === 3 && !repo.unattended) continue;
 
     let severity = meta.severity;
 
@@ -95,14 +96,13 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
     else summary.info++;
   }
 
-  return { tool_version: TOOL_VERSION, canon: CANON, mode: opts.mode, tier: repo.tier, summary, findings };
+  return { tool_version: TOOL_VERSION, canon: CANON, mode: opts.mode, unattended: repo.unattended, summary, findings };
 }
 
 /** Load a repo at `root` and evaluate it. */
 export function run(root: string, opts: RunOptions): Report {
   validateRunOptions(opts); // before touching the filesystem
-  const repo = loadRepo(root, { tierOverride: opts.tierOverride });
-  return evaluate(repo, opts);
+  return evaluate(loadRepo(root), opts);
 }
 
 export function exitCodeFor(report: Report): number {

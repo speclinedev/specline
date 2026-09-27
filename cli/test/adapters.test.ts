@@ -9,12 +9,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadCanon } from "../src/canon.ts";
+import { canonFor, loadCanon } from "../src/canon.ts";
 
 const cli = fileURLToPath(new URL("../src/cli/index.ts", import.meta.url));
 const mcp = fileURLToPath(new URL("../src/mcp/index.ts", import.meta.url));
 const fixture = (name: string) => fileURLToPath(new URL(`fixtures/${name}`, import.meta.url));
 const env = { ...process.env, SPECLINE_NO_UPDATE_CHECK: "1" };
+/** The opt-in chapter's own heading — the thing `specline spec` slices away. */
+const PART3_HEADING = /^# Part 3\b/m;
 
 function temp(t: TestContext): string {
   const root = mkdtempSync(join(tmpdir(), "specline-adapter-"));
@@ -38,7 +40,9 @@ function tool(args: unknown) {
 test("CLI streams the complete canon through a pipe and returns clean JSON", () => {
   const spec = invoke(cli, ["spec"]);
   assert.equal(spec.status, 0, spec.stderr);
-  assert.equal(spec.stdout.trimEnd(), loadCanon().text.trimEnd());
+  // with the switch off (no specline.yml here) the canon stops before Part 3
+  assert.equal(spec.stdout.trimEnd(), canonFor(false).trimEnd());
+  assert.ok(canonFor(true).length > canonFor(false).length, "Part 3 must be the larger slice");
   const report = invoke(cli, ["check", fixture("clean"), "--format", "json"]);
   assert.equal(report.status, 0, report.stderr);
   assert.equal(JSON.parse(report.stdout).summary.errors, 0);
@@ -70,7 +74,7 @@ test("CLI exit codes separate findings from invalid input", (t) => {
     ["check", "/missing-specline-root"],
     ["check", fixture("clean"), "--now", "2026-02-30"],
     ["check", fixture("clean"), "--now", "yesterday"],
-    ["check", fixture("clean"), "--tier", "-1"],
+    ["check", fixture("clean"), "--tier", "2"], // canon 3.1: tiers are gone, so this is an unknown flag
     ["check", fixture("clean"), "--changed", "../escape"],
     ["init", file, "--yes"],
   ]) {
@@ -82,7 +86,7 @@ test("CLI exit codes separate findings from invalid input", (t) => {
 
 test("MCP validates its arguments and matches the CLI report byte for byte", () => {
   for (const args of [null, [], {}, { path: 42 }, { path: "/missing-specline-root" }, ...[
-    { tier: -1 }, { tier: 1.5 }, { mode: "banana" }, { now: "banana" }, { now: "2026-02-30" }, { now: 42 },
+    { mode: "banana" }, { now: "banana" }, { now: "2026-02-30" }, { now: 42 },
     { changed: [1] }, { modified: "docs/archive/old/spec.md" }, { changed: ["../escape"] },
   ].map((extra) => ({ path: fixture("clean"), ...extra }))]) {
     assert.equal(tool(args).isError, true, JSON.stringify(args));
@@ -125,5 +129,33 @@ test("MCP handles discovery, prompts, malformed JSON, notifications and split ch
   assert.deepEqual(responses[2].result.prompts.map((p: { name: string }) => p.name), ["shape"]);
   assert.match(responses[3].result.messages[0].content.text, /widgets/);
   assert.equal(responses[4].error.code, -32700);
-  assert.equal(responses[5].result.content[0].text, loadCanon().text);
+  assert.equal(responses[5].result.content[0].text, canonFor(false), "no path → switch off → Parts 1–2 only");
+  // Parts 1–2 *cite* Part 3 in prose ("Part 3 is not a further stage but a switch"),
+  // so the test is that the chapter itself is gone, not the words.
+  assert.ok(!PART3_HEADING.test(responses[5].result.content[0].text));
+});
+
+test("`rules` and `spec` follow the repo's switch, and never leak the Part-3 marker", (t) => {
+  const off = temp(t);
+  const on = temp(t);
+  writeFileSync(join(on, "specline.yml"), "unattended: true\n");
+
+  for (const [root, expected] of [[off, false], [on, true]] as const) {
+    const catalog = JSON.parse(invoke(cli, ["rules", root, "--format", "json"]).stdout);
+    assert.equal(catalog.unattended, expected);
+    const part3 = catalog.rules.filter((r: { part: number }) => r.part === 3);
+    assert.equal(part3.length > 0, expected, `part-3 rules listed: ${part3.length}`);
+    assert.ok(part3.every((r: { experimental: boolean }) => r.experimental === true));
+
+    const md = invoke(cli, ["rules", root]).stdout;
+    assert.equal(/experimental/.test(md.split("## Part 1")[1] ?? ""), expected);
+
+    const canon = invoke(cli, ["spec", root]).stdout;
+    assert.equal(PART3_HEADING.test(canon), expected, "the Part-3 chapter follows the switch");
+    assert.equal(canon.includes("Last green checkpoint"), expected, "...and so does the machinery only it documents");
+    assert.equal(canon.includes("The runner contract"), expected);
+    assert.ok(!canon.includes("specline:unattended"), "the section marker is machinery, never served");
+    assert.equal(canon.trimEnd(), canonFor(expected).trimEnd());
+  }
+  assert.ok(loadCanon().text.includes("<!-- specline:unattended -->"), "the bundled canon must carry the marker");
 });

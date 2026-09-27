@@ -142,7 +142,10 @@ for (const tier of [0, 1, 2]) {
     assert.equal(readFileSync(join(root, "docs/architecture.md"), "utf8"), authored);
     assert.match(readFileSync(join(root, "specline.yml"), "utf8"), /jonathan/);
     const report = run(root, { mode: "gate", changed: [], now: null });
-    assert.equal(report.tier, tier);
+    // canon 3.1 removed tiers; while `init --tier` still exists the scaffolded
+    // `tier: 2` maps onto the unattended switch, and nothing else about tier does
+    // anything. The flag itself goes in the scaffolder rewrite.
+    assert.equal(report.unattended, tier === 2);
     assert.equal(report.summary.errors, 0);
     assert.equal(existsSync(join(root, "docs/knowledge")), true);
     assert.equal(existsSync(join(root, "docs/decisions")), tier === 2);

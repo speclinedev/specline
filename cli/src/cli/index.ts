@@ -6,27 +6,30 @@
 import { existsSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { run, exitCodeFor, type Mode, type Report } from "../engine/run.ts";
-import { InputError } from "../engine/model.ts";
+import { InputError, readUnattendedSwitch } from "../engine/model.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { init, sync, upgrade, type RunResult } from "../init/scaffold.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
-import { loadCanon } from "../canon.ts";
+import { canonFor } from "../canon.ts";
 import { refreshLatest, staleness } from "../staleness.ts";
 
 const USAGE = `specline — spec-driven development tooling
 
   specline check  [PATH] [--mode author|gate] [--format json|human]
-                         [--changed <file>...] [--now <iso-date>] [--tier 0|1|2]
-  specline init    [PATH] [--tier 0|1|2] [--decider <name>]
+                         [--changed <file>...] [--now <iso-date>]
+  specline init    [PATH] [--decider <name>]
                           [--github-action | --no-github-action] [--check] [--yes]
   specline sync    [PATH] [--check]
   specline upgrade [PATH] [--check]
-  specline rules   [--format json|markdown]
-  specline spec
+  specline rules   [PATH] [--format json|markdown]
+  specline spec    [PATH]
 
   check validates a repo's structure (read-only). init/sync write generated artifacts.
   upgrade bumps the canon pin (specline.yml + doc-architecture.md) to this tool's
   canon and regenerates generated files.
+
+  rules and spec read PATH's specline.yml for the \`unattended:\` switch: with it off
+  (the default) the experimental Part 3 is neither listed nor served.
 
 Exit: 0 = ok, 1 = errors / --check stale, 2 = usage error, 3 = internal error.`;
 
@@ -40,7 +43,6 @@ interface Args {
   changed: string[];
   modified: string[];
   now: string | null;
-  tier: number | undefined;
   decider: string;
   githubAction: "yes" | "no" | "ask";
   check: boolean;
@@ -58,7 +60,7 @@ function fail(msg: string): never {
 function parseArgs(argv: string[]): Args {
   const a: Args = {
     command: "check", path: ".", mode: "gate", format: null, changed: [], modified: [], now: null,
-    tier: undefined, decider: "you", githubAction: "ask", check: false, yes: false,
+    decider: "you", githubAction: "ask", check: false, yes: false,
   };
   const sub = argv[0];
   if (sub === undefined || sub === "-h" || sub === "--help") {
@@ -93,12 +95,6 @@ function parseArgs(argv: string[]): Args {
       case "--now":
         a.now = argv[++i] ?? fail(`--now needs an ISO date`);
         break;
-      case "--tier": {
-        const v = Number(argv[++i]);
-        if (!Number.isInteger(v) || v < 0 || v > 2) fail(`--tier must be 0, 1, or 2`);
-        a.tier = v;
-        break;
-      }
       case "--changed":
         while (i + 1 < argv.length && !argv[i + 1]!.startsWith("--")) a.changed.push(argv[++i]!);
         break;
@@ -135,20 +131,34 @@ function parseArgs(argv: string[]): Args {
   return a;
 }
 
-function canonText(): string {
-  return loadCanon().text;
-}
+const PART_TITLES: Record<number, string> = {
+  1: "Part 1 — the spec",
+  2: "Part 2 — the record",
+  3: "Part 3 — unattended builds (experimental)",
+};
 
-function printRules(format: Format): void {
+/** The catalog an agent reads to know what it will be checked against *before* it
+ *  writes. With the switch off, Part-3 rules are omitted entirely rather than
+ *  listed-and-inert: nothing should advertise a rule that cannot fire. */
+function printRules(format: Format, unattended: boolean): void {
+  const parts: (1 | 2 | 3)[] = unattended ? [1, 2, 3] : [1, 2];
+  const listed = parts.flatMap((part) => REGISTRY.filter((r) => r.part === part));
   if (format === "json") {
-    process.stdout.write(`${JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, rules: REGISTRY }, null, 2)}\n`);
+    const rules = listed.map((r) => (r.part === 3 ? { ...r, experimental: true } : { ...r }));
+    process.stdout.write(`${JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, unattended, rules }, null, 2)}\n`);
     return;
   }
   const lines = [`# specline rules — catalog (tool ${TOOL_VERSION}, canon ${CANON})`, ""];
-  lines.push("| rule_id | severity | scope | tier | downgradable |");
-  lines.push("|---|---|---|---|---|");
-  for (const r of REGISTRY) {
-    lines.push(`| \`${r.rule_id}\` | ${r.severity} | ${r.scope} | ${r.tier} | ${r.downgradable} |`);
+  lines.push(unattended
+    ? "`unattended: true` — Part 3 is in force and its rules are listed as experimental."
+    : "`unattended` is off (the default), so the experimental Part-3 rules neither run nor are listed.");
+  for (const part of parts) {
+    lines.push("", `## ${PART_TITLES[part]}`, "");
+    lines.push("| rule_id | severity | scope | tags |");
+    lines.push("|---|---|---|---|");
+    for (const r of REGISTRY.filter((x) => x.part === part)) {
+      lines.push(`| \`${r.rule_id}\` | ${r.severity} | ${r.scope} | ${r.part === 3 ? "experimental" : ""} |`);
+    }
   }
   process.stdout.write(`${lines.join("\n")}\n`);
 }
@@ -157,7 +167,7 @@ const SEV_LABEL: Record<string, string> = { error: "ERROR ", warning: "WARN  ", 
 
 function renderHuman(report: Report, path: string): string {
   const out: string[] = [];
-  out.push(`specline ${report.tool_version} · canon ${report.canon} · mode ${report.mode} · tier ${report.tier}`);
+  out.push(`specline ${report.tool_version} · canon ${report.canon} · mode ${report.mode}${report.unattended ? " · unattended (experimental)" : ""}`);
   out.push(path);
   out.push("");
   if (report.findings.length === 0) {
@@ -203,18 +213,18 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.command === "spec") {
-    const text = canonText();
+    const text = canonFor(readUnattendedSwitch(args.path));
     process.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
     return;
   }
   if (args.command === "rules") {
-    printRules(args.format ?? "markdown");
+    printRules(args.format ?? "markdown", readUnattendedSwitch(args.path));
     return;
   }
   if (args.command === "init") {
     if (existsSync(args.path) && !statSync(args.path).isDirectory()) fail(`${args.path} is not a directory`);
     const res = init(args.path, {
-      tier: args.tier ?? 1,
+      tier: 1,
       decider: args.decider,
       githubAction: await resolveGithubAction(args),
       check: args.check,
@@ -236,7 +246,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now, tierOverride: args.tier });
+  const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now });
   const format = args.format ?? "human";
   if (format === "json") {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

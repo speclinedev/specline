@@ -9,12 +9,12 @@ import { run, evaluate, exitCodeFor } from "../src/engine/run.ts";
 import { loadRepo } from "../src/engine/model.ts";
 import { REGISTRY, REGISTRY_BY_ID } from "../src/engine/rules.ts";
 import { validate, type JsonSchema } from "../src/engine/schema.ts";
+import { fx, withMutatedFixture } from "./support.ts";
 
 const reportSchema: JsonSchema = JSON.parse(
   readFileSync(fileURLToPath(new URL("../schema/report.schema.json", import.meta.url)), "utf8"),
 );
 
-const fx = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
 const changedAll = ["docs/specs/widget/spec.md", "docs/specs/widget/relations.md"];
 const gate = (name: string, changed: string[] = []) =>
   run(fx(name), { mode: "gate", changed, now: "2026-06-14" });
@@ -197,6 +197,69 @@ test("canon-pin-skew: a repo pinning an older canon warns (CANON-PIN-MISMATCH), 
 test("canon pin matching the served canon does not warn", () => {
   assert.ok(!ruleIds(gate("clean")).includes("CANON-PIN-MISMATCH"), "no pin → no finding");
   assert.ok(!ruleIds(gate("lifecycle-gaps")).includes("CANON-PIN-MISMATCH"), "current pin → no finding");
+});
+
+// specline.yml used to be read with line regexes, which took the quotes as part of
+// the value. `canon: "2.4.0"` therefore parsed as `"2.4.0"`, failed the version
+// match, and silently disabled CANON-PIN-MISMATCH — the repo was gated by a
+// contract it did not claim. A real YAML parser on the failsafe schema is the fix:
+// quoted and unquoted scalars are the same string.
+test('a quoted canon pin (`canon: "2.4.0-draft"`) still surfaces CANON-PIN-MISMATCH, unquoted', () => {
+  withMutatedFixture("canon-pin-skew", (yml) => yml.replace(/^canon:\s*(\S+)\s*$/m, 'canon: "$1"'), (dir) => {
+    const r = run(dir, { mode: "gate", changed: [], now: "2026-06-14" });
+    const f = r.findings.find((x) => x.rule_id === "CANON-PIN-MISMATCH");
+    assert.ok(f, `expected CANON-PIN-MISMATCH, got ${JSON.stringify(ruleIds(r))}`);
+    assert.equal(f!.file, "specline.yml");
+    assert.equal(f!.line, 1);
+    assert.equal(f!.severity, "warning");
+    assert.ok(f!.message.includes("2.4.0-draft") && !f!.message.includes('"'),
+      `pin value must be unquoted in the message, got: ${f!.message}`);
+    assert.equal(exitCodeFor(r), 0);
+  });
+});
+
+test('a quoted switch (`unattended: "true"`, legacy `tier: "2"`) reads as its unquoted meaning', () => {
+  for (const line of ['unattended: "true"', 'tier: "2"']) {
+    withMutatedFixture("governance", (yml) => yml.replace(/^tier:.*$/m, line), (dir) => {
+      const r = run(dir, { mode: "gate", changed: [], modified: [], now: "2026-06-16" });
+      assert.equal(r.unattended, true, line);
+      assert.ok(new Set(ruleIds(r)).has("STALE-QUARANTINE"), `${line}: Part 3 must be in force`);
+    });
+  }
+});
+
+test("a trailing comment on a config line doesn't corrupt its value", () => {
+  withMutatedFixture(
+    "governance",
+    (yml) => yml
+      .replace(/^canon:\s*(\S+)\s*$/m, "canon: $1  # pinned; bump deliberately")
+      .replace(/^tier:\s*(\S+)\s*$/m, "unattended: true  # experimental"),
+    (dir) => {
+      const r = run(dir, { mode: "gate", changed: [], modified: [], now: "2026-06-16" });
+      assert.equal(r.unattended, true, "a trailing comment must not break the switch");
+      const f = r.findings.find((x) => x.rule_id === "CANON-PIN-MISMATCH");
+      assert.ok(f, `expected CANON-PIN-MISMATCH, got ${JSON.stringify(ruleIds(r))}`);
+      assert.ok(!f!.message.includes("#"), `comment must be stripped from the pin, got: ${f!.message}`);
+    },
+  );
+});
+
+test("a malformed specline.yml is bad input (InputError), not a finding and not a crash", () => {
+  for (const yml of [
+    "unattended: maybe\n",
+    "canon: three-point-one\n",
+    "canon: 3.1\ncanon: 3.0\n",
+    "focus_limit: 3\n",
+    "context_window: lots\n",
+    "coupling_ceiling: 150%\n",
+    "- a list, not a mapping\n",
+    "canon: 3.1\n\tunattended: true\n",
+  ]) {
+    withMutatedFixture("clean", () => yml, (dir) => {
+      assert.throws(() => run(dir, { mode: "gate", changed: [], now: "2026-06-14" }),
+        { name: "InputError" }, JSON.stringify(yml));
+    });
+  }
 });
 
 test("determinism: two evaluations of the same model are byte-identical", () => {

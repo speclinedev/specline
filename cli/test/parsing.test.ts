@@ -90,13 +90,14 @@ const BODY = ["", "# Widget", "", "## Intent", "Do the thing.", "", "## Goal", "
   "## Behavior", "1. It does the thing.", "", "## Acceptance checks", "- (agent-loopable) the thing happens.", ""].join("\n");
 const REL = "depends_on: none\npart_of: []\nsupersedes: []\nconflicts_with: []\n";
 
-function repo(t: TestContext, spec: string, rel: string = REL, status: string | null = null): string {
+function repo(t: TestContext, spec: string, rel: string = REL, status: string | null = null, unattended = false): string {
   const root = mkdtempSync(join(tmpdir(), "specline-parsing-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, "docs", "specs", "widget"), { recursive: true });
   writeFileSync(join(root, "docs", "specs", "widget", "spec.md"), spec);
   writeFileSync(join(root, "docs", "specs", "widget", "relations.md"), rel);
   if (status !== null) writeFileSync(join(root, "docs", "specs", "widget", "status.md"), status);
+  if (unattended) writeFileSync(join(root, "specline.yml"), "unattended: true\n");
   return root;
 }
 const ruleIds = (root: string): string[] =>
@@ -141,6 +142,7 @@ test("a malformed relations.md stays silent (no edges, no finding)", (t) => {
 test("a `## ` heading inside a blockquote does not satisfy status.md's schema", (t) => {
   const status = ["State", "Done", "In progress", "Last green checkpoint", "Dead ends", "Corrections"]
     .map((s) => `## ${s}\n`).join("\n");
-  assert.deepEqual(ruleIds(repo(t, FM + BODY, REL, status)), []);
-  assert.deepEqual(ruleIds(repo(t, FM + BODY, REL, status.replace("## Dead ends", "> ## Dead ends"))), ["STATUS-SCHEMA"]);
+  // status.md is Part 3, so the schema is only checked with the switch on.
+  assert.deepEqual(ruleIds(repo(t, FM + BODY, REL, status, true)), []);
+  assert.deepEqual(ruleIds(repo(t, FM + BODY, REL, status.replace("## Dead ends", "> ## Dead ends"), true)), ["STATUS-SCHEMA"]);
 });

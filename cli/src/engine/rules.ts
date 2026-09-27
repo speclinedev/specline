@@ -1,8 +1,8 @@
 // The rule registry and the rules. The registry is the single source of truth:
 // the engine runs these rules and `doctor rules` prints this same catalog, so a
 // finding can never carry a rule_id the catalog lacks. Each rule is a pure
-// function (context) -> raw findings; severity/scope/tier/downgradable live in
-// the registry, not in the rule body.
+// function (context) -> raw findings; severity/scope/part live in the registry,
+// not in the rule body.
 
 import { dirname, join, resolve } from "node:path";
 import { existsSync } from "node:fs";
@@ -10,54 +10,59 @@ import { parseFlatYaml, headings, links } from "./parse.ts";
 import type { Repo, RawFinding, RuleMeta, SpecFolder } from "./model.ts";
 import { CANON } from "../version.ts";
 
-// Two layers (canon 2.6). LAYER 1 — INTEGRITY: facts about the repo that are true
-// or false independent of any opinion about good specs. These are the only rules
-// that error and block the gate. LAYER 2 — ADVISORY: every judgment about whether a
-// spec is *good* (completeness, sizing, mechanics, lifecycle readiness). These warn,
-// never block; the decider owns "enough". `downgradable` is retained as metadata but
-// no longer drives behaviour now that author-mode downgrade is retired.
+// Two axes, both in the registry (canon 3.1).
+//
+// SEVERITY — integrity (error, blocks) vs. advisory (warning, never blocks).
+// Integrity is a fact about the repo that is true or false independent of any
+// opinion about good specs; advisory is every judgment about whether a spec is
+// *good*, and the decider owns "enough". *Gate integrity, advise on taste.*
+//
+// PART — which of the canon's three parts the rule belongs to. Parts 1 (writing a
+// spec) and 2 (keeping the record) always run. Part 3 (unattended builds) is
+// experimental and opt-in: it runs, and is listed by `specline rules`, only when
+// specline.yml sets `unattended: true`. There is no tier — one system, one switch.
 export const REGISTRY: RuleMeta[] = [
-  // ── Layer 1: integrity (error, blocks) ──────────────────────────────────────
+  // ── Part 1 — the spec ───────────────────────────────────────────────────────
   // spec.md is constitutive: a specs/ folder with no spec.md is not a spec at all
   // (and its dir-derived slug would let other specs' relations resolve to an empty
   // shell). The auxiliary files — relations.md, status.md — are advisory.
-  { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "FRONTMATTER-UNPARSEABLE", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "FRONTMATTER-SLUG-MISMATCH", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "ENUM-INVALID", severity: "error", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "RELATION-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "LINK-DANGLING", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "SLUG-DUPLICATE", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", tier: 1, downgradable: false },
-  // ── Layer 2: advisory (warning, never blocks) ───────────────────────────────
-  // structure & completeness (auxiliary files — advisory)
-  { rule_id: "STRUCT-MISSING-RELATIONS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "STATUS-SCHEMA", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "UNKNOWN-FRONTMATTER-KEY", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "UNKNOWN-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "RELATION-CROSS-REPO", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "RELATION-KILLED", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "GOAL-MISSING", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "LOOP-BUDGET-INVALID", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  // intent/altitude (B6 is advisory — an indicator, not a defect)
-  { rule_id: "JUDGEABLE-NO-SECTION", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "CHECK-RUN-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "PARENT-HAS-MECHANICS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "CANON-PIN-MISMATCH", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  // build-readiness (advisory: routing/verification metadata, not a gate)
-  { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "ARCHIVE-NO-ACCEPTANCE", severity: "warning", scope: "repo", tier: 1, downgradable: false },
-  { rule_id: "OPEN-QUESTION-INCOMPLETE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  { rule_id: "OPEN-QUESTION-OVERDUE", severity: "warning", scope: "spec", tier: 1, downgradable: false },
-  // tier-2 governance — advisory, and only surfaced when a repo declares tier 2.
-  { rule_id: "STALE-QUARANTINE", severity: "warning", scope: "spec", tier: 2, downgradable: false },
-  { rule_id: "DECIDER-OVER-BUDGET", severity: "warning", scope: "repo", tier: 2, downgradable: false },
-  { rule_id: "COUPLING-CEILING", severity: "warning", scope: "spec", tier: 2, downgradable: false },
+  { rule_id: "STRUCT-MISSING-SPEC", severity: "error", scope: "spec", part: 1 },
+  { rule_id: "FRONTMATTER-UNPARSEABLE", severity: "error", scope: "spec", part: 1 },
+  { rule_id: "FRONTMATTER-SLUG-MISMATCH", severity: "error", scope: "spec", part: 1 },
+  { rule_id: "ENUM-INVALID", severity: "error", scope: "spec", part: 1 },
+  { rule_id: "UNKNOWN-FRONTMATTER-KEY", severity: "warning", scope: "spec", part: 1 },
+  { rule_id: "UNKNOWN-SECTION", severity: "warning", scope: "spec", part: 1 },
+  { rule_id: "GOAL-MISSING", severity: "warning", scope: "spec", part: 1 },
+  { rule_id: "PARENT-HAS-MECHANICS", severity: "warning", scope: "spec", part: 1 },
+  { rule_id: "PARENT-NO-SCOPES", severity: "warning", scope: "spec", part: 1 },
+  // ── Part 2 — the record ─────────────────────────────────────────────────────
+  { rule_id: "SLUG-DUPLICATE", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "RELATION-DANGLING", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "LINK-DANGLING", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "KNOWLEDGE-HAS-STATUS", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "ARCHIVE-EDITED", severity: "error", scope: "repo", part: 2 },
+  { rule_id: "STRUCT-MISSING-RELATIONS", severity: "warning", scope: "spec", part: 2 },
+  { rule_id: "RELATION-CROSS-REPO", severity: "warning", scope: "repo", part: 2 },
+  { rule_id: "RELATION-KILLED", severity: "warning", scope: "repo", part: 2 },
+  { rule_id: "OPEN-QUESTION-INCOMPLETE", severity: "warning", scope: "spec", part: 2 },
+  { rule_id: "OPEN-QUESTION-OVERDUE", severity: "warning", scope: "spec", part: 2 },
+  { rule_id: "CANON-PIN-MISMATCH", severity: "warning", scope: "repo", part: 2 },
+  // ── Part 3 — unattended builds (experimental, opt-in) ───────────────────────
+  // Every one of these reads a key, a state, a heading, or a file that belongs to
+  // the unattended machinery. With the switch off they neither run nor are listed,
+  // so nothing advertises a rule that will not fire.
+  { rule_id: "STATUS-SCHEMA", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "CORRECTIONS-MALFORMED", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "LOOP-BUDGET-INVALID", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "JUDGEABLE-NO-SECTION", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "CHECK-RUN-MALFORMED", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "SCOPE-EXCEEDS-SIZE", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "RATIFIED-NO-BLAST-RADIUS", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "RATIFIED-ACCEPTANCE-UNPARTITIONED", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "ARCHIVE-NO-ACCEPTANCE", severity: "warning", scope: "repo", part: 3 },
+  { rule_id: "STALE-QUARANTINE", severity: "warning", scope: "spec", part: 3 },
+  { rule_id: "DECIDER-OVER-BUDGET", severity: "warning", scope: "repo", part: 3 },
+  { rule_id: "COUPLING-CEILING", severity: "warning", scope: "spec", part: 3 },
 ];
 
 export const REGISTRY_BY_ID: Map<string, RuleMeta> = new Map(REGISTRY.map((r) => [r.rule_id, r]));

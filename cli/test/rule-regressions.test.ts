@@ -22,8 +22,10 @@ function fixture(t: TestContext) {
     put(`docs/specs/${slug}/relations.md`, "depends_on: []\n");
   };
   spec();
+  /** Flip the repo's one switch. Part-3 rules do not run without it. */
+  const unattended = (on: boolean): void => put("specline.yml", `unattended: ${on}\n`);
   const check = (changed = ["docs/specs/widget/spec.md"]) => run(root, { mode: "gate", changed, now: "2026-06-14" });
-  return { root, put, spec, check };
+  return { root, put, spec, unattended, check };
 }
 const matching = (report: ReturnType<typeof run>, id: string) => report.findings.filter((f) => f.rule_id === id);
 const options: RunOptions = { mode: "gate", changed: [], now: null };
@@ -44,6 +46,7 @@ test("enums reject unknown values and accept every member", (t) => {
 
 test("loop_budget accepts positive integers only", (t) => {
   const f = fixture(t);
+  f.unattended(true); // LOOP-BUDGET-INVALID is Part 3
   for (const value of ["0", "-1", "1.5", "01.5", "two"]) {
     f.spec(`loop_budget: ${value}\n`);
     assert.equal(matching(f.check(), "LOOP-BUDGET-INVALID").length, 1, value);
@@ -56,6 +59,7 @@ test("loop_budget accepts positive integers only", (t) => {
 
 test("scope and focus limits fire above their threshold, never at it", (t) => {
   const f = fixture(t);
+  f.unattended(true); // SCOPE-EXCEEDS-SIZE and DECIDER-OVER-BUDGET are Part 3
   f.spec("", "## Behavior\n- first\n- second\n");
   let repo = loadRepo(f.root);
   repo.config.suggestSlicingPast = 2;
@@ -68,7 +72,8 @@ test("scope and focus limits fire above their threshold, never at it", (t) => {
   assert.equal(matching(evaluate(repo, options), "SCOPE-EXCEEDS-SIZE").length, 0);
 
   f.put("docs/specs/widget/spec.md", "---\nslug: widget\nstatus: building\ndecider: owner\n---\n");
-  repo = loadRepo(f.root, { tierOverride: 2 });
+  repo = loadRepo(f.root);
+  repo.unattended = true; // DECIDER-OVER-BUDGET is Part 3
   repo.config.focusLimitBuilding = 1;
   repo.config.focusLimitActive = 1;
   assert.equal(matching(evaluate(repo, options), "DECIDER-OVER-BUDGET").length, 0);
@@ -94,7 +99,8 @@ test("coupling sums transitively, dedupes cycles, and fires only over the ceilin
   f.spec("", "## Goal\nB\n", "child");
   f.put("docs/specs/widget/relations.md", "depends_on: [child, child]\n");
   f.put("docs/specs/child/relations.md", "part_of: widget\n");
-  const repo = loadRepo(f.root, { tierOverride: 2 });
+  const repo = loadRepo(f.root);
+  repo.unattended = true; // COUPLING-CEILING is Part 3
   const total = repo.specs.reduce((sum, s) => sum + s.specContent!.length + s.relationsContent!.length, 0);
   repo.config.couplingCeilingPct = 100;
   repo.config.contextWindowChars = total;
