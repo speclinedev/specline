@@ -147,7 +147,7 @@ export function speclineYml(tier: number, decider: string): string {
     "# Scaffolded by `specline init` — edit freely; this is the source of truth.",
     `canon: ${CANON}`,
     `tier: ${tier}`,
-    `deciders: [${decider}]`,
+    `deciders: [${JSON.stringify(decider)}]`,
     "deputy: null",
     "staleness:            # how long before an untouched build is presumed abandoned",
     "  building: 30 days",
@@ -186,7 +186,7 @@ export function githubWorkflow(): string {
 name: specline
 on:
   pull_request:
-    paths: ["docs/**"]
+    paths: ["docs/**", "specline.yml"]
 jobs:
   specline:
     runs-on: ubuntu-latest
