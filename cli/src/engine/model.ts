@@ -3,8 +3,60 @@
 // functions consume. It never executes, imports, or compiles repo code.
 
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { parseFrontmatter, type Frontmatter } from "./parse.ts";
+
+/** Bad input from a caller (CLI flag, MCP argument, API option) — never a bug in
+ *  the engine. Adapters map it to their own "you asked for something invalid"
+ *  channel; nothing else in the engine throws. */
+export class InputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InputError";
+  }
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validatePaths(key: string, value: unknown): void {
+  const bad = (p: unknown): boolean =>
+    typeof p !== "string" || p === "" || p.includes("\0") ||
+    /^(?:[A-Za-z]:|[/\\])/.test(p) || p.replace(/\\/g, "/").split("/").includes("..");
+  if (!Array.isArray(value) || value.some(bad)) {
+    throw new InputError(`${key} must contain repository-relative paths (no absolute paths, no "..")`);
+  }
+}
+
+/** Every adapter funnels through here, so "the validator ran on what you meant"
+ *  is checked once rather than per transport. */
+export function validateRunOptions(opts: { mode: unknown; changed: unknown; modified?: unknown; now: unknown; tierOverride?: unknown }): void {
+  if (opts.mode !== "gate" && opts.mode !== "author") throw new InputError("mode must be gate or author");
+  validatePaths("changed", opts.changed);
+  validatePaths("modified", opts.modified ?? []);
+  if (opts.tierOverride !== undefined && ![0, 1, 2].includes(opts.tierOverride as number)) {
+    throw new InputError("tier must be 0, 1, or 2");
+  }
+  if (opts.now !== null && opts.now !== undefined) {
+    if (typeof opts.now !== "string" || !ISO_DATE.test(opts.now)) throw new InputError("now must be an ISO date (YYYY-MM-DD)");
+    const date = new Date(`${opts.now}T00:00:00Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== opts.now) {
+      throw new InputError(`now must be a real calendar date (${opts.now} is not)`);
+    }
+  }
+}
+
+/** Resolve and verify the repo root: an absolute path with a docs/ directory. */
+export function resolveRepoRoot(root: string): string {
+  if (typeof root !== "string" || root.trim() === "" || root.includes("\0")) {
+    throw new InputError("path must be a non-empty repository path");
+  }
+  const absolute = resolve(root);
+  const docsDir = join(absolute, "docs");
+  if (!existsSync(docsDir) || !statSync(docsDir).isDirectory()) {
+    throw new InputError(`no docs/ directory at ${absolute}; run specline init first`);
+  }
+  return absolute;
+}
 
 export type Severity = "error" | "warning" | "info";
 export type Scope = "repo" | "spec";
@@ -254,6 +306,10 @@ export interface LoadOptions {
 
 /** Locate `docs/` beneath `root` and build the repo model. */
 export function loadRepo(root: string, opts: LoadOptions = {}): Repo {
+  root = resolveRepoRoot(root);
+  if (opts.tierOverride !== undefined && ![0, 1, 2].includes(opts.tierOverride)) {
+    throw new InputError("tier must be 0, 1, or 2");
+  }
   const docsDir = join(root, "docs");
   const specsDir = join(docsDir, "specs");
   const knowledgeDir = join(docsDir, "knowledge");

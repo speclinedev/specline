@@ -3,10 +3,10 @@
 // parses args, renders output (JSON is the source of truth; human is a projection),
 // and maps results to a stable exit code. All real logic lives in the engine/init.
 
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { run, exitCodeFor, type Mode, type Report } from "../engine/run.ts";
+import { InputError } from "../engine/model.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { init, sync, upgrade, type RunResult } from "../init/scaffold.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
@@ -47,9 +47,12 @@ interface Args {
   yes: boolean;
 }
 
+/** Help is not an error, but it does end the run — and `process.exit` here would
+ *  truncate anything still buffered on stdout. Both unwind to main().catch. */
+class HelpRequested extends Error {}
+
 function fail(msg: string): never {
-  process.stderr.write(`specline: ${msg}\n\n${USAGE}\n`);
-  process.exit(2);
+  throw new InputError(`${msg}\n\n${USAGE}`);
 }
 
 function parseArgs(argv: string[]): Args {
@@ -60,7 +63,7 @@ function parseArgs(argv: string[]): Args {
   const sub = argv[0];
   if (sub === undefined || sub === "-h" || sub === "--help") {
     process.stdout.write(`${USAGE}\n`);
-    process.exit(0);
+    throw new HelpRequested();
   }
   if (sub === "check" || sub === "doctor") a.command = "check"; // `doctor` kept as a silent back-compat alias
   else if (sub === "rules") a.command = "rules";
@@ -121,7 +124,7 @@ function parseArgs(argv: string[]): Args {
       case "-h":
       case "--help":
         process.stdout.write(`${USAGE}\n`);
-        process.exit(0);
+        throw new HelpRequested();
       default:
         if (arg.startsWith("--")) fail(`unknown flag ${arg}`);
         if (sawPath) fail(`unexpected extra argument ${arg}`);
@@ -202,13 +205,14 @@ async function main(): Promise<void> {
   if (args.command === "spec") {
     const text = canonText();
     process.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
-    process.exit(0);
+    return;
   }
   if (args.command === "rules") {
     printRules(args.format ?? "markdown");
-    process.exit(0);
+    return;
   }
   if (args.command === "init") {
+    if (existsSync(args.path) && !statSync(args.path).isDirectory()) fail(`${args.path} is not a directory`);
     const res = init(args.path, {
       tier: args.tier ?? 1,
       decider: args.decider,
@@ -216,21 +220,20 @@ async function main(): Promise<void> {
       check: args.check,
     });
     process.stdout.write(renderScaffold("init", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
   if (args.command === "sync") {
     const res = sync(args.path, { check: args.check });
     process.stdout.write(renderScaffold("sync", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
   if (args.command === "upgrade") {
     const res = upgrade(args.path, { check: args.check });
     process.stdout.write(renderScaffold("upgrade", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
-  }
-
-  if (!existsSync(join(args.path, "docs"))) {
-    fail(`no docs/ directory found under ${args.path}`);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
 
   const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now, tierOverride: args.tier });
@@ -245,10 +248,15 @@ async function main(): Promise<void> {
       process.stderr.write(`\nnote: serving canon ${stale.current}; ${stale.latest} is the latest release — update your speclinedev/specline@ ref.\n`);
     }
   }
-  process.exit(exitCodeFor(report));
+  process.exitCode = exitCodeFor(report);
 }
 
+// Nothing here calls process.exit: it discards whatever stdout has buffered, and a
+// JSON report over ~64 KiB through a pipe came out truncated. Setting exitCode and
+// letting the event loop drain is the whole fix.
 main().catch((err) => {
-  process.stderr.write(`specline: internal error: ${err instanceof Error ? err.message : String(err)}\n`);
-  process.exit(3);
+  if (err instanceof HelpRequested) return;
+  const input = err instanceof InputError;
+  process.stderr.write(`specline: ${input ? "" : "internal error: "}${err instanceof Error ? err.message : String(err)}\n`);
+  process.exitCode = input ? 2 : 3;
 });

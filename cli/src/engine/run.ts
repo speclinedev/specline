@@ -2,7 +2,7 @@
 // downgrade and quarantine -> deterministic sort -> summary. Pure given (repo
 // state, options); the only inputs are the model and the run options.
 
-import { loadRepo, type Repo, type Finding, type RawFinding } from "./model.ts";
+import { loadRepo, validateRunOptions, type Repo, type Finding, type RawFinding } from "./model.ts";
 import { REGISTRY_BY_ID, RULES, type RuleContext } from "./rules.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
 
@@ -43,6 +43,7 @@ function compareFindings(a: Finding, b: Finding): number {
 
 /** Evaluate an already-loaded repo model. */
 export function evaluate(repo: Repo, opts: RunOptions): Report {
+  validateRunOptions(opts);
   const changed = new Set(opts.changed.map(normalize));
   const modified = new Set((opts.modified ?? []).map(normalize));
   const ctx: RuleContext = { repo, changed, modified, now: opts.now };
@@ -99,6 +100,7 @@ export function evaluate(repo: Repo, opts: RunOptions): Report {
 
 /** Load a repo at `root` and evaluate it. */
 export function run(root: string, opts: RunOptions): Report {
+  validateRunOptions(opts); // before touching the filesystem
   const repo = loadRepo(root, { tierOverride: opts.tierOverride });
   return evaluate(repo, opts);
 }
