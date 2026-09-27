@@ -108,7 +108,7 @@ test("check-run-malformed: a bad \u2014 run: item warns once; well-formed and ab
   const r = gate("check-run-malformed");
   const hits = r.findings.filter((f) => f.rule_id === "CHECK-RUN-MALFORMED");
   assert.equal(hits.length, 1, `expected exactly one CHECK-RUN-MALFORMED, got ${JSON.stringify(ruleIds(r))}`);
-  assert.equal(hits[0].severity, "warning");
+  assert.equal(hits[0]!.severity, "warning");
   assert.equal(exitCodeFor(r), 0);
 });
 
