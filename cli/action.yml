@@ -30,8 +30,12 @@ runs:
         # Two-dot (not three-dot) so this works in a depth-1 clone with no merge base, and
         # `|| true` so a diff failure can never abort the gate under set -e / pipefail.
         changed="$(git diff --name-only "$baseref" HEAD -- 'docs/**' 2>/dev/null | tr '\n' ' ' || true)"
-        # modifications/deletions/renames only (not pure adds) — for edit detection on archive/
-        modified="$(git diff --name-status "$baseref" HEAD -- 'docs/**' 2>/dev/null | awk '$1 ~ /^[MDR]/ {print $NF}' | tr '\n' ' ' || true)"
+        # modifications/deletions only (not additions) — for edit detection on archive/.
+        # --no-renames so a graduation (specs/<slug>/spec.md -> archive/<slug>/spec.md)
+        # reads as a delete + an add, not a rename: the archive add is correctly excluded
+        # (graduation is allowed), while true archive edits (M) and deletions (D), including
+        # a rename that moves an archived file, still register on their old path.
+        modified="$(git diff --no-renames --name-status "$baseref" HEAD -- 'docs/**' 2>/dev/null | awk '$1 ~ /^[MD]/ {print $NF}' | tr '\n' ' ' || true)"
         echo "Changed under docs/: ${changed:-<none>}"
         echo "Modified (not added): ${modified:-<none>}"
         node "$GITHUB_ACTION_PATH/src/action/main.ts" "${{ inputs.path }}" \
