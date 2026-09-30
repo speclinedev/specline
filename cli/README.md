@@ -49,7 +49,15 @@ specline spec    [PATH]
 
 `check` validates a repo's structure (read-only) and is the default command.
 `init`/`sync` write generated artifacts (folder READMEs, `specline.yml`);
-`upgrade` bumps the canon pin and regenerates them. `rules` and `spec` read
+`upgrade` bumps the canon pin, migrates legacy tiers, regenerates generated
+artifacts, and moves whole `docs/specs/<slug>/` folders carrying `status: draft`
+or `status: ratified` into `docs/drafts/<slug>/`. File contents are preserved;
+paths change. `status: building` and status-free folders stay put. Preview
+with `specline upgrade PATH --check` (no writes; exit 1 when changes are
+needed), then review an actual upgrade in a disposable copy before adoption.
+A pin edit alone does not perform these moves.
+
+`rules` and `spec` read
 `PATH`'s `specline.yml` for the `unattended:` switch — with it off (the
 default) the experimental Part 3 is neither listed nor served.
 
