@@ -2,16 +2,11 @@
 
 | Field | Value |
 |---|---|
-| **Canon** | Specline `2.7.0` (governing contract: `specline-2.7.md` in repo `speclinedev/specline`; supersedes `spec-flow-v2` when ratified) |
-| **Note** | v2.3 adds the acceptance-check partition, the `status.md` schema, the Assumptions section, and `blast_radius`/`target_model` routing. `doctor` builds the **structural** subset of these now; the **state-gate** rules (e.g. `ratified` requires `blast_radius` + partitioned acceptance) are deferred to the lifecycle spec. |
-| **Tier** | **1 — the loop.** Ratification frontmatter, the two-PR pattern, graduation + `archive/`, `knowledge/`. (Tier 2 enforcement — TTL/quarantine, decider budget, context budget — is exactly what `doctor` is being built to provide; this repo ratchets to Tier 2 once `doctor` self-validates.) |
-| **Decider** | `jonathan` (non-delegable per B3) |
-| **Deputy** | none yet — TTL/open-question deadlines park to stated defaults until one is named |
-| **`doctor` distribution** | TBD — see `doctor/open-questions.md`. Proposed: a canon-version-pinned package (`doctor@2.x` ↔ `canon 2.x.0`) with a standalone compiled binary for the Tier-0 vendored case. |
+| **Canon** | Specline `3.1` (governing contract: `specline-3.1.md` in repo `speclinedev/specline`) |
+| **Decider** | `jonathan` (non-delegable) |
+| **Deputy** | none yet — staleness/open-question deadlines park to stated defaults until one is named |
+| **`specline` distribution** | See `doctor/open-questions.md`. A canon-MAJOR.MINOR-pinned package (`specline` CLI, `@vMAJOR.MINOR` on the GitHub Action) plus standalone compiled binaries built from the same source. |
 
-## Bootstrap note
-
-`doctor` does not exist yet, so this repo's own conformance is checked by hand
-against the canon's *Enforcement: the doctor* section. The first passing
-`doctor` build runs against this repo as fixture zero. Until then, treat the
-self-check in `doctor` as the manual stand-in.
+This table is optional prose/rationale — `specline.yml` at the repo root is the
+machine-readable source of truth for the canon pin and thresholds Specline
+actually reads (`CANON-PIN-MISMATCH` compares that pin, not this file).
