@@ -1,35 +1,38 @@
 ---
 import Docs from "../../../layouts/Docs.astro";
 
-const states = [
-  { name: "draft", set: "Agent / PO, while shaping", means: "Being shaped. Acceptance checks may not yet be falsifiable; open questions may be unresolved.", to: "→ ratified (a human approves), or → killed (abandoned)." },
-  { name: "ratified", set: "The named decider, by their go in git", means: "A human read the contract and approved it — the commit that flips status out of draft is the record, on whichever branch the work is on, and git owns who/when. Build-ready when open-questions.md is clean. (A spec may also go straight from draft to building; ratified is the approved-not-yet-building waypoint.)", to: "→ building (the builder starts), or → draft (reshape)." },
-  { name: "building", set: "The builder, on starting the build", means: "Under construction. Unattended, it carries a stale_after date — the abandonment trigger (B4).", to: "→ shipped (graduates), → blocked (hits a contradiction), or → killed." },
-  { name: "blocked", set: "The builder, on hitting a contradiction — unattended only", means: "The unattended handback: paused on something the loop can't resolve, carrying a stale_after date and recording the dead end in status.md. Attended there is nothing to hand back to — the builder says so, the decider agrees, the spec is amended in the branch, and no status flips.", to: "→ building (resume against the amended contract), or → killed." },
-  { name: "shipped", set: "Graduation, wired to the implementation PR", means: "Done. The contract moves to archive/ verbatim with an acceptance-results link; knowledge/ describes the shipped reality. Exists only in archive/.", to: "Terminal." },
-  { name: "killed", set: "A deliberate kill, or an abandoned draft", means: "Dropped. Archived with a one-line tombstone stating why (\"abandoned\" for a draft dropped before ship). The slug stays burned. Exists only in archive/.", to: "Terminal." },
+const locations = [
+  { name: "docs/drafts/<slug>/", set: "Agent / PO, while shaping", means: "Being shaped — an idea, not a commitment. May be incomplete; nothing may depend on it yet, so it may simply be deleted.", to: "→ docs/specs/ (the decider's go), or deleted / archived as killed (\"abandoned\")." },
+  { name: "docs/specs/<slug>/", set: "The decider, by moving the folder", means: "Approved for build — the move itself, recorded in git, is the record. No status field tracks progress here; the folder's presence is the state, whether the build hasn't started yet or is well underway.", to: "→ docs/knowledge/ + docs/archive/ (ships), or → docs/archive/ (killed)." },
+  { name: "docs/knowledge/<slug>/ + docs/archive/<slug>/", set: "Graduation, wired to the implementation PR", means: "Shipped. archive/ holds the contract, verbatim, with an acceptance-results link, status: shipped, read-only forever — what was promised. knowledge/ is the living, present-tense description — what it became.", to: "Terminal." },
+  { name: "docs/archive/<slug>/ (alone)", set: "A deliberate kill, or an abandoned draft", means: "Dropped. Archived with a one-line tombstone stating why (\"abandoned\" for a draft dropped before ship) and status: killed. The slug stays burned.", to: "Terminal." },
 ];
 ---
 <Docs title="Reference — lifecycle & states">
   <div class="doc-kicker">Reference · Lifecycle</div>
-  <h1>The states, and the moves</h1>
+  <h1>State is location</h1>
   <p class="doc-lead">
-    A spec has one <code>status</code> at a time, carried in its frontmatter — identity and
-    state, nothing else. Four <strong>moves</strong> carry it from an idea to a shipped, archived
-    contract; <em>reshape</em> is a normal move back, not a failure. The two terminal states,
-    <code>shipped</code> and <code>killed</code>, exist <strong>only in <code>archive/</code></strong> —
-    set during archiving, never seen in <code>specs/</code>.
+    <strong>Where a spec lives is its state</strong> — there is no frontmatter <code>status</code>
+    field to keep in step with the folder. Four folders under <code>docs/</code> carry the
+    whole lifecycle, and a spec is in exactly one of them. Four <strong>moves</strong> carry it
+    from an idea to a shipped, archived contract; <em>reshape</em> is a normal move, not a
+    failure. The sequence isn't prescribed — shape, approve, build, and graduate can be one
+    commit or several branches; Specline reads folders, not order. The only place a
+    <code>status</code> field still appears is <code>archive/</code> (<code>shipped | killed</code>)
+    — location can't tell those two apart there. A <code>status:</code> line written against an
+    earlier canon (including <code>ratified</code>, <code>building</code>, <code>blocked</code>)
+    is recognised silently.
   </p>
 
-  <h2>The states</h2>
-  <p>Each state names what's true, who sets it, and where it can go next:</p>
+  <h2>The locations</h2>
+  <p>Each location names what's true, who moves a spec into it, and where it can go next:</p>
   <div class="tbl-wrap">
     <table class="book-table">
       <thead>
-        <tr><th>State</th><th>What it means</th><th>Who sets it</th><th>Transitions</th></tr>
+        <tr><th>Location</th><th>What it means</th><th>Who moves it</th><th>Transitions</th></tr>
       </thead>
       <tbody>
-        {states.map((s) => (
+        {locations.map((s) => (
           <tr>
             <td><code>{s.name}</code></td>
             <td>{s.means}</td>
@@ -42,19 +45,19 @@ const states = [
   </div>
 
   <h2>The four moves</h2>
-  <p>The lifecycle loop is the feature's journey <em>across</em> the gates — distinct from the autonomous build loop that runs <em>inside</em> the build step:</p>
+  <p>The lifecycle loop is the feature's journey <em>across</em> the gates — distinct from the experimental, opt-in build loop that can run <em>inside</em> the build step (unattended builds only; see <a href="/docs/reference/altitudes">acceptance altitudes</a>):</p>
 
   <div class="bcard">
     <h3>Shape <span class="gate-tag gate-human">agent + PO</span></h3>
-    <p>An agent drafts the contract; the PO edits. The spec lives in <code>draft</code> until it carries a falsifiable Goal and partitioned acceptance checks. Specline runs in author mode here — advisory, reporting distance to ratifiable, not failure.</p>
+    <p>An agent drafts the contract in <code>docs/drafts/</code>; the PO edits. Only parse-level integrity runs here — incomplete is what a draft is for.</p>
   </div>
   <div class="bcard">
-    <h3>Ratify <span class="gate-tag gate-human">decider · the first gate</span></h3>
-    <p>A named human reads the whole contract in one sitting (B1) and gives it their <strong>go, recorded in git</strong> — the commit that flips <code>status</code> out of <code>draft</code>, made or approved by the decider on whichever branch the work is on. Git records who and when. The spec does <em>not</em> have to merge first. <code>draft</code> → <code>ratified</code> (or straight to <code>building</code>).</p>
+    <h3>Approve <span class="gate-tag gate-human">decider · the first gate</span></h3>
+    <p>A named human reads the whole contract in one sitting (<em>One sitting</em>) and gives it their <strong>go</strong> — moving the folder from <code>docs/drafts/</code> to <code>docs/specs/</code>, in a commit made or approved by the decider, on whichever branch the work is on. Git records who and when. The spec does <em>not</em> have to merge first.</p>
   </div>
   <div class="bcard">
     <h3>Build <span class="gate-tag gate-human">builder · attended by default</span></h3>
-    <p>The builder flips the spec to <code>building</code> and works toward the Goal, against the agent-loopable checks. <strong>Attended</strong> (the default) the decider is reachable: the builder disagrees out loud and the spec is amended by agreement. <strong>Unattended</strong> (<code>build: unattended</code>) it runs the autonomous loop and escalates back to a human at the first of two triggers — <code>loop_budget</code> exhausted or <code>stale_after</code> reached — and a contradiction flips it to <code>blocked</code>.</p>
+    <p>The builder works from <code>docs/specs/&lt;slug&gt;/</code> toward the Goal, against the acceptance checks. <strong>Attended</strong> (the default) the decider is reachable: the builder disagrees out loud and the spec is amended by agreement. <strong>Unattended</strong> (<code>build: unattended</code>, experimental) it runs the autonomous loop and escalates back to a human at the first of two triggers — <code>loop_budget</code> exhausted or <code>stale_after</code> reached — and a contradiction parks it <code>blocked</code> in <code>status.md</code>.</p>
   </div>
   <div class="bcard">
     <h3>Graduate <span class="gate-tag gate-human">agent · wired to the impl PR</span></h3>
@@ -63,19 +66,21 @@ const states = [
 
   <h2>One branch, or two</h2>
   <p>
-    The <strong>normal shape is one branch</strong>: the spec folder is added, the decider's go flips
-    <code>status: building</code>, the build lands against it, graduation runs, and one pull request
-    carries all three. Its approving merge is the record of contract, build, and graduation.
+    The <strong>normal shape is one branch</strong>: the spec folder is created in <code>drafts/</code>,
+    the decider's go moves it to <code>specs/</code>, the build lands against it, graduation runs,
+    and one pull request carries all of it. Its approving merge is the record of contract, build,
+    and graduation.
   </p>
   <p>
-    A <strong>spec PR ahead of the build</strong> is the two-branch shape: the spec lands first,
-    and the implementation PR follows, referencing the slug. Reach for it when shaping runs well
-    ahead of building, when several branches are shaping in parallel and a slug needs claiming early,
-    or when an unattended runner requires a landed baseline. It is a legal shape, not the rule —
-    and the slug freezes when the spec lands on the merge target, not at ratification.
+    A <strong>spec landed ahead of the build</strong> is the two-branch shape: the move to
+    <code>specs/</code> lands first, and the implementation PR follows, referencing the slug.
+    Reach for it when shaping runs well ahead of building, when several branches are shaping in
+    parallel and a slug needs claiming early, or when an unattended runner requires a landed
+    baseline. It is a legal shape, not the rule — and the slug freezes when the spec lands on the
+    merge target, not at the decider's go.
   </p>
 
-  <div class="callout"><span class="ci">▸</span><p><strong>Reshape is a normal move.</strong> The spec on the branch being built is the contract, and it changes as the build teaches. <strong>Attended:</strong> the builder says so in product terms, the decider agrees, the builder edits <code>spec.md</code> in the branch — acceptance checks included, proposed before they're changed — and the diff is the record. No status flip, no separate PR. <strong>Unattended:</strong> there's no conversation to have, so it's a handback — flip to <code>blocked</code>, land a decider-approved spec-amendment commit touching only the spec folder (resetting <code>stale_after</code> in the same commit), then resume <code>building</code>.</p></div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Reshape is a normal move.</strong> The spec on the branch being built is the contract, and it changes as the build teaches. <strong>Attended:</strong> the builder says so in product terms, the decider agrees, the builder edits <code>spec.md</code> in the branch — acceptance checks included, proposed before they're changed — and the diff is the record. No folder move, no separate PR. <strong>Unattended (experimental):</strong> there's no conversation to have, so it's a handback — set <code>status.md</code>'s State to <code>blocked</code>, land a decider-approved spec-amendment commit touching only the spec folder (resetting <code>stale_after</code> in the same commit), then resume.</p></div>
 
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a>. The law: <a href="/spec.md">the canon, "Lifecycle"</a>.</p></div>
 </Docs>

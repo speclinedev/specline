@@ -14,7 +14,7 @@ import Docs from "../../layouts/Docs.astro";
   <p>
     Drop a <code>CLAUDE.md</code> at the repo root. Claude Code reads it on open, so any
     agent you start there is briefed before you've said a word. A ready template lives at
-    <code>specline/templates/specline-CLAUDE.md</code>; it tells the agent it's a Specline
+    <code>docs/conventions/specline-CLAUDE.md</code>; it tells the agent it's a Specline
     repo, how to shape and migrate plans with you, and to reach for Specline tools.
   </p>
 
@@ -36,12 +36,12 @@ import Docs from "../../layouts/Docs.astro";
 Migrate this plan into Specline with me: &lt;the file&gt;.</pre>
       </div>
     </li>
-    <li>The agent pulls the canon (<code>specline_spec</code>), asks you the shaping questions, and writes the spec folder — checking itself with <code>specline_check</code> (author mode) as it goes.</li>
-    <li>You read the result in one sitting and sign it, or send it back. That's the ratify gate — your call, not the machine's.</li>
+    <li>The agent pulls the canon (<code>specline_spec</code>), asks you the shaping questions, and writes the spec folder in <code>docs/drafts/</code> — checking itself with <code>specline_check</code> as it goes (only parse-level integrity runs against a draft).</li>
+    <li>You read the result in one sitting and approve it — moving it to <code>docs/specs/</code> — or send it back. That's the approve gate — your call, not the machine's.</li>
   </ol>
 
   <div class="callout"><span class="ci">▲</span><p>Here's what you <em>don't</em> have to do: remember the spec structure, check it's right by hand, or learn the rules before you start. The agent knows the structure (from <code>specline_spec</code>), Specline checks it, and <code>specline_rules</code> lists the checks on demand.</p></div>
 
   <h2>You don't need Claude Code for this</h2>
-  <p>Any agent with shell access does the same: have it run <code>specline spec</code> to load the canon and <code>specline check --mode author --format json</code> to check its work. MCP just makes the discovery automatic.</p>
+  <p>Any agent with shell access does the same: have it run <code>specline spec</code> to load the canon and <code>specline check --format json</code> to check its work. MCP just makes the discovery automatic.</p>
 </Docs>

@@ -7,7 +7,7 @@ const files = [
   { name: "open-questions.md", role: "required", purpose: "Unresolved decisions, each carrying who decides, the options, the default, and the deadline.", when: "Required while unresolved decisions exist. An entry with a default and a future deadline is legal during building — indecision becomes a logged choice with an override window." },
   { name: "status.md", role: "required", purpose: "The build's memory across fresh-context iterations — the resume point and the dead ends a stateless re-entry cannot reconstruct from the diff.", when: "Required for unattended builds; optional otherwise. Fixed schema (State / Done / In progress / Last green checkpoint / Dead ends / Corrections); Specline checks shape, never prose." },
   { name: "discovery.md", role: "optional", purpose: "Customer evidence, code research, rationale — the why behind the shape.", when: "Optional. Loaded for product thinking and reshape, not for the build." },
-  { name: "implementation.md", role: "optional", purpose: "The build-scratch: the 'how' B6 keeps out of spec.md — implementation proposals, mechanics, and suggested UI approach. (Adopts an engineering design-doc format.) A repo's design system / UI standards are NOT this file — they live at the repo level alongside architecture.md.", when: "Optional. Relocate the 'how' here, NOT into spec.md. It does not graduate." },
+  { name: "implementation.md", role: "optional", purpose: "The build-scratch: the 'how' Intent over description keeps out of spec.md — implementation proposals, mechanics, and suggested UI approach. (Adopts an engineering design-doc format.) A repo's design system / UI standards are NOT this file — they live at the repo level alongside architecture.md.", when: "Optional. Relocate the 'how' here, NOT into spec.md. It does not graduate." },
   { name: "api.md", role: "optional", purpose: "A feature-specific API contract.", when: "Optional. Only when the spec defines an interface worth pinning separately." },
 ];
 ---
@@ -15,11 +15,11 @@ const files = [
   <div class="doc-kicker">Reference · Spec folder</div>
   <h1>The spec folder</h1>
   <p class="doc-lead">
-    One folder per in-flight feature, living in <code>docs/specs/&lt;slug&gt;/</code> — the folder name is the slug, which is the spec's identity. The folder
+    One folder per feature, living in <code>docs/drafts/&lt;slug&gt;/</code> while it's being shaped and <code>docs/specs/&lt;slug&gt;/</code> once approved — the folder name is the slug, which is the spec's identity, and the location is its state. The folder
     <em>is</em> its <code>spec.md</code> — the build contract — and everything else orbits it:
     the graph that connects it, the questions still open, the build's own memory, and optional
-    research and plan. Three files are always present, one more whenever a build runs unattended,
-    the rest only when there's something to put in them.
+    research and plan. Two files are always present; open-questions.md is needed while decisions remain unresolved,
+    and status.md when a build runs unattended. Other files carry optional context.
   </p>
   <p>Knowing which file a thing belongs in — and which it does <em>not</em> — is what lets a fresh-context agent load only what the task needs:</p>
   {files.map((f) => (

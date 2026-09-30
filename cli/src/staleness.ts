@@ -11,7 +11,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, dirname } from "node:path";
+import { join, dirname, isAbsolute } from "node:path";
 
 const REPO = process.env.SPECLINE_REPO ?? "speclinedev/specline";
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -39,13 +39,24 @@ export function checkSuppressed(): boolean {
 }
 
 function cachePath(): string {
-  const base = process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache");
-  return join(base, "specline", "latest-release.json");
+  // Per the XDG spec a relative $XDG_CACHE_HOME is invalid and must be ignored —
+  // resolving it against the cwd would scatter caches through users' repos.
+  const base = process.env.XDG_CACHE_HOME;
+  const dir = base !== undefined && isAbsolute(base) ? base : join(homedir(), ".cache");
+  return join(dir, "specline", "latest-release.json");
 }
 
+/** The cache is a file on a user's disk: half-written, hand-edited, or from a
+ *  future version. Anything that is not a well-formed entry is treated as absent
+ *  (and so refetched) rather than trusted into the comparison. */
 function readCache(): CacheEntry | null {
   try {
-    return JSON.parse(readFileSync(cachePath(), "utf8")) as CacheEntry;
+    const value: unknown = JSON.parse(readFileSync(cachePath(), "utf8"));
+    if (value === null || typeof value !== "object") return null;
+    const { checkedAt, tag } = value as Partial<CacheEntry>;
+    if (typeof checkedAt !== "number" || !Number.isFinite(checkedAt) || checkedAt < 0 || checkedAt > Date.now()) return null;
+    if (tag !== null && (typeof tag !== "string" || parse(tag) === null)) return null;
+    return { checkedAt, tag };
   } catch {
     return null;
   }
@@ -87,19 +98,37 @@ export async function refreshLatest(): Promise<void> {
   if (checkSuppressed()) return;
   const cached = readCache();
   if (cached !== null && Date.now() - cached.checkedAt < TTL_MS) return;
+  const ctl = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-      headers: { accept: "application/vnd.github+json", "user-agent": "specline-cli" },
-      signal: ctl.signal,
+    // The budget covers the whole exchange, not just the headers: a server that
+    // accepts the connection and then dribbles the body used to hang the CLI.
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        ctl.abort();
+        reject(new Error("update check timed out"));
+      }, FETCH_TIMEOUT_MS);
     });
-    clearTimeout(timer);
-    // 404 = no releases yet; cache that as "no tag" so we don't refetch for a day.
-    const tag = res.ok ? String(((await res.json()) as { tag_name?: string }).tag_name ?? "") || null : null;
+    const request = async (): Promise<string | null> => {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+        headers: { accept: "application/vnd.github+json", "user-agent": "specline-cli" },
+        signal: ctl.signal,
+      });
+      // 404 = no releases yet; 403/429 = rate-limited; 5xx = their problem. Cache
+      // "no tag" either way, so a failing endpoint costs one request a day rather
+      // than one per run.
+      if (!res.ok) return null;
+      const data: unknown = await res.json();
+      const tag = data !== null && typeof data === "object" ? (data as { tag_name?: unknown }).tag_name : undefined;
+      if (typeof tag !== "string" || parse(tag) === null) throw new Error("invalid release tag");
+      return tag;
+    };
+    const tag = await Promise.race([request(), deadline]);
     writeCache({ checkedAt: Date.now(), tag });
   } catch {
-    // Offline / rate-limited / aborted — leave the cache as-is, try again later.
+    // Offline / aborted / unreadable body — leave the cache as-is, try again later.
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -1,15 +1,22 @@
 ---
 import Docs from "../../../layouts/Docs.astro";
+import Experimental from "../../../components/Experimental.astro";
 ---
 <Docs title="Reference — acceptance altitudes">
   <div class="doc-kicker">Reference · Altitudes</div>
-  <h1>The three acceptance altitudes</h1>
+  <h1>The three acceptance altitudes <em>(experimental)</em></h1>
   <p class="doc-lead">
-    Acceptance checks are <strong>partitioned by altitude</strong> — and the altitudes are the
-    <strong>handoffs between who certifies <em>done</em></strong>, not three flavors of test.
-    Each check belongs to one actor: the implementer (<strong>provable</strong>), the reviewer
-    (<strong>judgeable</strong>), or you (<strong>tasteable</strong>). Falsifiable (B5) means
-    <em>settleable the same way twice</em>; each altitude is one actor settling it.
+    A spec's <strong>Acceptance checks</strong> are, by default, one falsifiable list — each
+    item settleable the same way twice — with anything only a person can settle under an
+    optional <code>### human</code> sub-heading. That's all Part 1 asks.
+  </p>
+  <Experimental />
+  <p class="doc-lead">
+    Unattended, that one list is refined into three <strong>altitudes</strong> — and the
+    altitudes are the <strong>handoffs between who certifies <em>done</em></strong>, not three
+    flavors of test. Each check belongs to one actor: the implementer (<strong>provable</strong>),
+    the reviewer (<strong>judgeable</strong>), or you (<strong>tasteable</strong>, Part 1's
+    <code>### human</code> under its unattended name).
   </p>
 
   <div class="bcard">
@@ -47,5 +54,5 @@ import Docs from "../../../layouts/Docs.astro";
   <div class="callout"><span class="ci">▸</span><p><strong>Depth scales with risk.</strong> <code>blast_radius</code> gates the <em>depth</em> of the <code>judgeable</code> partition, not its existence: a <code>low</code> blast radius may leave it empty (no separate reviewer); <code>high</code> makes a fresh-context reviewer mandatory.</p></div>
   <div class="callout"><span class="ci">▸</span><p><strong>Specline's limit.</strong> Specline checks, in planning, that the partition is present and a <code>judgeable</code> item names a section. It cannot judge whether the implementer's assessment was sound or the reviewer was right — that's the actors' job, then yours.</p></div>
 
-  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a> (see also <a href="/handbook/review">review, then accept</a>). The law: <a href="/spec.md">the canon, "Falsifiable or Draft" (B5) and "The build loop"</a>.</p></div>
+  <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/building">handbook — building</a> (see also <a href="/handbook/review">review, then accept</a>). The law: <a href="/spec.md">the canon, "Falsifiable or draft" and "The build loop"</a>.</p></div>
 </Docs>

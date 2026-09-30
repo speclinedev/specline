@@ -62,3 +62,19 @@ export function loadCanon(): BundledCanon {
   };
   return cached;
 }
+
+/** The one line that separates the two normative parts from the opt-in third. */
+const PART3_MARKER = "<!-- specline:unattended -->";
+
+/** The canon as this repo should see it (canon 3.1 §Part 3). With `unattended`
+ *  off, Part 3 is not injected at all — the prompt an agent hydrates on shrinks by
+ *  roughly a third, which is the token saving Part 3 was itself chasing. The marker
+ *  line is machinery, never served either way. */
+export function canonFor(unattended: boolean): string {
+  const text = loadCanon().text;
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => l.trim() === PART3_MARKER);
+  if (at === -1) return text; // a canon with no marker has no Part 3 to slice
+  if (unattended) return [...lines.slice(0, at), ...lines.slice(at + 1)].join("\n");
+  return `${lines.slice(0, at).join("\n").replace(/\s+$/, "")}\n`;
+}

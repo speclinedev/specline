@@ -13,9 +13,17 @@
     "test": "node --test test/*.test.ts",
     "sync-canon": "node scripts/sync-canon.mjs",
     "sync-canon:check": "node scripts/sync-canon.mjs --check",
-    "build": "npm run sync-canon && bun build src/cli/index.ts --compile --outfile dist/specline"
+    "build": "npm run sync-canon && bun build src/cli/index.ts --compile --outfile dist/specline",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "bun": ">=1.0.0"
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "typescript": "^7.0.2"
   }
 }

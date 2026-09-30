@@ -3,30 +3,33 @@
 // parses args, renders output (JSON is the source of truth; human is a projection),
 // and maps results to a stable exit code. All real logic lives in the engine/init.
 
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
-import { run, exitCodeFor, type Mode, type Report } from "../engine/run.ts";
+import { run, exitCodeFor, type Report } from "../engine/run.ts";
+import { InputError, readUnattendedSwitch } from "../engine/model.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { init, sync, upgrade, type RunResult } from "../init/scaffold.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
-import { loadCanon } from "../canon.ts";
+import { canonFor } from "../canon.ts";
 import { refreshLatest, staleness } from "../staleness.ts";
 
 const USAGE = `specline — spec-driven development tooling
 
-  specline check  [PATH] [--mode author|gate] [--format json|human]
-                         [--changed <file>...] [--now <iso-date>] [--tier 0|1|2]
-  specline init    [PATH] [--tier 0|1|2] [--decider <name>]
+  specline check  [PATH] [--format json|human]
+                         [--changed <file>...] [--modified <file>...] [--now <iso-date>]
+  specline init    [PATH] [--decider <name>]
                           [--github-action | --no-github-action] [--check] [--yes]
   specline sync    [PATH] [--check]
   specline upgrade [PATH] [--check]
-  specline rules   [--format json|markdown]
-  specline spec
+  specline rules   [PATH] [--format json|markdown]
+  specline spec    [PATH]
 
   check validates a repo's structure (read-only). init/sync write generated artifacts.
   upgrade bumps the canon pin (specline.yml + doc-architecture.md) to this tool's
   canon and regenerates generated files.
+
+  rules and spec read PATH's specline.yml for the \`unattended:\` switch: with it off
+  (the default) the experimental Part 3 is neither listed nor served.
 
 Exit: 0 = ok, 1 = errors / --check stale, 2 = usage error, 3 = internal error.`;
 
@@ -35,32 +38,33 @@ type Format = "json" | "human" | "markdown";
 interface Args {
   command: "check" | "rules" | "spec" | "init" | "sync" | "upgrade";
   path: string;
-  mode: Mode;
   format: Format | null;
   changed: string[];
   modified: string[];
   now: string | null;
-  tier: number | undefined;
   decider: string;
   githubAction: "yes" | "no" | "ask";
   check: boolean;
   yes: boolean;
 }
 
+/** Help is not an error, but it does end the run — and `process.exit` here would
+ *  truncate anything still buffered on stdout. Both unwind to main().catch. */
+class HelpRequested extends Error {}
+
 function fail(msg: string): never {
-  process.stderr.write(`specline: ${msg}\n\n${USAGE}\n`);
-  process.exit(2);
+  throw new InputError(`${msg}\n\n${USAGE}`);
 }
 
 function parseArgs(argv: string[]): Args {
   const a: Args = {
-    command: "check", path: ".", mode: "gate", format: null, changed: [], modified: [], now: null,
-    tier: undefined, decider: "you", githubAction: "ask", check: false, yes: false,
+    command: "check", path: ".", format: null, changed: [], modified: [], now: null,
+    decider: "you", githubAction: "ask", check: false, yes: false,
   };
   const sub = argv[0];
   if (sub === undefined || sub === "-h" || sub === "--help") {
     process.stdout.write(`${USAGE}\n`);
-    process.exit(0);
+    throw new HelpRequested();
   }
   if (sub === "check" || sub === "doctor") a.command = "check"; // `doctor` kept as a silent back-compat alias
   else if (sub === "rules") a.command = "rules";
@@ -75,12 +79,6 @@ function parseArgs(argv: string[]): Args {
   for (let i = 1; i < argv.length; i++) {
     const arg = argv[i]!;
     switch (arg) {
-      case "--mode": {
-        const v = argv[++i];
-        if (v !== "author" && v !== "gate") fail(`--mode must be author or gate`);
-        a.mode = v;
-        break;
-      }
       case "--format": {
         const v = argv[++i];
         if (v !== "json" && v !== "human" && v !== "markdown") fail(`--format must be json, human, or markdown`);
@@ -90,12 +88,6 @@ function parseArgs(argv: string[]): Args {
       case "--now":
         a.now = argv[++i] ?? fail(`--now needs an ISO date`);
         break;
-      case "--tier": {
-        const v = Number(argv[++i]);
-        if (!Number.isInteger(v) || v < 0 || v > 2) fail(`--tier must be 0, 1, or 2`);
-        a.tier = v;
-        break;
-      }
       case "--changed":
         while (i + 1 < argv.length && !argv[i + 1]!.startsWith("--")) a.changed.push(argv[++i]!);
         break;
@@ -121,7 +113,7 @@ function parseArgs(argv: string[]): Args {
       case "-h":
       case "--help":
         process.stdout.write(`${USAGE}\n`);
-        process.exit(0);
+        throw new HelpRequested();
       default:
         if (arg.startsWith("--")) fail(`unknown flag ${arg}`);
         if (sawPath) fail(`unexpected extra argument ${arg}`);
@@ -132,20 +124,34 @@ function parseArgs(argv: string[]): Args {
   return a;
 }
 
-function canonText(): string {
-  return loadCanon().text;
-}
+const PART_TITLES: Record<number, string> = {
+  1: "Part 1 — the spec",
+  2: "Part 2 — the record",
+  3: "Part 3 — unattended builds (experimental)",
+};
 
-function printRules(format: Format): void {
+/** The catalog an agent reads to know what it will be checked against *before* it
+ *  writes. With the switch off, Part-3 rules are omitted entirely rather than
+ *  listed-and-inert: nothing should advertise a rule that cannot fire. */
+function printRules(format: Format, unattended: boolean): void {
+  const parts: (1 | 2 | 3)[] = unattended ? [1, 2, 3] : [1, 2];
+  const listed = parts.flatMap((part) => REGISTRY.filter((r) => r.part === part));
   if (format === "json") {
-    process.stdout.write(`${JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, rules: REGISTRY }, null, 2)}\n`);
+    const rules = listed.map((r) => (r.part === 3 ? { ...r, experimental: true } : { ...r }));
+    process.stdout.write(`${JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, unattended, rules }, null, 2)}\n`);
     return;
   }
   const lines = [`# specline rules — catalog (tool ${TOOL_VERSION}, canon ${CANON})`, ""];
-  lines.push("| rule_id | severity | scope | tier | downgradable |");
-  lines.push("|---|---|---|---|---|");
-  for (const r of REGISTRY) {
-    lines.push(`| \`${r.rule_id}\` | ${r.severity} | ${r.scope} | ${r.tier} | ${r.downgradable} |`);
+  lines.push(unattended
+    ? "`unattended: true` — Part 3 is in force and its rules are listed as experimental."
+    : "`unattended` is off (the default), so the experimental Part-3 rules neither run nor are listed.");
+  for (const part of parts) {
+    lines.push("", `## ${PART_TITLES[part]}`, "");
+    lines.push("| rule_id | severity | scope | tags |");
+    lines.push("|---|---|---|---|");
+    for (const r of REGISTRY.filter((x) => x.part === part)) {
+      lines.push(`| \`${r.rule_id}\` | ${r.severity} | ${r.scope} | ${r.part === 3 ? "experimental" : ""} |`);
+    }
   }
   process.stdout.write(`${lines.join("\n")}\n`);
 }
@@ -154,7 +160,7 @@ const SEV_LABEL: Record<string, string> = { error: "ERROR ", warning: "WARN  ", 
 
 function renderHuman(report: Report, path: string): string {
   const out: string[] = [];
-  out.push(`specline ${report.tool_version} · canon ${report.canon} · mode ${report.mode} · tier ${report.tier}`);
+  out.push(`specline ${report.tool_version} · canon ${report.canon}${report.unattended ? " · unattended (experimental)" : ""}`);
   out.push(path);
   out.push("");
   if (report.findings.length === 0) {
@@ -200,40 +206,39 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.command === "spec") {
-    const text = canonText();
+    const text = canonFor(readUnattendedSwitch(args.path));
     process.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
-    process.exit(0);
+    return;
   }
   if (args.command === "rules") {
-    printRules(args.format ?? "markdown");
-    process.exit(0);
+    printRules(args.format ?? "markdown", readUnattendedSwitch(args.path));
+    return;
   }
   if (args.command === "init") {
+    if (existsSync(args.path) && !statSync(args.path).isDirectory()) fail(`${args.path} is not a directory`);
     const res = init(args.path, {
-      tier: args.tier ?? 1,
       decider: args.decider,
       githubAction: await resolveGithubAction(args),
       check: args.check,
     });
     process.stdout.write(renderScaffold("init", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
   if (args.command === "sync") {
     const res = sync(args.path, { check: args.check });
     process.stdout.write(renderScaffold("sync", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
   if (args.command === "upgrade") {
     const res = upgrade(args.path, { check: args.check });
     process.stdout.write(renderScaffold("upgrade", args.path, res, args.check));
-    process.exit(args.check && !res.clean ? 1 : 0);
+    process.exitCode = args.check && !res.clean ? 1 : 0;
+    return;
   }
 
-  if (!existsSync(join(args.path, "docs"))) {
-    fail(`no docs/ directory found under ${args.path}`);
-  }
-
-  const report = run(args.path, { mode: args.mode, changed: args.changed, modified: args.modified, now: args.now, tierOverride: args.tier });
+  const report = run(args.path, { changed: args.changed, modified: args.modified, now: args.now });
   const format = args.format ?? "human";
   if (format === "json") {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
@@ -245,10 +250,15 @@ async function main(): Promise<void> {
       process.stderr.write(`\nnote: serving canon ${stale.current}; ${stale.latest} is the latest release — update your speclinedev/specline@ ref.\n`);
     }
   }
-  process.exit(exitCodeFor(report));
+  process.exitCode = exitCodeFor(report);
 }
 
+// Nothing here calls process.exit: it discards whatever stdout has buffered, and a
+// JSON report over ~64 KiB through a pipe came out truncated. Setting exitCode and
+// letting the event loop drain is the whole fix.
 main().catch((err) => {
-  process.stderr.write(`specline: internal error: ${err instanceof Error ? err.message : String(err)}\n`);
-  process.exit(3);
+  if (err instanceof HelpRequested) return;
+  const input = err instanceof InputError;
+  process.stderr.write(`specline: ${input ? "" : "internal error: "}${err instanceof Error ? err.message : String(err)}\n`);
+  process.exitCode = input ? 2 : 3;
 });

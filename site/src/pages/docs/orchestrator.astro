@@ -1,12 +1,15 @@
 ---
 import Docs from "../../layouts/Docs.astro";
+import Experimental from "../../components/Experimental.astro";
 ---
 <Docs title="The orchestrator — roadmap">
   <div class="doc-kicker">The runner · pluggable</div>
   <h1>The orchestrator</h1>
+  <Experimental />
   <p class="doc-lead">
-    Between the two human gates, something has to drive a signed spec to its acceptance checks
-    on its own. That something is the runner — whatever it happens to be. The key word is
+    Between the two human gates, something has to drive an approved, <code>unattended</code>
+    spec to its acceptance checks on its own. That something is the runner — whatever it
+    happens to be. The key word is
     <em>whatever</em>: Specline defines the loop's contract and checks that a spec carries its
     inputs. It does <strong>not</strong> build the runner. The runner is pluggable.
   </p>
@@ -27,8 +30,8 @@ import Docs from "../../layouts/Docs.astro";
   <div class="tbl-wrap"><table class="book-table">
     <thead><tr><th>Loop input</th><th>Specline (validates shape)</th><th>orchestrator (consumes)</th></tr></thead>
     <tbody>
-      <tr><td>Goal — the target</td><td>present &amp; falsifiable-shaped</td><td>converges toward it</td></tr>
-      <tr><td>Agent-loopable checks — the exit</td><td>runnable command present</td><td>runs them each iteration</td></tr>
+      <tr><td>Goal — the target</td><td>Goal heading present (advisory)</td><td>converges toward it</td></tr>
+      <tr><td>Agent-loopable checks — the exit</td><td>agent-loopable label present; optional run suffix syntax checked</td><td>runs them each iteration</td></tr>
       <tr><td>status.md — memory</td><td>required sections + entries</td><td>resumes from / appends to it</td></tr>
       <tr><td>loop_budget / stale_after — autonomy</td><td>well-formed values</td><td>counts cycles / clock; escalates</td></tr>
       <tr><td>blast_radius / target_model — routing</td><td>allowed values</td><td>selects model effort + reviewer depth</td></tr>
@@ -40,8 +43,9 @@ import Docs from "../../layouts/Docs.astro";
     The runner hands control back to a human gate at the first of: <code>loop_budget</code>
     exhausted (no progress), <code>stale_after</code> reached (too much time), or a true gate
     — a destructive action, a real scope change, or input only the PO can give. It never
-    quietly extends a boundary and never edits a ratified spec. It speaks through artifacts
-    and <code>status.md</code>, not a reasoning transcript.
+    quietly extends a boundary and never edits an approved spec without a decider-approved
+    amendment commit. It speaks through artifacts and <code>status.md</code>, not a reasoning
+    transcript.
   </p>
-  <p>See the handbook's <a href="/#build">How agents build</a> and <a href="/#escalation">Escalation</a> chapters for the narrative, and <a href="/spec.md">/spec.md</a> § <em>The build loop</em> for the normative contract.</p>
+  <p>See the handbook's <a href="/handbook/building">How agents build</a> and <a href="/handbook/building">unattended escalation</a> discussion for the narrative, and <a href="/spec.md">/spec.md</a> § <em>The build loop</em> for the normative contract.</p>
 </Docs>

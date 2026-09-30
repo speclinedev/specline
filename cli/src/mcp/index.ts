@@ -14,15 +14,20 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { run } from "../engine/run.ts";
+import { readUnattendedSwitch } from "../engine/model.ts";
 import { REGISTRY } from "../engine/rules.ts";
 import { TOOL_VERSION, CANON } from "../version.ts";
-import { loadCanon } from "../canon.ts";
+import { canonFor } from "../canon.ts";
 import { refreshLatest, staleness } from "../staleness.ts";
 
 const DEFAULT_PROTOCOL = "2025-06-18";
 
-function canonText(): string {
-  return loadCanon().text;
+/** `path` is optional on the two read-only tools: absent means "no repo in view",
+ *  and the switch defaults off — the same default a repo with no specline.yml gets. */
+function switchAt(value: unknown): boolean {
+  if (value === undefined) return false;
+  if (typeof value !== "string" || value.trim() === "") throw new Error("path must be a nonempty string");
+  return readUnattendedSwitch(value);
 }
 
 function plannerPersona(): string {
@@ -50,23 +55,33 @@ const TOOLS = [
       type: "object",
       properties: {
         path: { type: "string", description: "Path to the repo root (contains docs/)." },
-        mode: { type: "string", enum: ["gate", "author"], description: "Default gate." },
         changed: { type: "array", items: { type: "string" }, description: "Repo-relative changed paths." },
+        modified: { type: "array", items: { type: "string" }, description: "Repo-relative modifications/deletions, excluding additions (archive edit detection)." },
         now: { type: "string", description: "Reference ISO date for time-dependent checks." },
-        tier: { type: "integer", description: "Override the declared tier (0|1|2)." },
       },
       required: ["path"],
     },
   },
   {
     name: "specline_spec",
-    description: "Return the pinned Specline canon (markdown). Inject this to make an agent aware of the methodology before it authors a spec.",
-    inputSchema: { type: "object", properties: {} },
+    description:
+      "Return the pinned Specline canon (markdown). Inject this to make an agent aware of the methodology " +
+      "before it authors a spec. Pass path to honour that repo's `unattended:` switch — with it off (the " +
+      "default) the experimental Part 3 is not included.",
+    inputSchema: {
+      type: "object",
+      properties: { path: { type: "string", description: "Path to the repo root, to read its unattended switch." } },
+    },
   },
   {
     name: "specline_rules",
-    description: "Return the rule catalog Specline enforces: every rule_id with its severity, scope, tier, and downgradable flag.",
-    inputSchema: { type: "object", properties: {} },
+    description:
+      "Return the rule catalog Specline enforces: every rule_id with its severity, scope, and canon part. " +
+      "Part-3 (unattended) rules are listed only when the repo at path sets `unattended: true`.",
+    inputSchema: {
+      type: "object",
+      properties: { path: { type: "string", description: "Path to the repo root, to read its unattended switch." } },
+    },
   },
 ];
 
@@ -90,21 +105,34 @@ function textResult(text: string, isError = false) {
 function callTool(name: string, args: Record<string, unknown>): unknown {
   switch (name) {
     case "specline_check": {
-      const path = typeof args.path === "string" ? args.path : ".";
-      const report = run(path, {
-        mode: args.mode === "author" ? "author" : "gate",
-        changed: Array.isArray(args.changed) ? (args.changed as string[]) : [],
+      // Arguments are agent-supplied and unvalidated by the protocol. A wrong one
+      // must be a visible error, never a silent default: `path` defaulting to "."
+      // used to validate whatever directory the server happened to start in.
+      if (typeof args.path !== "string" || args.path.trim() === "") throw new Error("path is required and must be a nonempty string");
+      for (const key of ["changed", "modified"]) {
+        const value = args[key];
+        if (value !== undefined && (!Array.isArray(value) || !value.every((p) => typeof p === "string"))) {
+          throw new Error(`${key} must be an array of repo-relative paths`);
+        }
+      }
+      if (args.now !== undefined && args.now !== null && typeof args.now !== "string") throw new Error("now must be an ISO date");
+      const report = run(args.path, {
+        changed: (args.changed as string[] | undefined) ?? [],
+        modified: (args.modified as string[] | undefined) ?? [],
         now: typeof args.now === "string" ? args.now : null,
-        tierOverride: typeof args.tier === "number" ? args.tier : undefined,
       });
       return textResult(JSON.stringify(report, null, 2));
     }
     case "specline_spec":
-      return textResult(canonText());
+      return textResult(canonFor(switchAt(args.path)));
     case "specline_rules": {
+      const unattended = switchAt(args.path);
       const stale = staleness(CANON);
       const update = stale !== null ? { update_available: stale.latest } : {};
-      return textResult(JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, ...update, rules: REGISTRY }, null, 2));
+      const rules = REGISTRY
+        .filter((r) => r.part !== 3 || unattended)
+        .map((r) => (r.part === 3 ? { ...r, experimental: true } : { ...r }));
+      return textResult(JSON.stringify({ tool_version: TOOL_VERSION, canon: CANON, ...update, unattended, rules }, null, 2));
     }
     default:
       return textResult(`unknown tool: ${name}`, true);
@@ -136,7 +164,11 @@ function handle(req: Rpc): void {
         return;
       case "tools/call": {
         const name = String(params?.name ?? "");
-        const args = (params?.arguments as Record<string, unknown>) ?? {};
+        const supplied = params?.arguments;
+        if (supplied !== undefined && (supplied === null || typeof supplied !== "object" || Array.isArray(supplied))) {
+          throw new Error("arguments must be an object");
+        }
+        const args = (supplied as Record<string, unknown>) ?? {};
         send({ jsonrpc: "2.0", id, result: callTool(name, args) });
         return;
       }
@@ -179,6 +211,24 @@ function handle(req: Rpc): void {
 // (cache-only, no network in the request path) and reports if the bundle is behind.
 void refreshLatest();
 
+/** One JSON-RPC line. A client that sends garbage gets `-32700`, not silence: the
+ *  old handler swallowed it and the caller waited for a reply that never came. */
+function receive(line: string): void {
+  let value: unknown;
+  try {
+    value = JSON.parse(line);
+  } catch {
+    send({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
+    return;
+  }
+  if (value === null || typeof value !== "object" || Array.isArray(value) ||
+      (value as Rpc).jsonrpc !== "2.0" || typeof (value as Rpc).method !== "string") {
+    send({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } });
+    return;
+  }
+  handle(value as Rpc);
+}
+
 let buffer = "";
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk: string) => {
@@ -188,11 +238,11 @@ process.stdin.on("data", (chunk: string) => {
     const line = buffer.slice(0, nl).trim();
     buffer = buffer.slice(nl + 1);
     if (line === "") continue;
-    try {
-      handle(JSON.parse(line) as Rpc);
-    } catch {
-      // Unparseable line — ignore per JSON-RPC stream robustness.
-    }
+    receive(line);
   }
 });
-process.stdin.on("end", () => process.exit(0));
+// Handle a final line with no trailing newline, then exit naturally — process.exit
+// would drop any response still buffered on stdout.
+process.stdin.on("end", () => {
+  if (buffer.trim() !== "") receive(buffer.trim());
+});

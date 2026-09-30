@@ -1,42 +1,47 @@
 ---
+import { CANON_VERSION } from "../../../canon.ts";
 import Docs from "../../../layouts/Docs.astro";
 
+// specline.yml pins MAJOR.MINOR only — CANON-PIN-MISMATCH compares at that
+// grain, so a patch release never forces every repo's pin to churn.
+const CANON_MM = CANON_VERSION.match(/^(\d+\.\d+)/)?.[1] ?? CANON_VERSION;
+
 const yaml = `# specline.yml
-canon: 2.6
-tier: 1
+canon: ${CANON_MM}
+unattended: false     # experimental — Part 3. default false
 deciders: [jonathan]
 deputy: null
-staleness:            # the staleness windows (durations), per state
+staleness:            # the staleness windows (durations), per state — experimental
   building: 30 days   # frontmatter stale_after is computed from these
   blocked:  14 days
-focus_limit:          # decider WIP — the B7 ceiling (per decider)
+focus_limit:          # decider WIP — the decider-budget ceiling (per decider) — experimental
   building: 3
   active:   6
-coupling_ceiling: 50%        # B2 — spec + forced loads, as % of context_window
+coupling_ceiling: 50%        # experimental — spec + forced loads, as % of context_window
 context_window: 400000       # chars in the weakest in-use model's window (the coupling denominator)
-suggest_slicing_past: 6      # acceptance/Behavior count above which Specline nudges to slice (while size: small)
-review_rounds_before_human: 2  # outer-loop verifier↔implementer bounce budget
+suggest_slicing_past: 6      # acceptance/Behavior count above which Specline nudges to slice (while size: small) — experimental
+review_rounds_before_human: 2  # outer-loop verifier↔implementer bounce budget — experimental
 models:               # capability tier → real model
   light:    claude-haiku
   standard: claude-sonnet
   frontier: claude-opus
-merge_target: main    # (v2.8, optional) where impl PRs merge and graduation lands; absent → repo default branch`;
+merge_target: main    # optional; where impl PRs merge and graduation lands; absent → repo default branch`;
 
 const keys = [
-  { key: "canon", values: "version string", when: "The canon version this repo pins. This contract changes first; repo conventions follow." },
-  { key: "tier", values: "0 | 1 | 2", when: "The adoption tier. Specline checks only the rules of the declared tier; tier-2 governance fires only at tier: 2." },
-  { key: "deciders", values: "list of names", when: "The named POs who may ratify and accept." },
+  { key: "canon", values: "MAJOR.MINOR", when: "The canon version this repo pins. This contract changes first; repo conventions follow. Compared to the tool's canon at MAJOR.MINOR — a patch bump never forces a pin update." },
+  { key: "unattended", values: "boolean (default false)", when: "The one switch for Part 3 (unattended builds) — experimental. Off: Part-3 rules aren't listed or checked, and its keys/states are recognised silently. On: the same tested contract, tagged experimental. upgrade maps a legacy tier: 2 to unattended: true and drops tier: 0 | 1." },
+  { key: "deciders", values: "list of names", when: "The named POs who may approve and accept." },
   { key: "deputy", values: "a name | null", when: "Who decides when a decider is unavailable. With no deputy, the agent applies the entry's stated default and parks blocked." },
-  { key: "staleness.building", values: "duration (default 30 days)", when: "The window before a building spec is presumed abandoned. stale_after is computed from this (B4)." },
-  { key: "staleness.blocked", values: "duration (default 14 days)", when: "The window before a blocked spec is presumed abandoned (B4)." },
-  { key: "focus_limit.building", values: "int (default 3)", when: "Max specs a decider may have in building at once (B7)." },
-  { key: "focus_limit.active", values: "int (default 6)", when: "Max specs a decider may have in active states (ratified|building|blocked) at once (B7)." },
-  { key: "coupling_ceiling", values: "% (default 50%)", when: "B2 — spec.md + transitively forced loads, as a percentage of context_window. Specline warns on breach." },
+  { key: "staleness.building", values: "duration (default 30 days)", when: "Experimental. The window before a building spec is presumed abandoned. stale_after is computed from this." },
+  { key: "staleness.blocked", values: "duration (default 14 days)", when: "Experimental. The window before a blocked spec is presumed abandoned." },
+  { key: "focus_limit.building", values: "int (default 3)", when: "Experimental. Max specs a decider may have in building at once." },
+  { key: "focus_limit.active", values: "int (default 6)", when: "Experimental. Max specs a decider may have in active states (building|blocked) at once." },
+  { key: "coupling_ceiling", values: "% (default 50%)", when: "Experimental. spec.md + transitively forced loads, as a percentage of context_window. Specline warns on breach." },
   { key: "context_window", values: "chars (default 400000)", when: "Chars in the weakest in-use model's window — the denominator for the coupling ceiling." },
-  { key: "suggest_slicing_past", values: "int (default 6)", when: "Acceptance/Behavior count above which Specline nudges to slice, while size: small." },
-  { key: "review_rounds_before_human", values: "int (default 2)", when: "The outer-loop verifier↔implementer bounce budget before the human gate." },
+  { key: "suggest_slicing_past", values: "int (default 6)", when: "Experimental. Acceptance/Behavior count above which Specline nudges to slice, while size: small." },
+  { key: "review_rounds_before_human", values: "int (default 2)", when: "Experimental. The outer-loop verifier↔implementer bounce budget before the human gate." },
   { key: "models", values: "tier → model map", when: "Binds each capability tier (light/standard/frontier) to a real model, so specs stay agent-agnostic." },
-  { key: "merge_target", values: "branch name", when: "(v2.8, optional) The branch impl PRs merge into and graduation lands on. Repo-level on purpose — a spec doesn't choose its integration branch. Absent → the repo's default branch." },
+  { key: "merge_target", values: "branch name", when: "Optional. The branch impl PRs merge into and graduation lands on. Repo-level on purpose — a spec doesn't choose its integration branch. Absent → the repo's default branch." },
 ];
 ---
 <Docs title="Reference — specline.yml">
@@ -49,6 +54,7 @@ const keys = [
     not the <em>methodology</em>: it does not configure rules, schema, or partitions. Absent → Specline
     falls back to canon defaults.
   </p>
+  <p>Configuration and frontmatter use YAML mappings. Known enum fields must be scalar strings; relations accept a string or a list, including annotated <code>slug: rationale</code> entries. Duplicate keys are invalid. Unknown fields, including nested values, are preserved for compatibility.</p>
   <pre class="code"><code>{yaml}</code></pre>
   <div class="tbl-wrap">
     <table class="book-table">
@@ -60,6 +66,6 @@ const keys = [
       </tbody>
     </table>
   </div>
-  <div class="callout"><span class="ci">▸</span><p><strong>Per-repo, set once.</strong> <code>specline.yml</code> is the repo's calibration — the thresholds and pins every spec is measured against. Contrast it with <a href="/docs/reference/frontmatter">frontmatter</a>, which is per-spec and set at every ratification. Tune the numbers here; the rules are the canon's.</p></div>
+  <div class="callout"><span class="ci">▸</span><p><strong>Per-repo, set once.</strong> <code>specline.yml</code> is the repo's calibration — the thresholds and pins every spec is measured against. Contrast it with <a href="/docs/reference/frontmatter">frontmatter</a>, which is per-spec and set at the decider's go. Tune the numbers here; the rules are the canon's.</p></div>
   <div class="callout"><span class="ci">▸</span><p>Up: <a href="/handbook/start-light">handbook — start light</a>. The law: <a href="/spec.md">the canon, "Configuration — specline.yml"</a>.</p></div>
 </Docs>
