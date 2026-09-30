@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
@@ -14,7 +14,9 @@ const binary = resolve(process.argv[2]);
 const sourceDir = fileURLToPath(new URL("../../", import.meta.url));
 const canonFiles = readdirSync(sourceDir).filter((f) => /^specline-.*\.md$/.test(f));
 assert.equal(canonFiles.length, 1, `expected exactly one specline-*.md in ${sourceDir}, found ${canonFiles.length}`);
-const sourceCanonText = readFileSync(join(sourceDir, canonFiles[0]), "utf8");
+// The serving contract omits the internal Part-3 boundary marker.
+const sourceCanonText = readFileSync(join(sourceDir, canonFiles[0]), "utf8")
+  .split("\n").filter((line) => line.trim() !== "<!-- specline:unattended -->").join("\n");
 
 const root = mkdtempSync(join(tmpdir(), "specline-binary-"));
 const run = (args, status = 0) => {
@@ -23,7 +25,9 @@ const run = (args, status = 0) => {
   return result.stdout;
 };
 try {
-  assert.equal(run(["spec"]), sourceCanonText.endsWith("\n") ? sourceCanonText : `${sourceCanonText}\n`);
+  writeFileSync(join(root, "specline.yml"), "unattended: true\n");
+  assert.equal(run(["spec", root]), sourceCanonText.endsWith("\n") ? sourceCanonText : `${sourceCanonText}\n`);
+  rmSync(join(root, "specline.yml"));
   assert.match(run(["rules"]), /STRUCT-MISSING-SPEC/);
   mkdirSync(join(root, "docs"));
   const report = JSON.parse(run(["check", root, "--format", "json"]));
@@ -31,7 +35,7 @@ try {
   mkdirSync(join(root, "docs/specs/broken"), { recursive: true });
   const invalid = JSON.parse(run(["check", root, "--format", "json", "--changed", "docs/specs/broken/spec.md"], 1));
   assert.ok(invalid.findings.some((finding) => finding.rule_id === "STRUCT-MISSING-SPEC"));
-  run(["init", root, "--tier", "1", "--yes", "--no-github-action", "--check"], 1);
+  run(["init", root, "--yes", "--no-github-action", "--check"], 1);
   assert.deepEqual(readdirSync(root), ["docs"]);
   assert.deepEqual(readdirSync(join(root, "docs")), ["specs"]);
   assert.deepEqual(readdirSync(join(root, "docs/specs/broken")), []);

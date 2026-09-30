@@ -1,5 +1,5 @@
 name: "Specline"
-description: "Validate a Specline repo's docs/ structure on pull requests (gate mode). Blocks the merge on structural errors; posts findings as annotations."
+description: "Validate a Specline repo's docs/ structure on pull requests. Blocks the merge on structural errors; posts findings as annotations."
 branding:
   icon: check-circle
   color: red
@@ -18,7 +18,7 @@ runs:
     - name: Install Specline runtime dependencies
       shell: bash
       run: npm ci --omit=dev --prefix "$GITHUB_ACTION_PATH"
-    - name: Run Specline (gate mode)
+    - name: Run Specline
       shell: bash
       run: |
         base="${GITHUB_BASE_REF:-main}"
@@ -35,7 +35,6 @@ runs:
         echo "Changed under docs/: ${changed:-<none>}"
         echo "Modified (not added): ${modified:-<none>}"
         node "$GITHUB_ACTION_PATH/src/action/main.ts" "${{ inputs.path }}" \
-          --mode gate \
           --now "$(date -u +%Y-%m-%d)" \
           --changed "$changed" \
           --modified "$modified"
